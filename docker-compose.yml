@@ -1,0 +1,93 @@
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: kevin_crm_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-kevin_construction_os}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_secure_pass_2026}
+    ports:
+      - "5448:5432"
+    volumes:
+      - postgres_18_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-kevin_construction_os}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kevin_crm_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      USE_SQLITE: "False"
+    volumes:
+      - ./backend:/app
+      - ./docs:/docs
+      - backend_venv:/app/.venv
+    ports:
+      - "8017:8017"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "uv run python manage.py migrate &&
+             uv run python manage.py provision_notion &&
+             uv run python manage.py runserver 0.0.0.0:8017"
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: kevin_crm_n8n
+    restart: unless-stopped
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_PERSONALIZATION_ENABLED=false
+      - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
+      - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+      - EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS=true
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n/workflows:/workflows:ro
+    depends_on:
+      - backend
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: kevin_crm_frontend
+    restart: unless-stopped
+    environment:
+      - PORT=3017
+      - HOSTNAME=0.0.0.0
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8017/api/v1
+      - NEXT_PUBLIC_N8N_URL=http://localhost:5678
+      - NEXT_PUBLIC_NOTION_HUB_URL=https://app.notion.com/p/Kevin-s-Construction-OS-4098194ec3e8811ab5b1c1b79f62bce1
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    ports:
+      - "3017:3017"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_18_data:
+  backend_venv:
+  n8n_data:
+  frontend_node_modules:
+

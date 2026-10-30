@@ -1,0 +1,200 @@
+{
+  "name": "Kevin's Construction OS — Automated Project Cost & Invoice Ingestion (Part 3)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "construction-cost-intake",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "b1f4c001-1111-4444-8888-000000000001",
+      "name": "1. Incoming Vendor Email & Receipt Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        180,
+        300
+      ],
+      "webhookId": "construction-cost-intake"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8017/api/v1/invoices/extract/",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ email_subject: $json.body?.email_subject || $json.email_subject || '', email_sender: $json.body?.email_sender || $json.email_sender || 'billing@vendor.com', email_body: $json.body?.email_body || $json.email_body || '', attachment_base64: $json.body?.attachment_base64 || $json.attachment_base64 || '', attachment_filename: $json.body?.attachment_filename || $json.attachment_filename || '' }) }}",
+        "options": {}
+      },
+      "id": "b1f4c001-1111-4444-8888-000000000002",
+      "name": "2. Extract Cost & Receipt Information (PDF + Email)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const extracted = $input.first().json.data || $input.first().json;\nconst needsReviewReasons = [];\n\nif (!extracted.project_reference || extracted.project_reference.toLowerCase().includes('unknown')) {\n  needsReviewReasons.push('Missing or unrecognized Construction Project reference in vendor submission.');\n}\nif (!extracted.document_reference) {\n  needsReviewReasons.push('Missing invoice/receipt document reference.');\n}\nif (Number(extracted.amount || 0) <= 0) {\n  needsReviewReasons.push('Missing or zero invoice amount.');\n}\n\nreturn [{\n  json: {\n    ...extracted,\n    pre_check_needs_clarification: needsReviewReasons.length > 0,\n    pre_check_reasons: needsReviewReasons\n  }\n}];"
+      },
+      "id": "b1f4c001-1111-4444-8888-000000000003",
+      "name": "3. Validate Fields & Pre-Check Clarification Rules",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8017/api/v1/invoices/process/",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ title: $json.title, supplier: $json.supplier, document_reference: $json.document_reference, project_reference: $json.project_reference, invoice_date: $json.invoice_date, amount: $json.amount, currency: $json.currency, payment_status: $json.payment_status, payment_due_date: $json.payment_due_date, source_email: $json.source_email, sync_to_notion: true }) }}",
+        "options": {}
+      },
+      "id": "b1f4c001-1111-4444-8888-000000000004",
+      "name": "4. Match Project, Deduplicate/Upsert in Notion & Notify",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        980,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-clarification",
+              "leftValue": "={{ $json.data?.needs_clarification }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b1f4c001-1111-4444-8888-000000000005",
+      "name": "5. Requires Clarification or Review?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const res = $input.first().json.data;\nreturn [{\n  json: {\n    status: 'FLAGGED_FOR_REVIEW',\n    action_taken: res.action,\n    alert_routed_to: 'kevin@kevinconstruction.com',\n    notion_url: res.cost?.notion_url,\n    clarification_notes: res.cost?.clarification_notes,\n    cost: res.cost\n  }\n}];"
+      },
+      "id": "b1f4c001-1111-4444-8888-000000000006",
+      "name": "6A. Escalated to Kevin / Review Queue",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1500,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const res = $input.first().json.data;\nreturn [{\n  json: {\n    status: 'RECORDED_OR_UPDATED_CLEANLY',\n    action_taken: res.action,\n    duplicate_prevented: res.duplicate_prevented,\n    alert_routed_to: res.cost?.notified_person || 'marcus.vance@kevinconstruction.com',\n    notion_url: res.cost?.notion_url,\n    cost: res.cost\n  }\n}];"
+      },
+      "id": "b1f4c001-1111-4444-8888-000000000007",
+      "name": "6B. Recorded / Updated & PM Notified",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1500,
+        420
+      ]
+    }
+  ],
+  "connections": {
+    "1. Incoming Vendor Email & Receipt Webhook": {
+      "main": [
+        [
+          {
+            "node": "2. Extract Cost & Receipt Information (PDF + Email)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Extract Cost & Receipt Information (PDF + Email)": {
+      "main": [
+        [
+          {
+            "node": "3. Validate Fields & Pre-Check Clarification Rules",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Validate Fields & Pre-Check Clarification Rules": {
+      "main": [
+        [
+          {
+            "node": "4. Match Project, Deduplicate/Upsert in Notion & Notify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Match Project, Deduplicate/Upsert in Notion & Notify": {
+      "main": [
+        [
+          {
+            "node": "5. Requires Clarification or Review?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Requires Clarification or Review?": {
+      "main": [
+        [
+          {
+            "node": "6A. Escalated to Kevin / Review Queue",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "6B. Recorded / Updated & PM Notified",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c9a71234-5678-4321-9999-000000000001",
+  "id": "kevin-construction-cost-automation"
+}
+

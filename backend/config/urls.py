@@ -49,6 +49,7 @@ def api_root(request):
 
 
 urlpatterns = [
+    path("django-admin/", admin.site.urls),
     path("admin/", admin.site.urls),
     path("api/", api_root, name="api-root"),
     path("api", api_root),

@@ -27,6 +27,14 @@ def _rt(text: str) -> list[dict[str, Any]]:
     return [{"type": "text", "text": {"content": str(text)[:1950]}}]
 
 
+def _format_date(d: Any) -> str | None:
+    if not d:
+        return None
+    if hasattr(d, "isoformat"):
+        return d.isoformat()
+    return str(d)
+
+
 class NotionProvisionerService:
     """
     Provisions and synchronizes Kevin's Construction OS in Notion:
@@ -1121,10 +1129,10 @@ class NotionProvisionerService:
                     "Latest Update": {"rich_text": _rt(p.latest_update)},
                 }
                 if p.start_date:
-                    props["Start Date"] = {"date": {"start": p.start_date.isoformat()}}
+                    props["Start Date"] = {"date": {"start": _format_date(p.start_date)}}
                 if p.target_completion_date:
                     props["Target Completion"] = {
-                        "date": {"start": p.target_completion_date.isoformat()}
+                        "date": {"start": _format_date(p.target_completion_date)}
                     }
 
                 resp = self._request(
@@ -1239,7 +1247,7 @@ class NotionProvisionerService:
                 }
                 if o.next_follow_up_date:
                     props["Next Follow-Up Date"] = {
-                        "date": {"start": o.next_follow_up_date.isoformat()}
+                        "date": {"start": _format_date(o.next_follow_up_date)}
                     }
                 if o.contact and o.contact.notion_page_id:
                     props["Contact"] = {"relation": [{"id": o.contact.notion_page_id}]}
@@ -1272,7 +1280,7 @@ class NotionProvisionerService:
                     "Activity Title": {"title": _rt(a.title)},
                     "Activity Type": {"select": {"name": a.activity_type}},
                     "Owner": {"rich_text": _rt(a.owner)},
-                    "Activity Date": {"date": {"start": a.activity_date.isoformat()}},
+                    "Activity Date": {"date": {"start": _format_date(a.activity_date)}},
                     "Completed": {"checkbox": bool(a.completed)},
                     "Outcome & Next Steps": {"rich_text": _rt(a.outcome_notes)},
                 }
@@ -1310,7 +1318,7 @@ class NotionProvisionerService:
                     "Progress & Field Updates": {"rich_text": _rt(t.progress_updates)},
                 }
                 if t.deadline:
-                    props["Deadline"] = {"date": {"start": t.deadline.isoformat()}}
+                    props["Deadline"] = {"date": {"start": _format_date(t.deadline)}}
                 if t.project and t.project.notion_page_id:
                     props["Construction Project"] = {
                         "relation": [{"id": t.project.notion_page_id}]
@@ -1347,10 +1355,10 @@ class NotionProvisionerService:
                     "Delivery Notes": {"rich_text": _rt(m.delivery_notes)},
                 }
                 if m.order_date:
-                    props["Order Date"] = {"date": {"start": m.order_date.isoformat()}}
+                    props["Order Date"] = {"date": {"start": _format_date(m.order_date)}}
                 if m.expected_delivery_date:
                     props["Expected Delivery Date"] = {
-                        "date": {"start": m.expected_delivery_date.isoformat()}
+                        "date": {"start": _format_date(m.expected_delivery_date)}
                     }
                 if m.project and m.project.notion_page_id:
                     props["Construction Project"] = {
@@ -1407,9 +1415,9 @@ class NotionProvisionerService:
             props["Event Timestamp"] = {"date": {"start": ts.strftime("%Y-%m-%dT%H:%M:%SZ")}}
             props["Exact Timestamp (UTC)"] = {"rich_text": _rt(ts.strftime("%Y-%m-%d %H:%M:%S UTC"))}
         if cost.invoice_date:
-            props["Invoice Date"] = {"date": {"start": cost.invoice_date.isoformat()}}
+            props["Invoice Date"] = {"date": {"start": _format_date(cost.invoice_date)}}
         if cost.payment_due_date:
-            props["Payment Due Date"] = {"date": {"start": cost.payment_due_date.isoformat()}}
+            props["Payment Due Date"] = {"date": {"start": _format_date(cost.payment_due_date)}}
         if cost.supporting_document_url:
             props["Supporting Document"] = {"url": cost.supporting_document_url}
         if cost.source_email:

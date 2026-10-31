@@ -57,15 +57,21 @@ services:
       db:
         condition: service_healthy
     command: >
-      sh -c "uv run python manage.py migrate --noinput &&
-             uv run python manage.py collectstatic --noinput &&
-             uv run python manage.py provision_notion &&
-             uv run gunicorn config.wsgi:application --bind 0.0.0.0:8017 --workers 3 --timeout 120 --access-logfile - --error-logfile -"
+      sh -c "/app/.venv/bin/python manage.py migrate --noinput &&
+             /app/.venv/bin/python manage.py collectstatic --noinput &&
+             exec /app/.venv/bin/gunicorn config.wsgi:application --bind 0.0.0.0:8017 --workers 3 --timeout 120 --access-logfile - --error-logfile -"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8017/api/v1/health/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      start_period: 60s
+      retries: 5
     labels:
+      - "autoheal=false"
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_proxy"
-      # Backend API, Admin, Media, and Static HTTPS Router
-      - "traefik.http.routers.crm-backend.rule=Host(`crm.musfiqdehan.com`) && (PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/media`) || PathPrefix(`/static`))"
+      # Backend API, Django Admin, Media, and Static HTTPS Router
+      - "traefik.http.routers.crm-backend.rule=Host(`crm.musfiqdehan.com`) && (PathPrefix(`/api`) || PathPrefix(`/django-admin`) || PathPrefix(`/media`) || PathPrefix(`/static`))"
       - "traefik.http.routers.crm-backend.entrypoints=websecure"
       - "traefik.http.routers.crm-backend.tls=true"
       - "traefik.http.routers.crm-backend.tls.certresolver=letsencrypt"
@@ -92,6 +98,7 @@ services:
       - N8N_PATH=/n8n/
       - N8N_EDITOR_BASE_URL=https://crm.musfiqdehan.com/n8n/
       - WEBHOOK_URL=https://crm.musfiqdehan.com/n8n/
+      - N8N_RUNNERS_ENABLED=false
       - N8N_PROXY_HOPS=1
       - N8N_DIAGNOSTICS_ENABLED=false
       - N8N_PERSONALIZATION_ENABLED=false
@@ -107,18 +114,21 @@ services:
     depends_on:
       - backend
     labels:
+      - "autoheal=false"
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_proxy"
       # Explicit redirect: /n8n without slash -> /n8n/
       - "traefik.http.middlewares.crm-n8n-slash.redirectregex.regex=^https://([^/]+)/n8n$$"
       - "traefik.http.middlewares.crm-n8n-slash.redirectregex.replacement=https://$$1/n8n/"
       - "traefik.http.middlewares.crm-n8n-slash.redirectregex.permanent=true"
+      # Strip /n8n prefix when forwarding to container
+      - "traefik.http.middlewares.crm-n8n-strip.stripprefix.prefixes=/n8n"
       # n8n HTTPS Router
       - "traefik.http.routers.crm-n8n.rule=Host(`crm.musfiqdehan.com`) && PathPrefix(`/n8n`)"
       - "traefik.http.routers.crm-n8n.entrypoints=websecure"
       - "traefik.http.routers.crm-n8n.tls=true"
       - "traefik.http.routers.crm-n8n.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.crm-n8n.middlewares=crm-n8n-slash,security-headers@file,compress@file,ws-headers@file"
+      - "traefik.http.routers.crm-n8n.middlewares=crm-n8n-slash,crm-n8n-strip,security-headers@file,compress@file"
       - "traefik.http.routers.crm-n8n.priority=200"
       - "traefik.http.services.crm-n8n.loadbalancer.server.port=5678"
     logging:
@@ -151,6 +161,7 @@ services:
     depends_on:
       - backend
     labels:
+      - "autoheal=false"
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_proxy"
       # HTTP -> HTTPS redirect for crm.musfiqdehan.com

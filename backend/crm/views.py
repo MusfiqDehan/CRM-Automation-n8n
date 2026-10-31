@@ -826,9 +826,15 @@ class SampleInvoicePDFAPIView(APIView):
                 amount=cost.amount,
                 currency=cost.currency,
                 payment_status=cost.payment_status,
-                invoice_date=cost.invoice_date.isoformat() if cost.invoice_date else None,
+                invoice_date=(
+                    cost.invoice_date.isoformat()
+                    if hasattr(cost.invoice_date, "isoformat")
+                    else str(cost.invoice_date) if cost.invoice_date else None
+                ),
                 payment_due_date=(
-                    cost.payment_due_date.isoformat() if cost.payment_due_date else None
+                    cost.payment_due_date.isoformat()
+                    if hasattr(cost.payment_due_date, "isoformat")
+                    else str(cost.payment_due_date) if cost.payment_due_date else None
                 ),
                 description=cost.title,
                 generated_datetime=gen_dt,

@@ -33,7 +33,9 @@ import {
   InvoiceFormModal,
   ProjectFormModal,
 } from "@/components/admin/AdminForms";
+import { SMTPSettingsModal } from "@/components/admin/SMTPSettingsModal";
 import { CursorDataTable } from "@/components/common/CursorDataTable";
+import { ExecutivePipelineOverview } from "@/components/dashboard/ExecutivePipelineOverview";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import {
   Badge,
@@ -44,7 +46,7 @@ import {
   statusTone,
 } from "@/components/ui/primitives";
 import { apiClient } from "@/lib/api-client";
-import { formatCompactCurrency, formatCurrency, formatDate } from "@/lib/format";
+import { formatCompactCurrency, formatCurrency, formatDate, formatDateTimeWithSeconds } from "@/lib/format";
 import type {
   ConstructionProject,
   Contact,
@@ -67,6 +69,8 @@ export function AdminDashboard() {
 
   // Sub-tab toggles
   const [crmSubTab, setCrmSubTab] = useState<"deals" | "contacts">("deals");
+  const [selectedPipelineStage, setSelectedPipelineStage] = useState<string>("");
+  const [selectedReviewFilter, setSelectedReviewFilter] = useState<string>("");
   const [projectSubTab, setProjectSubTab] = useState<
     "projects" | "tasks" | "materials"
   >("projects");
@@ -88,6 +92,38 @@ export function AdminDashboard() {
   const [isDealOpen, setIsDealOpen] = useState(false);
   const [isProjectOpen, setIsProjectOpen] = useState(false);
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
+  const [isSmtpSettingsOpen, setIsSmtpSettingsOpen] = useState(false);
+  const [dispatchingEmail, setDispatchingEmail] = useState<string | null>(null);
+
+  const handleTriggerClientEmail = async (payload: {
+    client_email: string;
+    client_name: string;
+    project_code: string;
+    email_type: string;
+    keyLabel: string;
+  }) => {
+    setDispatchingEmail(payload.keyLabel);
+    try {
+      const res = await apiClient.post<{ status: string; triggered_at: string }>(
+        "/client-emails/trigger/",
+        payload
+      );
+      showToast(
+        `Email sent to ${payload.client_email} (${res.data?.status || "Sent via SMTP"}) at ${formatDateTimeWithSeconds(
+          res.data?.triggered_at || new Date()
+        )}!`,
+        "success"
+      );
+      setRefreshCounter((c) => c + 1);
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : "Failed to dispatch client email.",
+        "error"
+      );
+    } finally {
+      setDispatchingEmail(null);
+    }
+  };
 
   // Toast
   const [toast, setToast] = useState<{
@@ -143,8 +179,11 @@ export function AdminDashboard() {
         { scenario: scenarioKey }
       );
       setLastSimulation(res.data);
+      const timeStr = formatDateTimeWithSeconds(
+        res.data.triggered_at || res.data.event_timestamp || new Date()
+      );
       showToast(
-        `Simulation finished: ${res.data.scenario_label} (${res.data.action_taken})`,
+        `Simulation recorded at ${timeStr}: ${res.data.scenario_label} (${res.data.action_taken})`,
         "success"
       );
       setRefreshCounter((c) => c + 1);
@@ -413,7 +452,7 @@ export function AdminDashboard() {
       {/* ------------------------------------------------------------ */}
       <div className="flex-1 flex flex-col min-w-0 lg:pl-72">
         {/* Top Header Bar - Full Width Responsive Workspace Alignment */}
-        <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-slate-800/80 dark:bg-[#0f1523]/90 transition-colors duration-200">
+        <header className="sticky top-0 z-30 border-b border-slate-200/90 bg-white/95 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.03)] dark:border-slate-800/90 dark:bg-[#0f1523]/95 transition-colors duration-200">
           <div className="flex w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 2xl:px-10 py-3.5">
             {/* Left: Mobile Brand / Desktop Active Title */}
             <div className="flex items-center gap-3 min-w-0">
@@ -432,19 +471,46 @@ export function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Desktop View Title & Subtitle */}
-              <div className="hidden lg:block">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-                  {pageMeta[activeTab].title}
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {pageMeta[activeTab].subtitle}
-                </p>
+              {/* Desktop View Title & Subtitle with Luxury Department Badge */}
+              <div className="hidden lg:flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100/70 border border-indigo-200/70 text-indigo-700 shadow-xs dark:from-indigo-950/60 dark:to-indigo-900/40 dark:border-indigo-800/60 dark:text-indigo-300 shrink-0">
+                  {React.createElement(
+                    navItems.find((n) => n.id === activeTab)?.icon || Building2,
+                    { className: "h-5 w-5" }
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+                      {pageMeta[activeTab].title}
+                    </h2>
+                    {activeTab === "crm" && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        $14.1M Pipeline
+                      </span>
+                    )}
+                    {activeTab === "crm" && kevinReviewCount > 0 && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/80 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                        {kevinReviewCount} Awaiting Kevin
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {pageMeta[activeTab].subtitle}
+                  </p>
+                </div>
               </div>
             </div>
 
             {/* Right: Improved Action Buttons & Controls Placement */}
             <div className="flex items-center gap-2 shrink-0">
+              {/* Desktop Theme Toggle Shortcut */}
+              <div className="hidden lg:flex items-center">
+                <ThemeToggle variant="compact" />
+              </div>
+
               {/* Mobile Theme Toggle & Public Site Shortcut */}
               <div className="flex items-center gap-1.5 lg:hidden">
                 <ThemeToggle variant="compact" />
@@ -491,6 +557,17 @@ export function AdminDashboard() {
                   <span>Ingest Bill</span>
                 </button>
               )}
+
+              {/* SMTP Settings Quick Modal Trigger */}
+              <button
+                type="button"
+                onClick={() => setIsSmtpSettingsOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+                title="Configure Gmail SMTP credentials & live email triggers"
+              >
+                <Mail className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                <span className="hidden sm:inline">SMTP Settings</span>
+              </button>
 
               {/* Universal "+ Add Record" Dropdown (All Screens) */}
               <div className="relative" ref={dropdownRef}>
@@ -733,17 +810,34 @@ export function AdminDashboard() {
                   {(summary?.stages_breakdown || []).map((st) => (
                     <div
                       key={st.stage}
-                      className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 p-4"
+                      onClick={() => {
+                        setSelectedPipelineStage(st.stage);
+                        setSelectedReviewFilter("");
+                        setActiveTab("crm");
+                        setCrmSubTab("deals");
+                      }}
+                      className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 p-4 flex flex-col justify-between hover:border-indigo-400/50 hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition cursor-pointer"
                     >
-                      <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
-                        {st.stage}
-                      </span>
-                      <div className="mt-2 flex items-baseline justify-between">
-                        <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                          {formatCurrency(st.total_value)}
-                        </span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
-                          {st.count} deal(s)
+                      <div>
+                        <div className="flex items-center justify-between text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+                          <span>{st.stage}</span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                            {st.probability_percent ?? 20}% Prob
+                          </span>
+                        </div>
+                        <div className="mt-2 flex items-baseline justify-between">
+                          <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white font-mono">
+                            {formatCurrency(st.total_value)}
+                          </span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
+                            {st.count} deal(s)
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                        <span>Risk-Adjusted:</span>
+                        <span className="font-semibold text-purple-600 dark:text-purple-400 font-mono">
+                          {formatCompactCurrency(st.weighted_value || "0")}
                         </span>
                       </div>
                     </div>
@@ -799,7 +893,23 @@ export function AdminDashboard() {
           {/* ======================================================== */}
           {activeTab === "crm" && (
             <div className="space-y-6">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              {/* Executive Sales Pipeline Visual Overview & Funnel */}
+              <ExecutivePipelineOverview
+                summary={summary}
+                onFilterStage={(stage) => {
+                  setSelectedPipelineStage(stage);
+                  setSelectedReviewFilter("");
+                  setCrmSubTab("deals");
+                }}
+                onFilterReview={() => {
+                  setSelectedReviewFilter("true");
+                  setSelectedPipelineStage("");
+                  setCrmSubTab("deals");
+                }}
+                onNewDealClick={() => setIsDealOpen(true)}
+              />
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-2">
                 <div>
                   <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                     Sales Pipeline &amp; Client Inquiries
@@ -810,13 +920,17 @@ export function AdminDashboard() {
                 </div>
 
                 {/* Sub-tab switcher */}
-                <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-900 p-1 border border-transparent dark:border-slate-800 self-start sm:self-auto">
+                <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-900 p-1 border border-slate-200/80 dark:border-slate-800 self-start sm:self-auto shadow-2xs">
                   <button
                     type="button"
-                    onClick={() => setCrmSubTab("deals")}
+                    onClick={() => {
+                      setCrmSubTab("deals");
+                      setSelectedPipelineStage("");
+                      setSelectedReviewFilter("");
+                    }}
                     className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
                       crmSubTab === "deals"
-                        ? "bg-white text-slate-900 shadow-xs dark:bg-slate-800 dark:text-white"
+                        ? "bg-white text-slate-900 shadow-xs border border-slate-200/60 dark:border-transparent dark:bg-slate-800 dark:text-white"
                         : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
                     }`}
                   >
@@ -827,7 +941,7 @@ export function AdminDashboard() {
                     onClick={() => setCrmSubTab("contacts")}
                     className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
                       crmSubTab === "contacts"
-                        ? "bg-white text-slate-900 shadow-xs dark:bg-slate-800 dark:text-white"
+                        ? "bg-white text-slate-900 shadow-xs border border-slate-200/60 dark:border-transparent dark:bg-slate-800 dark:text-white"
                         : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
                     }`}
                   >
@@ -842,6 +956,10 @@ export function AdminDashboard() {
                   title="Deals & Opportunities"
                   endpoint="/opportunities/"
                   refreshTrigger={refreshCounter}
+                  initialFilters={{
+                    ...(selectedPipelineStage ? { stage: selectedPipelineStage } : {}),
+                    ...(selectedReviewFilter ? { requires_kevin_review: selectedReviewFilter } : {}),
+                  }}
                   onAddClick={() => setIsDealOpen(true)}
                   addButtonLabel="New Deal"
                   searchPlaceholder="Search deals, sales owners, clients..."
@@ -915,7 +1033,7 @@ export function AdminDashboard() {
                     },
                     {
                       key: "value",
-                      header: "Estimated Value",
+                      header: "Estimated Value & Schedule",
                       render: (row) => (
                         <div>
                           <div className="font-bold text-slate-900 dark:text-white">
@@ -923,6 +1041,9 @@ export function AdminDashboard() {
                           </div>
                           <div className="text-xs text-slate-500 dark:text-slate-400">
                             Follow-up: {formatDate(row.next_follow_up_date)}
+                          </div>
+                          <div className="text-[11px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
+                            Logged: {formatDateTimeWithSeconds(row.created_at)}
                           </div>
                         </div>
                       ),
@@ -1014,6 +1135,9 @@ export function AdminDashboard() {
                           <div className="text-slate-500 dark:text-slate-400">
                             {row.phone || "No phone"} • Prefers:{" "}
                             {row.preferred_channel}
+                          </div>
+                          <div className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">
+                            Added: {formatDateTimeWithSeconds(row.created_at)}
                           </div>
                         </div>
                       ),
@@ -1219,6 +1343,9 @@ export function AdminDashboard() {
                             <div className="font-medium text-slate-700 dark:text-slate-300">
                               {row.tasks_count} tasks • {row.costs_count} costs
                             </div>
+                            <div className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">
+                              Created: {formatDateTimeWithSeconds(row.created_at)}
+                            </div>
                           </div>
                         ),
                       },
@@ -1278,6 +1405,9 @@ export function AdminDashboard() {
                           <div className="text-xs text-slate-500 dark:text-slate-400">
                             {row.priority} Priority
                           </div>
+                          <div className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">
+                            Logged: {formatDateTimeWithSeconds(row.created_at)}
+                          </div>
                         </div>
                       ),
                     },
@@ -1335,6 +1465,9 @@ export function AdminDashboard() {
                           <Badge tone={statusTone(row.status)}>{row.status}</Badge>
                           <div className="mt-1 font-bold text-slate-900 dark:text-white text-xs">
                             {formatCurrency(row.unit_cost_total)}
+                          </div>
+                          <div className="text-[11px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
+                            Ordered: {formatDateTimeWithSeconds(row.created_at)}
                           </div>
                         </div>
                       ),
@@ -1470,7 +1603,7 @@ export function AdminDashboard() {
 
                     {/* Execution Trace Result */}
                     {lastSimulation && (
-                      <div className="rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/40 p-4 text-xs space-y-2">
+                      <div className="rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/40 p-4 text-xs space-y-2.5">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -1481,6 +1614,19 @@ export function AdminDashboard() {
                           <span className="rounded-full bg-emerald-100 dark:bg-emerald-900/80 px-2 py-0.5 font-semibold text-emerald-800 dark:text-emerald-300 text-[11px]">
                             Duplicate Prevented:{" "}
                             {lastSimulation.duplicate_prevented ? "YES" : "NO"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[11px] font-mono text-emerald-800 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-900/50 px-2.5 py-1 rounded-md">
+                          <Clock className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                          <span>
+                            Exact Trigger Timestamp:{" "}
+                            <span className="font-bold">
+                              {formatDateTimeWithSeconds(
+                                lastSimulation.triggered_at ||
+                                  lastSimulation.event_timestamp ||
+                                  lastSimulation.cost_record?.created_at
+                              )}
+                            </span>
                           </span>
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-slate-700 dark:text-slate-300 sm:grid-cols-4">
@@ -1582,6 +1728,23 @@ export function AdminDashboard() {
                         ),
                       },
                       {
+                        key: "event_timestamp",
+                        header: "Recorded / Event Time",
+                        render: (row) => (
+                          <div>
+                            <div className="font-semibold text-slate-900 dark:text-white flex items-center gap-1.5 text-xs">
+                              <Clock className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                              <span>{formatDateTimeWithSeconds(row.event_timestamp || row.created_at)}</span>
+                            </div>
+                            {row.invoice_date && (
+                              <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                Invoice Date: {formatDate(row.invoice_date)}
+                              </div>
+                            )}
+                          </div>
+                        ),
+                      },
+                      {
                         key: "clarification",
                         header: "Clarification / Notes",
                         render: (row) => (
@@ -1617,7 +1780,130 @@ export function AdminDashboard() {
 
               {/* Sub-tab: Emails */}
               {invoiceSubTab === "emails" && (
-                <CursorDataTable<EmailCommunicationLog>
+                <div className="space-y-6">
+                  {/* Part 3 Assessment Live Email Automation Trigger Bar */}
+                  <div className="rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 p-5 shadow-xs space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+                            <Mail className="h-4 w-4" />
+                          </span>
+                          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                            Live Part 3 Assessment Email Automation Test Bench
+                          </h3>
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                          Trigger real client communications and founder review alerts delivered via Gmail SMTP SSL (<span className="font-mono">smtp.gmail.com:465</span>).
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsSmtpSettingsOpen(true)}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/60 px-3.5 py-2 text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition cursor-pointer self-start sm:self-auto"
+                      >
+                        <Mail className="h-3.5 w-3.5" />
+                        <span>Configure SMTP Settings</span>
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+                      {/* Client 1 Trigger */}
+                      <button
+                        type="button"
+                        disabled={dispatchingEmail !== null}
+                        onClick={() =>
+                          handleTriggerClientEmail({
+                            client_email: "musfiq.works+client1@gmail.com",
+                            client_name: "Arthur & Clara Henderson",
+                            project_code: "PRJ-101",
+                            email_type: "milestone_update",
+                            keyLabel: "client1",
+                          })
+                        }
+                        className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-3.5 text-left transition hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-xs cursor-pointer disabled:opacity-50"
+                      >
+                        <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
+                          <span>Arthur Henderson (PRJ-101)</span>
+                          {dispatchingEmail === "client1" ? (
+                            <RefreshCw className="h-3 w-3 animate-spin text-indigo-600" />
+                          ) : (
+                            <Play className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
+                          )}
+                        </div>
+                        <div className="mt-1 font-mono text-[10px] text-indigo-600 dark:text-indigo-400">
+                          musfiq.works+client1@gmail.com
+                        </div>
+                        <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                          Milestone Update: Phase 2 Structural Framing Approved
+                        </p>
+                      </button>
+
+                      {/* Client 2 Trigger */}
+                      <button
+                        type="button"
+                        disabled={dispatchingEmail !== null}
+                        onClick={() =>
+                          handleTriggerClientEmail({
+                            client_email: "musfiq.works+client2@gmail.com",
+                            client_name: "Dr. Elena Rostova",
+                            project_code: "PRJ-102",
+                            email_type: "design_agreement",
+                            keyLabel: "client2",
+                          })
+                        }
+                        className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-3.5 text-left transition hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-xs cursor-pointer disabled:opacity-50"
+                      >
+                        <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
+                          <span>Dr. Elena Rostova (PRJ-102)</span>
+                          {dispatchingEmail === "client2" ? (
+                            <RefreshCw className="h-3 w-3 animate-spin text-indigo-600" />
+                          ) : (
+                            <Play className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
+                          )}
+                        </div>
+                        <div className="mt-1 font-mono text-[10px] text-indigo-600 dark:text-indigo-400">
+                          musfiq.works+client2@gmail.com
+                        </div>
+                        <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                          Design Agreement Ready: $4.1M Coastal Villa
+                        </p>
+                      </button>
+
+                      {/* Founder Review Alert Trigger */}
+                      <button
+                        type="button"
+                        disabled={dispatchingEmail !== null}
+                        onClick={() =>
+                          handleTriggerClientEmail({
+                            client_email: "musfiq.works@gmail.com",
+                            client_name: "Dr. Elena Rostova",
+                            project_code: "PRJ-102",
+                            email_type: "review_alert",
+                            keyLabel: "founder",
+                          })
+                        }
+                        className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-3.5 text-left transition hover:border-amber-400 dark:hover:border-amber-500 hover:shadow-xs cursor-pointer disabled:opacity-50"
+                      >
+                        <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
+                          <span>Kevin / Founder Alert</span>
+                          {dispatchingEmail === "founder" ? (
+                            <RefreshCw className="h-3 w-3 animate-spin text-amber-600" />
+                          ) : (
+                            <Play className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                          )}
+                        </div>
+                        <div className="mt-1 font-mono text-[10px] text-amber-600 dark:text-amber-400">
+                          musfiq.works@gmail.com
+                        </div>
+                        <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                          Action Required: Scope &amp; Structural Margin Review
+                        </p>
+                      </button>
+                    </div>
+                  </div>
+
+                  <CursorDataTable<EmailCommunicationLog>
                   title="Inbound & Outbound Email Automation Logs"
                   endpoint="/email-logs/"
                   refreshTrigger={refreshCounter}
@@ -1676,15 +1962,17 @@ export function AdminDashboard() {
                     },
                     {
                       key: "time",
-                      header: "Timestamp",
+                      header: "Exact Log Time",
                       render: (row) => (
-                        <div className="text-xs text-slate-400 dark:text-slate-500">
-                          {new Date(row.created_at).toLocaleString()}
+                        <div className="text-xs text-slate-700 dark:text-slate-300 font-mono flex items-center gap-1.5">
+                          <Clock className="h-3 w-3 text-slate-400 shrink-0" />
+                          <span>{formatDateTimeWithSeconds(row.created_at)}</span>
                         </div>
                       ),
                     },
                   ]}
                 />
+                </div>
               )}
             </div>
           )}
@@ -1726,6 +2014,11 @@ export function AdminDashboard() {
         onProcessed={(res) => {
           setLastSimulation(res);
         }}
+      />
+      <SMTPSettingsModal
+        isOpen={isSmtpSettingsOpen}
+        onClose={() => setIsSmtpSettingsOpen(false)}
+        onSuccessToast={(msg) => showToast(msg, "success")}
       />
     </div>
   );

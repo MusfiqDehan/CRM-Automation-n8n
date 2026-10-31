@@ -25,6 +25,9 @@ from crm.views import (
     SalesActivityDetailAPIView,
     SalesActivityListCreateAPIView,
     SampleInvoicePDFAPIView,
+    SMTPSettingsAPIView,
+    SMTPTestConnectionAPIView,
+    ClientEmailTriggerAPIView,
 )
 
 urlpatterns = [
@@ -105,4 +108,14 @@ urlpatterns = [
     # 13. Dynamic PDF Invoice & Document Downloads
     path("docs/sample-invoice/<str:doc_ref>/", SampleInvoicePDFAPIView.as_view(), name="sample-invoice-pdf"),
     path("docs/download/<str:filetype>/", BlueprintDownloadAPIView.as_view(), name="blueprint-download"),
+
+    # 14. Dynamic SMTP Settings & Live Connection Testing
+    path("settings/smtp/", SMTPSettingsAPIView.as_view(), name="smtp-settings"),
+    path("settings/smtp", SMTPSettingsAPIView.as_view()),
+    path("settings/smtp/test/", SMTPTestConnectionAPIView.as_view(), name="smtp-test-connection"),
+    path("settings/smtp/test", SMTPTestConnectionAPIView.as_view()),
+
+    # 15. Client & Stakeholder Email Automations (Part 3 Assessment)
+    path("client-emails/trigger/", ClientEmailTriggerAPIView.as_view(), name="client-email-trigger"),
+    path("client-emails/trigger", ClientEmailTriggerAPIView.as_view()),
 ]

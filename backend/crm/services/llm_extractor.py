@@ -5,7 +5,7 @@ import io
 import json
 import logging
 import re
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from typing import Any
 import httpx
@@ -26,10 +26,12 @@ def generate_sample_invoice_pdf(
     invoice_date: str | None = None,
     payment_due_date: str | None = None,
     description: str = "Construction Subcontractor / Material Progress Billing",
+    generated_datetime: str | None = None,
 ) -> bytes:
-    """Generates a valid binary PDF invoice/receipt for testing and live demonstration."""
+    """Generates a valid binary PDF invoice/receipt with exact generation second for testing and live demonstration."""
     inv_date = invoice_date or date.today().isoformat()
     due_date = payment_due_date or (date.today() + timedelta(days=14)).isoformat()
+    gen_time = generated_datetime or datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
     pdf = FPDF(orientation="P", unit="mm", format="A4")
     pdf.add_page()
@@ -42,6 +44,7 @@ def generate_sample_invoice_pdf(
         f"Document Reference: {document_reference}",
         f"Construction Project: {project_reference}",
         f"Invoice Date: {inv_date}",
+        f"Generated / Recorded At: {gen_time}",
         f"Amount: {amount} {currency}",
         f"Currency: {currency}",
         f"Payment Status: {payment_status}",
@@ -179,6 +182,22 @@ class InvoiceExtractorService:
         else:
             status_raw = status_raw.title()
 
+        event_timestamp = _match(
+            [
+                r"Generated\s*(?:/\s*Recorded)?\s*At\s*:\s*([0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\s+[A-Z]+)?)",
+                r"Timestamp\s*:\s*([0-9]{4}-[0-9]{2}-[0-9]{2}[T\s][0-9]{2}:[0-9]{2}:[0-9]{2})",
+            ],
+            default="",
+        )
+        if event_timestamp:
+            ts_clean = event_timestamp.strip()
+            if ts_clean.endswith(" UTC"):
+                ts_clean = ts_clean[:-4] + "Z"
+            ts_clean = ts_clean.replace(" ", "T")
+            event_timestamp = ts_clean
+        else:
+            event_timestamp = datetime.now(timezone.utc).isoformat()
+
         description = _match(
             [r"Description\s*:\s*([^\n\r]+)"],
             default=email_subject or f"Invoice {doc_ref} from {supplier}",
@@ -190,6 +209,7 @@ class InvoiceExtractorService:
             "document_reference": doc_ref[:100],
             "project_reference": project_ref[:220],
             "invoice_date": inv_date or None,
+            "event_timestamp": event_timestamp or datetime.now(timezone.utc).isoformat(),
             "amount": amount_val,
             "currency": currency if currency in ("USD", "CAD", "EUR", "GBP") else "USD",
             "payment_status": status_raw if status_raw in ("Paid", "Unpaid", "Partially Paid") else "Unpaid",

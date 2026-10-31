@@ -158,7 +158,10 @@ def test_pdf_invoice_generation_and_deterministic_extraction():
 
 
 @pytest.mark.django_db
-def test_part3_deduplication_inplace_update_and_clarification_flagging(seeded_db):
+def test_part3_deduplication_inplace_update_and_clarification_flagging(seeded_db, monkeypatch):
+    from django.core.mail.backends.smtp import EmailBackend as DjangoSMTPEmailBackend
+    monkeypatch.setattr(DjangoSMTPEmailBackend, "send_messages", lambda self, msgs: len(msgs))
+
     processor = CostAutomationProcessor(notion_service=NotionProvisionerService(api_key=""))
     initial_count = ProjectCost.objects.count()
     initial_emails = EmailCommunicationLog.objects.count()
@@ -248,6 +251,8 @@ def test_part3_deduplication_inplace_update_and_clarification_flagging(seeded_db
 def test_simulator_all_5_scenarios(api_client: APIClient, seeded_db, monkeypatch):
     # Avoid external Notion and n8n network calls during unit test
     monkeypatch.setattr(NotionProvisionerService, "upsert_cost_in_notion", lambda self, cost, cfg=None: cost)
+    from django.core.mail.backends.smtp import EmailBackend as DjangoSMTPEmailBackend
+    monkeypatch.setattr(DjangoSMTPEmailBackend, "send_messages", lambda self, msgs: len(msgs))
     from django.conf import settings
     monkeypatch.setattr(settings, "N8N_WEBHOOK_URL", "")
 
@@ -318,5 +323,56 @@ def test_apiview_explicit_crud_and_urls(api_client: APIClient, seeded_db):
     assert email_res1.status_code == 200
     email_res2 = api_client.get("/api/v1/email-logs/")
     assert email_res2.status_code == 200
+
+
+@pytest.mark.django_db
+def test_smtp_settings_and_client_email_triggers(api_client: APIClient, seeded_db, monkeypatch):
+    from django.core.mail.backends.smtp import EmailBackend as DjangoSMTPEmailBackend
+    monkeypatch.setattr(DjangoSMTPEmailBackend, "send_messages", lambda self, msgs: len(msgs))
+
+    # 1. GET active SMTP settings
+    get_res = api_client.get("/api/v1/settings/smtp/")
+    assert get_res.status_code == 200
+    data = get_res.json()["data"]
+    assert data["host"] == "smtp.gmail.com"
+    assert data["port"] == 465
+    assert data["username"] == "musfiq.works@gmail.com"
+
+    # 2. UPDATE SMTP settings
+    update_res = api_client.post(
+        "/api/v1/settings/smtp/",
+        {
+            "default_from_email": "Kevin's Construction OS <musfiq.works@gmail.com>",
+            "kevin_email": "musfiq.works@gmail.com",
+        },
+        format="json",
+    )
+    assert update_res.status_code == 200
+    assert update_res.json()["data"]["kevin_email"] == "musfiq.works@gmail.com"
+
+    # 3. Test SMTP live verification trigger
+    test_res = api_client.post(
+        "/api/v1/settings/smtp/test/",
+        {"recipient": "musfiq.works@gmail.com"},
+        format="json",
+    )
+    assert test_res.status_code == 200
+    assert test_res.json()["data"]["status"] == "Sent via SMTP"
+
+    # 4. Trigger client email automations (Part 3 assessment)
+    client_res = api_client.post(
+        "/api/v1/client-emails/trigger/",
+        {
+            "client_email": "musfiq.works+client1@gmail.com",
+            "client_name": "Arthur & Clara Henderson",
+            "project_code": "PRJ-101",
+            "email_type": "milestone_update",
+        },
+        format="json",
+    )
+    assert client_res.status_code == 200
+    assert client_res.json()["data"]["status"] == "Sent via SMTP"
+    assert client_res.json()["data"]["client_email"] == "musfiq.works+client1@gmail.com"
+
 
 

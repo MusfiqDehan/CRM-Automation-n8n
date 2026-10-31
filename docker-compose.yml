@@ -74,6 +74,7 @@ services:
     environment:
       - PORT=3017
       - HOSTNAME=0.0.0.0
+      - BACKEND_INTERNAL_URL=http://backend:8017
       - NEXT_PUBLIC_API_BASE_URL=http://localhost:8017/api/v1
       - NEXT_PUBLIC_N8N_URL=http://localhost:5678
       - NEXT_PUBLIC_NOTION_HUB_URL=https://app.notion.com/p/Kevin-s-Construction-OS-4098194ec3e8811ab5b1c1b79f62bce1

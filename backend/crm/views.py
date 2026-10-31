@@ -1,0 +1,823 @@
+from __future__ import annotations
+
+import base64
+from datetime import date, timedelta
+from decimal import Decimal
+import httpx
+from django.conf import settings
+from django.db.models import Count, Sum
+from django.http import FileResponse, HttpResponse
+from rest_framework import status
+from rest_framework.views import APIView
+from common.responses import api_response
+from common.views import BaseDetailAPIView, BaseListCreateAPIView
+from crm.filters import (
+    ConstructionProjectFilterSet,
+    ContactFilterSet,
+    EmailCommunicationLogFilterSet,
+    MaterialOrderFilterSet,
+    OpportunityFilterSet,
+    ProjectCostFilterSet,
+    ProjectTaskFilterSet,
+    SalesActivityFilterSet,
+)
+from crm.models import (
+    ConstructionProject,
+    Contact,
+    EmailCommunicationLog,
+    MaterialOrder,
+    Opportunity,
+    ProjectCost,
+    ProjectTask,
+    SalesActivity,
+)
+from crm.serializers import (
+    ConstructionProjectSerializer,
+    ContactSerializer,
+    EmailCommunicationLogSerializer,
+    InvoiceExtractRequestSerializer,
+    InvoiceProcessRequestSerializer,
+    MaterialOrderSerializer,
+    NotionWorkspaceConfigSerializer,
+    OpportunitySerializer,
+    ProjectCostSerializer,
+    ProjectTaskSerializer,
+    SalesActivitySerializer,
+)
+from crm.services.cost_processor import CostAutomationProcessor
+from crm.services.llm_extractor import InvoiceExtractorService, generate_sample_invoice_pdf
+from crm.services.notion_provisioner import NotionProvisionerService
+
+
+# ==============================================================================
+# 1. Contacts & Client Enquiries (APIViews)
+# ==============================================================================
+class ContactListCreateAPIView(BaseListCreateAPIView):
+    """
+    GET:  Returns paginated list of client contacts and enquiries with search/filter.
+    POST: Creates a new contact with Zod-compatible validation.
+    """
+
+    queryset = Contact.objects.all()
+    serializer_class = ContactSerializer
+    filterset_class = ContactFilterSet
+    search_fields = [
+        "name",
+        "email",
+        "phone",
+        "company_or_household",
+        "referral_source",
+        "enquiry_summary",
+    ]
+    ordering_fields = ["created_at", "updated_at", "name", "contact_type"]
+    entity_name = "Contact"
+
+
+class ContactDetailAPIView(BaseDetailAPIView):
+    """
+    GET:    Retrieve a single contact by ID.
+    PUT:    Full update of contact details.
+    PATCH:  Partial update of contact details.
+    DELETE: Remove contact record.
+    """
+
+    queryset = Contact.objects.all()
+    serializer_class = ContactSerializer
+    entity_name = "Contact"
+
+
+# ==============================================================================
+# 2. Opportunities / Deals (APIViews)
+# ==============================================================================
+class OpportunityListCreateAPIView(BaseListCreateAPIView):
+    """
+    GET:  Returns paginated list of high-value custom residential deals ($3M+).
+    POST: Creates a new deal, with optional 'Requires Kevin's Review' flag.
+    """
+
+    queryset = Opportunity.objects.select_related("contact", "linked_project").all()
+    serializer_class = OpportunitySerializer
+    filterset_class = OpportunityFilterSet
+    search_fields = [
+        "name",
+        "sales_owner",
+        "kevin_review_notes",
+        "qualification_notes",
+        "contact__name",
+    ]
+    ordering_fields = [
+        "created_at",
+        "updated_at",
+        "estimated_value",
+        "next_follow_up_date",
+        "stage",
+    ]
+    entity_name = "Opportunity"
+
+
+class OpportunityDetailAPIView(BaseDetailAPIView):
+    """
+    GET:    Retrieve deal details and Kevin review status.
+    PUT:    Full update of opportunity.
+    PATCH:  Partial update (e.g. stage change, agreements signed).
+    DELETE: Remove opportunity.
+    """
+
+    queryset = Opportunity.objects.select_related("contact", "linked_project").all()
+    serializer_class = OpportunitySerializer
+    entity_name = "Opportunity"
+
+
+# ==============================================================================
+# 3. Sales Activities & Client Touchpoints (APIViews)
+# ==============================================================================
+class SalesActivityListCreateAPIView(BaseListCreateAPIView):
+    """
+    GET:  Returns logged client consultations, calls, and design meetings.
+    POST: Records a new activity linked to an opportunity and contact.
+    """
+
+    queryset = SalesActivity.objects.select_related("opportunity", "contact").all()
+    serializer_class = SalesActivitySerializer
+    filterset_class = SalesActivityFilterSet
+    search_fields = [
+        "title",
+        "owner",
+        "outcome_notes",
+        "opportunity__name",
+        "contact__name",
+    ]
+    ordering_fields = ["created_at", "updated_at", "activity_date", "completed"]
+    entity_name = "Sales Activity"
+
+
+class SalesActivityDetailAPIView(BaseDetailAPIView):
+    """
+    GET:    Retrieve activity details.
+    PUT:    Full update of activity.
+    PATCH:  Partial update (e.g. mark completed, append outcome notes).
+    DELETE: Remove activity record.
+    """
+
+    queryset = SalesActivity.objects.select_related("opportunity", "contact").all()
+    serializer_class = SalesActivitySerializer
+    entity_name = "Sales Activity"
+
+
+# ==============================================================================
+# 4. Construction Projects (APIViews)
+# ==============================================================================
+class ConstructionProjectListCreateAPIView(BaseListCreateAPIView):
+    """
+    GET:  Returns 4-phase custom builds with progress % and budgets.
+    POST: Creates a new project provisioned with reusable Notion phase checklists.
+    """
+
+    queryset = ConstructionProject.objects.all()
+    serializer_class = ConstructionProjectSerializer
+    filterset_class = ConstructionProjectFilterSet
+    search_fields = [
+        "code",
+        "name",
+        "project_manager",
+        "site_address",
+        "latest_update",
+    ]
+    ordering_fields = [
+        "created_at",
+        "updated_at",
+        "code",
+        "contract_budget",
+        "progress_percent",
+    ]
+    entity_name = "Construction Project"
+
+
+class ConstructionProjectDetailAPIView(BaseDetailAPIView):
+    """
+    GET:    Retrieve project details, PM assignment, and budget metrics.
+    PUT:    Full update of project.
+    PATCH:  Partial update (e.g. advance phase, update progress %, log site status).
+    DELETE: Remove construction project.
+    """
+
+    queryset = ConstructionProject.objects.all()
+    serializer_class = ConstructionProjectSerializer
+    entity_name = "Construction Project"
+
+
+# ==============================================================================
+# 5. Project Tasks & Milestones (APIViews)
+# ==============================================================================
+class ProjectTaskListCreateAPIView(BaseListCreateAPIView):
+    """
+    GET:  Returns reusable 4-phase site checklist tasks and milestones.
+    POST: Creates a task assigned to a project phase and manager.
+    """
+
+    queryset = ProjectTask.objects.select_related("project").all()
+    serializer_class = ProjectTaskSerializer
+    filterset_class = ProjectTaskFilterSet
+    search_fields = [
+        "title",
+        "assigned_to",
+        "progress_updates",
+        "project__code",
+        "project__name",
+    ]
+    ordering_fields = ["created_at", "updated_at", "deadline", "priority", "status"]
+    entity_name = "Project Task"
+
+
+class ProjectTaskDetailAPIView(BaseDetailAPIView):
+    """
+    GET:    Retrieve task status, deadline, and updates.
+    PUT:    Full update of task.
+    PATCH:  Partial update (e.g. mark Done, change priority).
+    DELETE: Remove task.
+    """
+
+    queryset = ProjectTask.objects.select_related("project").all()
+    serializer_class = ProjectTaskSerializer
+    entity_name = "Project Task"
+
+
+# ==============================================================================
+# 6. Material Orders & Site Procurement (APIViews)
+# ==============================================================================
+class MaterialOrderListCreateAPIView(BaseListCreateAPIView):
+    """
+    GET:  Returns material orders and lead-time tracking.
+    POST: Records a new procurement order linked to a project.
+    """
+
+    queryset = MaterialOrder.objects.select_related("project").all()
+    serializer_class = MaterialOrderSerializer
+    filterset_class = MaterialOrderFilterSet
+    search_fields = [
+        "item_name",
+        "supplier",
+        "order_reference",
+        "received_by",
+        "project__code",
+    ]
+    ordering_fields = [
+        "created_at",
+        "updated_at",
+        "expected_delivery_date",
+        "unit_cost_total",
+    ]
+    entity_name = "Material Order"
+
+
+class MaterialOrderDetailAPIView(BaseDetailAPIView):
+    """
+    GET:    Retrieve material order details.
+    PUT:    Full update of order.
+    PATCH:  Partial update (e.g. mark Delivered, update actual delivery date).
+    DELETE: Remove material order.
+    """
+
+    queryset = MaterialOrder.objects.select_related("project").all()
+    serializer_class = MaterialOrderSerializer
+    entity_name = "Material Order"
+
+
+# ==============================================================================
+# 7. Project Costs & Invoices (APIViews)
+# ==============================================================================
+class ProjectCostListCreateAPIView(BaseListCreateAPIView):
+    """
+    GET:  Returns project invoices, payment statuses, and clarification flags.
+    POST: Ingests or creates an invoice record with duplicate protection.
+    """
+
+    queryset = ProjectCost.objects.select_related("project").all()
+    serializer_class = ProjectCostSerializer
+    filterset_class = ProjectCostFilterSet
+    search_fields = [
+        "title",
+        "supplier",
+        "document_reference",
+        "clarification_notes",
+        "source_email",
+        "project__code",
+        "project__name",
+    ]
+    ordering_fields = [
+        "created_at",
+        "updated_at",
+        "amount",
+        "invoice_date",
+        "payment_due_date",
+    ]
+    entity_name = "Project Cost"
+
+
+class ProjectCostDetailAPIView(BaseDetailAPIView):
+    """
+    GET:    Retrieve cost record and Notion sync link.
+    PUT:    Full update of invoice cost.
+    PATCH:  Partial update (e.g. mark Paid, resolve clarification notes).
+    DELETE: Remove cost record.
+    """
+
+    queryset = ProjectCost.objects.select_related("project").all()
+    serializer_class = ProjectCostSerializer
+    entity_name = "Project Cost"
+
+
+# ==============================================================================
+# 8. Email Communication Logs (APIViews)
+# ==============================================================================
+class EmailCommunicationLogListCreateAPIView(BaseListCreateAPIView):
+    """
+    GET:  Returns audited inbound and outbound automation email logs.
+    POST: Logs an email event or webhook dispatch.
+    """
+
+    queryset = EmailCommunicationLog.objects.select_related("related_cost").all()
+    serializer_class = EmailCommunicationLogSerializer
+    filterset_class = EmailCommunicationLogFilterSet
+    search_fields = [
+        "subject",
+        "sender",
+        "recipient",
+        "body_preview",
+        "attachment_name",
+    ]
+    ordering_fields = ["created_at", "updated_at", "direction", "status", "subject", "sender"]
+    entity_name = "Email Log"
+
+
+class EmailCommunicationLogDetailAPIView(BaseDetailAPIView):
+    """
+    GET:    Retrieve email log details and related cost reference.
+    PUT:    Full update of log.
+    PATCH:  Partial update of log status.
+    DELETE: Remove email log.
+    """
+
+    queryset = EmailCommunicationLog.objects.select_related("related_cost").all()
+    serializer_class = EmailCommunicationLogSerializer
+    entity_name = "Email Log"
+
+
+# ==============================================================================
+# Backwards Compatibility Aliases (if referenced elsewhere)
+# ==============================================================================
+ContactViewSet = ContactListCreateAPIView
+OpportunityViewSet = OpportunityListCreateAPIView
+SalesActivityViewSet = SalesActivityListCreateAPIView
+ConstructionProjectViewSet = ConstructionProjectListCreateAPIView
+ProjectTaskViewSet = ProjectTaskListCreateAPIView
+MaterialOrderViewSet = MaterialOrderListCreateAPIView
+ProjectCostViewSet = ProjectCostListCreateAPIView
+EmailCommunicationLogViewSet = EmailCommunicationLogListCreateAPIView
+
+
+# ==============================================================================
+# 9. Dashboard, Notion & Automation Services (Existing APIViews)
+# ==============================================================================
+class DashboardSummaryAPIView(APIView):
+    """Returns real-time Executive Sales CRM, Project Management, Cost Automation, and Notion link metrics."""
+
+    def get(self, request):
+        provisioner = NotionProvisionerService()
+        if Contact.objects.count() == 0:
+            provisioner.seed_local_database()
+        cfg = provisioner.get_or_create_config()
+
+        total_pipeline = (
+            Opportunity.objects.exclude(stage=Opportunity.Stage.LOST).aggregate(
+                total=Sum("estimated_value")
+            )["total"]
+            or Decimal("0.00")
+        )
+        kevin_review_deals = Opportunity.objects.filter(requires_kevin_review=True).count()
+        stages_summary = list(
+            Opportunity.objects.values("stage")
+            .annotate(count=Count("id"), total_value=Sum("estimated_value"))
+            .order_by("stage")
+        )
+
+        projects_by_phase = list(
+            ConstructionProject.objects.values("phase")
+            .annotate(count=Count("id"), total_budget=Sum("contract_budget"))
+            .order_by("phase")
+        )
+
+        paid_costs = (
+            ProjectCost.objects.filter(payment_status=ProjectCost.PaymentStatus.PAID).aggregate(
+                total=Sum("amount")
+            )["total"]
+            or Decimal("0.00")
+        )
+        unpaid_costs = (
+            ProjectCost.objects.filter(payment_status=ProjectCost.PaymentStatus.UNPAID).aggregate(
+                total=Sum("amount")
+            )["total"]
+            or Decimal("0.00")
+        )
+        flagged_costs_count = ProjectCost.objects.filter(needs_clarification=True).count()
+
+        return api_response(
+            data={
+                "kpis": {
+                    "total_pipeline_value": str(total_pipeline),
+                    "active_opportunities_count": Opportunity.objects.exclude(
+                        stage=Opportunity.Stage.LOST
+                    ).count(),
+                    "kevin_review_opportunities_count": kevin_review_deals,
+                    "active_projects_count": ConstructionProject.objects.count(),
+                    "open_tasks_count": ProjectTask.objects.exclude(
+                        status=ProjectTask.TaskStatus.DONE
+                    ).count(),
+                    "delayed_materials_count": MaterialOrder.objects.filter(
+                        status=MaterialOrder.OrderStatus.DELAYED
+                    ).count(),
+                    "paid_costs_total": str(paid_costs),
+                    "unpaid_costs_total": str(unpaid_costs),
+                    "flagged_costs_count": flagged_costs_count,
+                    "total_costs_records": ProjectCost.objects.count(),
+                    "email_notifications_count": EmailCommunicationLog.objects.count(),
+                },
+                "stages_breakdown": [
+                    {
+                        "stage": s["stage"],
+                        "count": s["count"],
+                        "total_value": str(s["total_value"] or Decimal("0.00")),
+                    }
+                    for s in stages_summary
+                ],
+                "projects_by_phase": [
+                    {
+                        "phase": p["phase"],
+                        "count": p["count"],
+                        "total_budget": str(p["total_budget"] or Decimal("0.00")),
+                    }
+                    for p in projects_by_phase
+                ],
+                "notion_workspace": NotionWorkspaceConfigSerializer(cfg).data,
+            },
+            message="Executive dashboard summary retrieved successfully.",
+            success=True,
+        )
+
+
+class NotionProvisionAPIView(APIView):
+    """Triggers idempotent Notion workspace creation & bidirectional sync."""
+
+    def post(self, request):
+        service = NotionProvisionerService()
+        cfg = service.provision_notion_workspace()
+        return api_response(
+            data=NotionWorkspaceConfigSerializer(cfg).data,
+            message="Notion workspace provisioned and synchronized under Kevin's Construction OS.",
+            success=True,
+        )
+
+
+class InvoiceExtractAPIView(APIView):
+    """
+    Assessment Extraction Endpoint (called by n8n workflow or direct upload):
+    Extracts supplier, document_reference, invoice_date, amount, currency,
+    payment_status, payment_due_date, and project_reference from email + PDF attachment.
+    """
+
+    def post(self, request):
+        serializer = InvoiceExtractRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated = serializer.validated_data
+
+        extractor = InvoiceExtractorService()
+        extracted = extractor.extract(
+            email_subject=validated.get("email_subject", ""),
+            email_sender=validated.get("email_sender", "billing@vendor.com"),
+            email_body=validated.get("email_body", ""),
+            attachment_base64=validated.get("attachment_base64", ""),
+            llm_provider=validated.get("llm_provider", "auto"),
+        )
+        return api_response(
+            data=extracted,
+            message="Invoice and receipt cost fields extracted successfully.",
+            success=True,
+        )
+
+
+class InvoiceProcessAPIView(APIView):
+    """
+    Idempotent Upsert & Notification Endpoint (called by n8n workflow):
+    Links cost to Notion Construction Project, checks for duplicates or updates,
+    flags unclear items, syncs to Notion, and sends built-in Django email alert.
+    """
+
+    def post(self, request):
+        serializer = InvoiceProcessRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        processor = CostAutomationProcessor()
+        result = processor.process_cost_submission(serializer.validated_data)
+        cost_obj = result["cost"]
+        return api_response(
+            data={
+                "action": result["action"],
+                "duplicate_prevented": result["duplicate_prevented"],
+                "needs_clarification": result["needs_clarification"],
+                "cost": ProjectCostSerializer(cost_obj).data,
+            },
+            message=f"Invoice processed with action: {result['action']}.",
+            success=True,
+            status_code=(
+                status.HTTP_201_CREATED
+                if result["action"] == "created_new"
+                else status.HTTP_200_OK
+            ),
+        )
+
+
+class AutomationSimulatorAPIView(APIView):
+    """
+    Live Demonstration & Test Bench Endpoint:
+    Dispatches realistic vendor invoice emails + binary PDF attachments through n8n & Django,
+    returning a complete execution trace.
+    """
+
+    SCENARIOS = {
+        "1_unpaid_invoice": {
+            "label": "Scenario 1: New Unpaid Subcontractor Invoice (With Due Date)",
+            "email_sender": "billing@sierrahvac.com",
+            "email_subject": "Invoice INV-2026-501 - Rough HVAC Ducting for PRJ-101 Oakridge Estate",
+            "supplier": "Sierra HVAC & Mechanical",
+            "document_reference": "INV-2026-501",
+            "project_reference": "PRJ-101 Oakridge Estate",
+            "amount": "18500.00",
+            "currency": "USD",
+            "payment_status": "Unpaid",
+            "days_until_due": 14,
+            "description": "Rough HVAC Ductwork & Zone Dampers Installation - Level 2",
+        },
+        "2_paid_receipt": {
+            "label": "Scenario 2: New Paid Material Supplier Receipt",
+            "email_sender": "receipts@cascademillwork.com",
+            "email_subject": "PAID Receipt REC-2026-602 - Custom White Oak Cabinetry Deposit (PRJ-102)",
+            "supplier": "Cascade Custom Millwork",
+            "document_reference": "REC-2026-602",
+            "project_reference": "PRJ-102 Harborview Villa",
+            "amount": "14200.00",
+            "currency": "USD",
+            "payment_status": "Paid",
+            "days_until_due": 0,
+            "description": "Custom White Oak Kitchen & Butler Pantry Millwork Shop Deposit (PAID IN FULL)",
+        },
+        "3_duplicate_submission": {
+            "label": "Scenario 3: Exact Duplicate Invoice Submission (Idempotency Check)",
+            "email_sender": "billing@sierrahvac.com",
+            "email_subject": "FWD: Invoice INV-2026-501 - Rough HVAC Ducting for PRJ-101 Oakridge Estate",
+            "supplier": "Sierra HVAC & Mechanical",
+            "document_reference": "INV-2026-501",
+            "project_reference": "PRJ-101 Oakridge Estate",
+            "amount": "18500.00",
+            "currency": "USD",
+            "payment_status": "Unpaid",
+            "days_until_due": 14,
+            "description": "Rough HVAC Ductwork & Zone Dampers Installation - Level 2 (Duplicate Email Resend)",
+        },
+        "4_status_update_paid": {
+            "label": "Scenario 4: Subsequent Update (Unpaid -> Paid Receipt for INV-2026-501)",
+            "email_sender": "billing@sierrahvac.com",
+            "email_subject": "PAYMENT CONFIRMATION: Invoice INV-2026-501 Marked PAID (PRJ-101)",
+            "supplier": "Sierra HVAC & Mechanical",
+            "document_reference": "INV-2026-501",
+            "project_reference": "PRJ-101 Oakridge Estate",
+            "amount": "18500.00",
+            "currency": "USD",
+            "payment_status": "Paid",
+            "days_until_due": 14,
+            "description": "Payment Received in Full via ACH for Invoice INV-2026-501",
+        },
+        "5_flagged_clarification": {
+            "label": "Scenario 5: Ambiguous / Unmatched Project Receipt (Flagged for Review)",
+            "email_sender": "field@westcoastpumping.com",
+            "email_subject": "Receipt INV-2026-999 - Emergency Concrete Line Pump Rental",
+            "supplier": "WestCoast Concrete Pumping",
+            "document_reference": "INV-2026-999",
+            "project_reference": "Unknown Hillside Site",
+            "amount": "8900.00",
+            "currency": "USD",
+            "payment_status": "Unpaid",
+            "days_until_due": 7,
+            "description": "Emergency saturday concrete boom pump service (No valid PRJ code on ticket)",
+        },
+    }
+
+    def post(self, request):
+        scenario_key = request.data.get("scenario", "1_unpaid_invoice")
+        custom_payload = request.data.get("custom")
+
+        if scenario_key == "custom" and isinstance(custom_payload, dict):
+            spec = {
+                "label": "Custom Vendor Invoice Submission",
+                "email_sender": custom_payload.get("email_sender", "vendor@subcontractor.com"),
+                "email_subject": custom_payload.get(
+                    "email_subject",
+                    f"Invoice {custom_payload.get('document_reference', 'INV-2026-777')}",
+                ),
+                "supplier": custom_payload.get("supplier", "Custom Subcontractor LLC"),
+                "document_reference": custom_payload.get("document_reference", "INV-2026-777"),
+                "project_reference": custom_payload.get("project_reference", "PRJ-101"),
+                "amount": str(custom_payload.get("amount", "12500.00")),
+                "currency": custom_payload.get("currency", "USD"),
+                "payment_status": custom_payload.get("payment_status", "Unpaid"),
+                "days_until_due": int(custom_payload.get("days_until_due", 14)),
+                "description": custom_payload.get("description", "Custom construction cost submission"),
+            }
+        else:
+            if scenario_key not in self.SCENARIOS:
+                return api_response(
+                    data={"available_scenarios": list(self.SCENARIOS.keys())},
+                    message=f"Unknown scenario '{scenario_key}'.",
+                    success=False,
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+            spec = self.SCENARIOS[scenario_key]
+
+        inv_date = date.today().isoformat()
+        due_date = (
+            (date.today() + timedelta(days=spec["days_until_due"])).isoformat()
+            if spec["days_until_due"] > 0
+            else inv_date
+        )
+
+        # 1. Generate genuine PDF invoice binary
+        pdf_bytes = generate_sample_invoice_pdf(
+            supplier=spec["supplier"],
+            document_reference=spec["document_reference"],
+            project_reference=spec["project_reference"],
+            amount=spec["amount"],
+            currency=spec["currency"],
+            payment_status=spec["payment_status"],
+            invoice_date=inv_date,
+            payment_due_date=due_date,
+            description=spec["description"],
+        )
+        pdf_b64 = base64.b64encode(pdf_bytes).decode("ascii")
+        filename = f"{spec['document_reference']}.pdf"
+
+        # 2. Record Inbound Email in EmailCommunicationLog
+        inbound_log = EmailCommunicationLog.objects.create(
+            subject=spec["email_subject"],
+            sender=spec["email_sender"],
+            recipient="invoices@kevinconstruction.com",
+            direction="Inbound Invoice",
+            status="Received",
+            body_preview=(
+                f"Attached PDF invoice {filename} from {spec['supplier']} for "
+                f"{spec['project_reference']} (${spec['amount']} {spec['currency']}, {spec['payment_status']})."
+            ),
+            attachment_name=filename,
+        )
+
+        # 3. Trigger live n8n Webhook if running; otherwise fall back to direct processor
+        n8n_triggered = False
+        n8n_result_data = None
+        n8n_webhook_url = getattr(settings, "N8N_WEBHOOK_URL", "")
+        webhook_payload = {
+            "email_subject": spec["email_subject"],
+            "email_sender": spec["email_sender"],
+            "email_body": inbound_log.body_preview,
+            "attachment_base64": pdf_b64,
+            "attachment_filename": filename,
+        }
+        if n8n_webhook_url:
+            try:
+                with httpx.Client(timeout=20.0) as client:
+                    r = client.post(n8n_webhook_url, json=webhook_payload)
+                    if r.status_code < 400:
+                        body_json = r.json()
+                        if isinstance(body_json, list) and body_json:
+                            body_json = body_json[0]
+                        if isinstance(body_json, dict) and "cost" in body_json and body_json["cost"]:
+                            n8n_triggered = True
+                            n8n_result_data = body_json
+            except Exception:
+                n8n_triggered = False
+
+        extractor = InvoiceExtractorService()
+        extracted = extractor.extract(
+            email_subject=spec["email_subject"],
+            email_sender=spec["email_sender"],
+            email_body=inbound_log.body_preview,
+            attachment_base64=pdf_b64,
+        )
+
+        if n8n_triggered and n8n_result_data:
+            cost_dict = n8n_result_data["cost"]
+            cost_obj = ProjectCost.objects.filter(id=cost_dict["id"]).first()
+            action_taken = n8n_result_data.get("action_taken", "created_new")
+            duplicate_prevented = bool(n8n_result_data.get("duplicate_prevented", action_taken != "created_new"))
+            needs_clarification = bool(cost_dict.get("needs_clarification", False))
+        else:
+            processor = CostAutomationProcessor()
+            result = processor.process_cost_submission(extracted)
+            cost_obj = result["cost"]
+            action_taken = result["action"]
+            duplicate_prevented = result["duplicate_prevented"]
+            needs_clarification = result["needs_clarification"]
+
+        if cost_obj:
+            inbound_log.related_cost = cost_obj
+            inbound_log.save(update_fields=["related_cost"])
+
+        return api_response(
+            data={
+                "scenario": scenario_key,
+                "scenario_label": spec["label"],
+                "n8n_webhook_triggered": n8n_triggered,
+                "extracted_fields": extracted,
+                "action_taken": action_taken,
+                "duplicate_prevented": duplicate_prevented,
+                "needs_clarification": needs_clarification,
+                "cost_record": ProjectCostSerializer(cost_obj).data if cost_obj else cost_dict,
+            },
+            message=f"{spec['label']} -> {action_taken}",
+            success=True,
+        )
+
+
+class SampleInvoicePDFAPIView(APIView):
+    """Serves a dynamically generated PDF invoice/receipt for any document reference."""
+
+    def get(self, request, doc_ref: str):
+        cost = ProjectCost.objects.select_related("project").filter(
+            document_reference__iexact=doc_ref
+        ).first()
+        if cost:
+            pdf_bytes = generate_sample_invoice_pdf(
+                supplier=cost.supplier,
+                document_reference=cost.document_reference,
+                project_reference=(
+                    f"{cost.project.code} - {cost.project.name}"
+                    if cost.project
+                    else "Unmatched Project"
+                ),
+                amount=cost.amount,
+                currency=cost.currency,
+                payment_status=cost.payment_status,
+                invoice_date=cost.invoice_date.isoformat() if cost.invoice_date else None,
+                payment_due_date=(
+                    cost.payment_due_date.isoformat() if cost.payment_due_date else None
+                ),
+                description=cost.title,
+            )
+        else:
+            pdf_bytes = generate_sample_invoice_pdf(
+                supplier="Sample Construction Vendor",
+                document_reference=doc_ref,
+                project_reference="PRJ-101 Oakridge Estate",
+                amount="15000.00",
+                currency="USD",
+                payment_status="Unpaid",
+            )
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'inline; filename="{doc_ref}.pdf"'
+        return response
+
+
+class BlueprintDownloadAPIView(APIView):
+    """Generates and serves executive solution blueprints (.docx, .pdf, .png)."""
+
+    def get(self, request, filetype: str):
+        from scripts.generate_submission_docs import main as generate_docs
+
+        paths = generate_docs()
+        mapping = {
+            "docx": (
+                paths["docx"],
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "Executive_Architecture_and_Solutions.docx",
+            ),
+            "pdf": (
+                paths["pdf"],
+                "application/pdf",
+                "Executive_Architecture_and_Solutions.pdf",
+            ),
+            "diagram": (
+                paths["diagram"],
+                "image/png",
+                "Workflow_Architecture_Diagram.png",
+            ),
+        }
+        if filetype not in mapping:
+            return api_response(
+                data={"allowed": list(mapping.keys())},
+                message="Invalid document type requested.",
+                success=False,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        file_path, content_type, download_name = mapping[filetype]
+        return FileResponse(
+            open(file_path, "rb"),
+            content_type=content_type,
+            as_attachment=(filetype != "diagram"),
+            filename=download_name,
+        )

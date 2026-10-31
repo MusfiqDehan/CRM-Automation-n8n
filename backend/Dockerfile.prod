@@ -1,0 +1,33 @@
+FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
+
+WORKDIR /app
+
+# Install system dependencies for fonts, document generation, and health checks
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    fonts-dejavu-core \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy dependency specifications first to leverage Docker layer caching
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-install-project --no-dev
+
+# Copy application source code
+COPY . .
+RUN uv sync --frozen --no-dev
+
+# Prepare staticfiles and media directories
+RUN mkdir -p /app/staticfiles /app/media
+
+EXPOSE 8017
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=5 \
+    CMD curl -f http://localhost:8017/api/v1/health/ || exit 1
+
+CMD ["uv", "run", "gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8017", "--workers", "3", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-"]
+

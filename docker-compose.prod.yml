@@ -70,7 +70,7 @@ services:
       - "traefik.http.routers.crm-backend.tls=true"
       - "traefik.http.routers.crm-backend.tls.certresolver=letsencrypt"
       - "traefik.http.routers.crm-backend.middlewares=security-headers@file,compress@file,api-ratelimit@file"
-      - "traefik.http.routers.crm-backend.priority=90"
+      - "traefik.http.routers.crm-backend.priority=190"
       - "traefik.http.services.crm-backend.loadbalancer.server.port=8017"
     logging:
       driver: json-file
@@ -119,7 +119,7 @@ services:
       - "traefik.http.routers.crm-n8n.tls=true"
       - "traefik.http.routers.crm-n8n.tls.certresolver=letsencrypt"
       - "traefik.http.routers.crm-n8n.middlewares=crm-n8n-slash,security-headers@file,compress@file,ws-headers@file"
-      - "traefik.http.routers.crm-n8n.priority=100"
+      - "traefik.http.routers.crm-n8n.priority=200"
       - "traefik.http.services.crm-n8n.loadbalancer.server.port=5678"
     logging:
       driver: json-file
@@ -135,7 +135,7 @@ services:
       args:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-https://crm.musfiqdehan.com/api/v1}
         NEXT_PUBLIC_N8N_URL: ${NEXT_PUBLIC_N8N_URL:-https://crm.musfiqdehan.com/n8n}
-        NEXT_PUBLIC_NOTION_HUB_URL: ${NEXT_PUBLIC_NOTION_HUB_URL:-https://app.notion.com/p/Kevin-s-Construction-OS-4098194ec3e8811ab5b1c1b79f62bce1}
+        NEXT_PUBLIC_NOTION_HUB_URL: ${NEXT_PUBLIC_NOTION_HUB_URL:-https://app.notion.com/p/Kevin-s-Construction-OS-Production-40a8194ec3e881e08797e4c0d8bc6c4e}
     container_name: crm_prod_frontend
     restart: always
     env_file:
@@ -157,14 +157,14 @@ services:
       - "traefik.http.routers.crm-frontend-http.rule=Host(`crm.musfiqdehan.com`)"
       - "traefik.http.routers.crm-frontend-http.entrypoints=web"
       - "traefik.http.routers.crm-frontend-http.middlewares=redirect-to-https@file"
-      - "traefik.http.routers.crm-frontend-http.priority=1"
+      - "traefik.http.routers.crm-frontend-http.priority=150"
       # Frontend HTTPS Router (Root and SPA pages)
       - "traefik.http.routers.crm-frontend.rule=Host(`crm.musfiqdehan.com`)"
       - "traefik.http.routers.crm-frontend.entrypoints=websecure"
       - "traefik.http.routers.crm-frontend.tls=true"
       - "traefik.http.routers.crm-frontend.tls.certresolver=letsencrypt"
       - "traefik.http.routers.crm-frontend.middlewares=security-headers@file,compress@file"
-      - "traefik.http.routers.crm-frontend.priority=10"
+      - "traefik.http.routers.crm-frontend.priority=150"
       - "traefik.http.services.crm-frontend.loadbalancer.server.port=3017"
     logging:
       driver: json-file

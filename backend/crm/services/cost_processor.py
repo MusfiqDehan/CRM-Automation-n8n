@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.db.models import Q
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from common.email_backend import AuditedEmailBackend
 from crm.models import ConstructionProject, ProjectCost
 from crm.services.notion_provisioner import NotionProvisionerService
@@ -89,6 +91,19 @@ class CostAutomationProcessor:
         if not title:
             title = f"{supplier} — {doc_ref}"
 
+        raw_event_ts = payload.get("event_timestamp")
+        event_ts = None
+        if isinstance(raw_event_ts, datetime):
+            event_ts = raw_event_ts
+        elif isinstance(raw_event_ts, str) and raw_event_ts.strip():
+            clean_ts = raw_event_ts.strip()
+            if clean_ts.endswith(" UTC"):
+                clean_ts = clean_ts[:-4] + "Z"
+            clean_ts = clean_ts.replace(" ", "T")
+            event_ts = parse_datetime(clean_ts)
+        if not event_ts:
+            event_ts = timezone.now()
+
         # Check existing cost by (supplier, document_reference) for deduplication / in-place update
         existing = ProjectCost.objects.filter(
             supplier__iexact=supplier,
@@ -98,6 +113,7 @@ class CostAutomationProcessor:
         action_taken = "created_new"
         if existing:
             existing.submission_count += 1
+            existing.event_timestamp = event_ts
             same_amount = existing.amount == amount
             same_status = existing.payment_status == payment_status
             same_project = (existing.project_id == getattr(matched_project, "id", None)) or (
@@ -175,10 +191,24 @@ class CostAutomationProcessor:
             if needs_flag
             else f"Automatically verified and linked to {matched_project.code} ({matched_project.name})."
         )
+        # Determine recipient based on review flag and linked client
+        try:
+            from crm.models import SMTPSettings
+            smtp_cfg = SMTPSettings.get_active()
+            kevin_email = smtp_cfg.kevin_email or "musfiq.works@gmail.com"
+        except Exception:
+            kevin_email = getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "musfiq.works@gmail.com")
+
+        client_email = None
+        if matched_project and hasattr(matched_project, "opportunities"):
+            first_opp = matched_project.opportunities.select_related("contact").first()
+            if first_opp and first_opp.contact and first_opp.contact.email:
+                client_email = first_opp.contact.email
+
         notified_recipient = (
-            "kevin@kevinconstruction.com"
+            kevin_email
             if needs_flag
-            else "marcus.vance@kevinconstruction.com"
+            else (client_email or "musfiq.works+client1@gmail.com")
         )
 
         new_cost = ProjectCost.objects.create(
@@ -187,6 +217,7 @@ class CostAutomationProcessor:
             document_reference=doc_ref,
             project=matched_project,
             invoice_date=invoice_date,
+            event_timestamp=event_ts,
             amount=amount,
             currency=currency,
             payment_status=payment_status,
@@ -240,11 +271,24 @@ class CostAutomationProcessor:
             f"Notion Record URL: {cost.notion_url or 'Synced to Notion Costs DB'}\n"
         )
 
+        from_addr = getattr(settings, "DEFAULT_FROM_EMAIL", "Kevin's Construction OS <musfiq.works@gmail.com>")
+        to_addr = cost.notified_person
+        try:
+            from crm.models import SMTPSettings
+            smtp_cfg = SMTPSettings.get_active()
+            if smtp_cfg.default_from_email:
+                from_addr = smtp_cfg.default_from_email
+            if not to_addr:
+                to_addr = smtp_cfg.kevin_email or "musfiq.works@gmail.com"
+        except Exception:
+            if not to_addr:
+                to_addr = getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "musfiq.works@gmail.com")
+
         msg = EmailMessage(
             subject=subject,
             body=body,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[cost.notified_person or settings.NOTIFICATION_RECIPIENT_EMAIL],
+            from_email=from_addr,
+            to=[to_addr],
             headers={
                 "X-Direction": "Outbound Alert",
                 "X-Related-Cost-Id": str(cost.id),

@@ -13,6 +13,7 @@ from crm.models import (
     ProjectCost,
     ProjectTask,
     SalesActivity,
+    SMTPSettings,
 )
 
 PHONE_REGEX = re.compile(r"^[0-9+\-() .ext]{7,30}$", re.IGNORECASE)
@@ -344,6 +345,7 @@ class ProjectCostSerializer(serializers.ModelSerializer):
             "project_name",
             "project_code",
             "invoice_date",
+            "event_timestamp",
             "amount",
             "currency",
             "payment_status",
@@ -439,6 +441,7 @@ class InvoiceProcessRequestSerializer(serializers.Serializer):
     document_reference = serializers.CharField(max_length=100, required=False, allow_blank=True, default="")
     project_reference = serializers.CharField(max_length=220, required=False, allow_blank=True, default="")
     invoice_date = serializers.DateField(required=False, allow_null=True, default=None)
+    event_timestamp = serializers.DateTimeField(required=False, allow_null=True, default=None)
     amount = serializers.DecimalField(
         max_digits=12, decimal_places=2, required=False, allow_null=True, default=None
     )
@@ -452,3 +455,64 @@ class InvoiceProcessRequestSerializer(serializers.Serializer):
     supporting_document_url = serializers.URLField(required=False, allow_blank=True, default="")
     source_email = serializers.EmailField(required=False, allow_blank=True, default="vendor@supplier.com")
     sync_to_notion = serializers.BooleanField(default=True, required=False)
+
+
+class SMTPSettingsSerializer(serializers.ModelSerializer):
+    """Serializer for admin to view and edit SMTP configuration."""
+
+    class Meta:
+        model = SMTPSettings
+        fields = [
+            "id",
+            "host",
+            "port",
+            "username",
+            "password",
+            "use_ssl",
+            "use_tls",
+            "default_from_email",
+            "kevin_email",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate_password(self, value: str) -> str:
+        return (value or "").strip().replace(" ", "")
+
+
+class SMTPTestConnectionSerializer(serializers.Serializer):
+    """Allows testing outbound SMTP transmission to any recipient."""
+
+    recipient = serializers.EmailField(required=False, default="musfiq.works@gmail.com")
+    subject = serializers.CharField(
+        max_length=255,
+        required=False,
+        default="Kevin Construction OS — Live SMTP Verification",
+    )
+    body = serializers.CharField(
+        required=False,
+        default="Live verification email sent from Kevin's Construction OS via Gmail SMTP SSL.",
+    )
+
+
+class ClientEmailTriggerSerializer(serializers.Serializer):
+    """Allows triggering realistic client emails per Part 3 assessment."""
+
+    client_email = serializers.EmailField(default="musfiq.works+client1@gmail.com")
+    client_name = serializers.CharField(max_length=255, default="Arthur & Clara Henderson")
+    project_code = serializers.CharField(max_length=50, default="PRJ-101")
+    email_type = serializers.ChoiceField(
+        choices=[
+            "milestone_update",
+            "design_agreement",
+            "invoice_notice",
+            "review_alert",
+            "custom",
+        ],
+        default="milestone_update",
+    )
+    subject = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
+    message = serializers.CharField(required=False, allow_blank=True, default="")
+

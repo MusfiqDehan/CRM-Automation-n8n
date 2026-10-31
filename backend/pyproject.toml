@@ -1,0 +1,33 @@
+[project]
+name = "kevin-construction-os-backend"
+version = "1.0.0"
+description = "Solution Architect & Implementation Lead Assessment Backend — Django 6.1 + DRF 3.18 + Notion + n8n Integration"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "Django>=6.1.2",
+    "djangorestframework>=3.18.3",
+    "django-filter>=26.2",
+    "django-cors-headers>=4.9.0",
+    "psycopg[binary]>=3.2.0",
+    "httpx>=0.28.0",
+    "pypdf>=5.0.0",
+    "fpdf2>=2.8.0",
+    "python-docx>=1.1.2",
+    "pillow>=11.0.0",
+    "python-dotenv>=1.0.1",
+    "gunicorn>=23.0.0",
+    "whitenoise>=6.12.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-django>=4.9.0",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+addopts = "-v --tb=short"
+

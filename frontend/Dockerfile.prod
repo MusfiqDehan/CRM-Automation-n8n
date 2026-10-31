@@ -1,0 +1,49 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Production Dockerfile for Kevin Construction OS — Next.js 16 (Bun runtime)
+# ─────────────────────────────────────────────────────────────────────────────
+FROM oven/bun:latest AS builder
+
+WORKDIR /app
+
+# Install dependencies first for layer caching
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
+
+# Copy source files
+COPY . .
+
+# Build-time arguments for Next.js static embedding
+ARG NEXT_PUBLIC_API_BASE_URL=https://crm.musfiqdehan.com/api/v1
+ARG NEXT_PUBLIC_N8N_URL=https://crm.musfiqdehan.com/n8n
+ARG NEXT_PUBLIC_NOTION_HUB_URL=https://app.notion.com/p/Kevin-s-Construction-OS-4098194ec3e8811ab5b1c1b79f62bce1
+
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL \
+    NEXT_PUBLIC_N8N_URL=$NEXT_PUBLIC_N8N_URL \
+    NEXT_PUBLIC_NOTION_HUB_URL=$NEXT_PUBLIC_NOTION_HUB_URL \
+    NODE_ENV=production
+
+# Compile optimized production build
+RUN bun run build
+
+# ── Runner Stage ─────────────────────────────────────────────────────────────
+FROM oven/bun:latest AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production \
+    PORT=3017 \
+    HOSTNAME="0.0.0.0"
+
+# Copy package definitions, node_modules, and build output
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/next.config.ts ./next.config.ts
+
+EXPOSE 3017
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=15s --retries=5 \
+    CMD bun --eval 'fetch("http://localhost:3017").then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))'
+
+CMD ["bun", "run", "start"]
+

@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.utils import timezone
 from common.models import BaseModel
 
 
@@ -366,6 +367,11 @@ class ProjectCost(BaseModel):
         related_name="costs",
     )
     invoice_date = models.DateField(null=True, blank=True, db_index=True)
+    event_timestamp = models.DateTimeField(
+        default=timezone.now,
+        db_index=True,
+        help_text="Exact timestamp with seconds when the invoice was generated, received, or triggered.",
+    )
     amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
@@ -433,3 +439,53 @@ class EmailCommunicationLog(BaseModel):
 
     def __str__(self) -> str:
         return f"[{self.direction}] {self.subject}"
+
+
+class SMTPSettings(BaseModel):
+    """Stores active SMTP configuration allowing admins to edit and manage email credentials dynamically."""
+
+    host = models.CharField(max_length=255, default="smtp.gmail.com")
+    port = models.IntegerField(default=465)
+    username = models.CharField(max_length=255, default="musfiq.works@gmail.com")
+    password = models.CharField(max_length=255, default="***REMOVED***")
+    use_ssl = models.BooleanField(default=True)
+    use_tls = models.BooleanField(default=False)
+    default_from_email = models.CharField(
+        max_length=255, default="Kevin's Construction OS <musfiq.works@gmail.com>"
+    )
+    kevin_email = models.EmailField(
+        default="musfiq.works@gmail.com",
+        help_text="Founder's recipient email for high-value alerts and flagged cost reviews.",
+    )
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "SMTP Settings"
+        verbose_name_plural = "SMTP Settings"
+
+    def __str__(self) -> str:
+        return f"SMTP ({self.username} via {self.host}:{self.port})"
+
+    @classmethod
+    def get_active(cls) -> "SMTPSettings":
+        from django.conf import settings
+
+        obj = cls.objects.filter(is_active=True).first()
+        if not obj:
+            obj = cls.objects.create(
+                host=getattr(settings, "SMTP_HOST", "smtp.gmail.com") or "smtp.gmail.com",
+                port=int(getattr(settings, "SMTP_PORT", 465) or 465),
+                username=getattr(settings, "SMTP_USER", "musfiq.works@gmail.com") or "musfiq.works@gmail.com",
+                password=getattr(settings, "SMTP_PASSWORD", "***REMOVED***") or "***REMOVED***",
+                use_ssl=getattr(settings, "SMTP_USE_SSL", True),
+                use_tls=getattr(settings, "SMTP_USE_TLS", False),
+                default_from_email=getattr(
+                    settings, "DEFAULT_FROM_EMAIL", "Kevin's Construction OS <musfiq.works@gmail.com>"
+                ) or "Kevin's Construction OS <musfiq.works@gmail.com>",
+                kevin_email=getattr(
+                    settings, "NOTIFICATION_RECIPIENT_EMAIL", "musfiq.works@gmail.com"
+                ) or "musfiq.works@gmail.com",
+                is_active=True,
+            )
+        return obj
+

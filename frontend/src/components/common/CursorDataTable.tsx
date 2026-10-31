@@ -29,6 +29,7 @@ interface CursorDataTableProps<T extends { id: string }> {
   endpoint: string;
   columns: TableColumn<T>[];
   filters?: FilterConfig[];
+  initialFilters?: Record<string, string>;
   sortOptions?: SortOption[];
   searchPlaceholder?: string;
   refreshTrigger?: number;
@@ -43,6 +44,7 @@ export function CursorDataTable<T extends { id: string }>({
   endpoint,
   columns,
   filters = [],
+  initialFilters,
   sortOptions = [],
   searchPlaceholder = "Search...",
   refreshTrigger = 0,
@@ -57,7 +59,14 @@ export function CursorDataTable<T extends { id: string }>({
 
   const [searchInput, setSearchInput] = useState<string>("");
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
-  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>(initialFilters || {});
+
+  useEffect(() => {
+    if (initialFilters) {
+      setActiveFilters(initialFilters);
+      setCursor(null);
+    }
+  }, [JSON.stringify(initialFilters)]);
   const [ordering, setOrdering] = useState<string>(
     sortOptions[0]?.value || "-created_at"
   );

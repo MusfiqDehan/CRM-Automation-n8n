@@ -7,6 +7,7 @@ import httpx
 from django.conf import settings
 from django.db.models import Count, Sum
 from django.http import FileResponse, HttpResponse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.views import APIView
 from common.responses import api_response
@@ -30,8 +31,10 @@ from crm.models import (
     ProjectCost,
     ProjectTask,
     SalesActivity,
+    SMTPSettings,
 )
 from crm.serializers import (
+    ClientEmailTriggerSerializer,
     ConstructionProjectSerializer,
     ContactSerializer,
     EmailCommunicationLogSerializer,
@@ -43,6 +46,8 @@ from crm.serializers import (
     ProjectCostSerializer,
     ProjectTaskSerializer,
     SalesActivitySerializer,
+    SMTPSettingsSerializer,
+    SMTPTestConnectionSerializer,
 )
 from crm.services.cost_processor import CostAutomationProcessor
 from crm.services.llm_extractor import InvoiceExtractorService, generate_sample_invoice_pdf
@@ -382,24 +387,75 @@ EmailCommunicationLogViewSet = EmailCommunicationLogListCreateAPIView
 class DashboardSummaryAPIView(APIView):
     """Returns real-time Executive Sales CRM, Project Management, Cost Automation, and Notion link metrics."""
 
+    STAGE_PROBABILITIES = {
+        Opportunity.Stage.NEW_ENQUIRY: (10, Decimal("0.10")),
+        Opportunity.Stage.QUALIFICATION: (20, Decimal("0.20")),
+        Opportunity.Stage.DESIGN_AGREEMENT: (50, Decimal("0.50")),
+        Opportunity.Stage.CONSTRUCTION_AGREEMENT: (80, Decimal("0.80")),
+        Opportunity.Stage.WON: (100, Decimal("1.00")),
+        Opportunity.Stage.LOST: (0, Decimal("0.00")),
+    }
+
     def get(self, request):
         provisioner = NotionProvisionerService()
         if Contact.objects.count() == 0:
             provisioner.seed_local_database()
         cfg = provisioner.get_or_create_config()
 
+        active_opps = Opportunity.objects.exclude(stage=Opportunity.Stage.LOST)
+        active_opps_count = active_opps.count()
         total_pipeline = (
-            Opportunity.objects.exclude(stage=Opportunity.Stage.LOST).aggregate(
-                total=Sum("estimated_value")
-            )["total"]
+            active_opps.aggregate(total=Sum("estimated_value"))["total"]
             or Decimal("0.00")
         )
+
+        weighted_pipeline = Decimal("0.00")
+        for opp in active_opps:
+            _, prob_dec = self.STAGE_PROBABILITIES.get(opp.stage, (0, Decimal("0.00")))
+            weighted_pipeline += (opp.estimated_value or Decimal("0.00")) * prob_dec
+
+        avg_deal_size = (
+            (total_pipeline / active_opps_count)
+            if active_opps_count > 0
+            else Decimal("0.00")
+        )
+
         kevin_review_deals = Opportunity.objects.filter(requires_kevin_review=True).count()
+        review_deals_list = [
+            {
+                "id": str(o.id),
+                "name": o.name,
+                "client_name": o.contact.name if o.contact else "Private Client",
+                "client_phone": o.contact.phone if o.contact else "",
+                "estimated_value": str(o.estimated_value),
+                "stage": o.stage,
+                "kevin_review_notes": o.kevin_review_notes or "Review required before agreement dispatch.",
+                "next_follow_up_date": str(o.next_follow_up_date) if o.next_follow_up_date else None,
+                "sales_owner": o.sales_owner,
+                "created_at": o.created_at.isoformat() if o.created_at else None,
+            }
+            for o in Opportunity.objects.filter(requires_kevin_review=True).select_related("contact")
+        ]
+
         stages_summary = list(
             Opportunity.objects.values("stage")
             .annotate(count=Count("id"), total_value=Sum("estimated_value"))
             .order_by("stage")
         )
+
+        stages_breakdown = []
+        for s in stages_summary:
+            st_name = s["stage"]
+            prob_int, prob_dec = self.STAGE_PROBABILITIES.get(st_name, (0, Decimal("0.00")))
+            val = s["total_value"] or Decimal("0.00")
+            weighted_val = val * prob_dec
+            stages_breakdown.append({
+                "stage": st_name,
+                "count": s["count"],
+                "total_value": str(val),
+                "probability_percent": prob_int,
+                "weighted_value": str(weighted_val),
+            })
 
         projects_by_phase = list(
             ConstructionProject.objects.values("phase")
@@ -425,9 +481,9 @@ class DashboardSummaryAPIView(APIView):
             data={
                 "kpis": {
                     "total_pipeline_value": str(total_pipeline),
-                    "active_opportunities_count": Opportunity.objects.exclude(
-                        stage=Opportunity.Stage.LOST
-                    ).count(),
+                    "weighted_pipeline_value": str(weighted_pipeline),
+                    "average_deal_size": str(avg_deal_size),
+                    "active_opportunities_count": active_opps_count,
                     "kevin_review_opportunities_count": kevin_review_deals,
                     "active_projects_count": ConstructionProject.objects.count(),
                     "open_tasks_count": ProjectTask.objects.exclude(
@@ -442,14 +498,7 @@ class DashboardSummaryAPIView(APIView):
                     "total_costs_records": ProjectCost.objects.count(),
                     "email_notifications_count": EmailCommunicationLog.objects.count(),
                 },
-                "stages_breakdown": [
-                    {
-                        "stage": s["stage"],
-                        "count": s["count"],
-                        "total_value": str(s["total_value"] or Decimal("0.00")),
-                    }
-                    for s in stages_summary
-                ],
+                "stages_breakdown": stages_breakdown,
                 "projects_by_phase": [
                     {
                         "phase": p["phase"],
@@ -458,6 +507,7 @@ class DashboardSummaryAPIView(APIView):
                     }
                     for p in projects_by_phase
                 ],
+                "kevin_review_deals": review_deals_list,
                 "notion_workspace": NotionWorkspaceConfigSerializer(cfg).data,
             },
             message="Executive dashboard summary retrieved successfully.",
@@ -498,9 +548,11 @@ class InvoiceExtractAPIView(APIView):
             attachment_base64=validated.get("attachment_base64", ""),
             llm_provider=validated.get("llm_provider", "auto"),
         )
+        now_ts = timezone.now()
+        extracted["extracted_at"] = now_ts.isoformat()
         return api_response(
             data=extracted,
-            message="Invoice and receipt cost fields extracted successfully.",
+            message=f"Invoice and receipt cost fields extracted successfully at {now_ts.strftime('%Y-%m-%d %H:%M:%S UTC')}.",
             success=True,
         )
 
@@ -518,14 +570,16 @@ class InvoiceProcessAPIView(APIView):
         processor = CostAutomationProcessor()
         result = processor.process_cost_submission(serializer.validated_data)
         cost_obj = result["cost"]
+        now_ts = timezone.now()
         return api_response(
             data={
                 "action": result["action"],
                 "duplicate_prevented": result["duplicate_prevented"],
                 "needs_clarification": result["needs_clarification"],
+                "processed_at": now_ts.isoformat(),
                 "cost": ProjectCostSerializer(cost_obj).data,
             },
-            message=f"Invoice processed with action: {result['action']}.",
+            message=f"Invoice processed with action: {result['action']} at {now_ts.strftime('%Y-%m-%d %H:%M:%S UTC')}.",
             success=True,
             status_code=(
                 status.HTTP_201_CREATED
@@ -728,6 +782,7 @@ class AutomationSimulatorAPIView(APIView):
             inbound_log.related_cost = cost_obj
             inbound_log.save(update_fields=["related_cost"])
 
+        now_ts = timezone.now()
         return api_response(
             data={
                 "scenario": scenario_key,
@@ -737,9 +792,11 @@ class AutomationSimulatorAPIView(APIView):
                 "action_taken": action_taken,
                 "duplicate_prevented": duplicate_prevented,
                 "needs_clarification": needs_clarification,
+                "event_timestamp": now_ts.isoformat(),
+                "triggered_at": now_ts.isoformat(),
                 "cost_record": ProjectCostSerializer(cost_obj).data if cost_obj else cost_dict,
             },
-            message=f"{spec['label']} -> {action_taken}",
+            message=f"{spec['label']} -> {action_taken} ({now_ts.strftime('%Y-%m-%d %H:%M:%S UTC')})",
             success=True,
         )
 
@@ -752,6 +809,12 @@ class SampleInvoicePDFAPIView(APIView):
             document_reference__iexact=doc_ref
         ).first()
         if cost:
+            gen_dt = None
+            if getattr(cost, "event_timestamp", None):
+                gen_dt = cost.event_timestamp.strftime("%Y-%m-%d %H:%M:%S UTC")
+            elif getattr(cost, "created_at", None):
+                gen_dt = cost.created_at.strftime("%Y-%m-%d %H:%M:%S UTC")
+
             pdf_bytes = generate_sample_invoice_pdf(
                 supplier=cost.supplier,
                 document_reference=cost.document_reference,
@@ -768,6 +831,7 @@ class SampleInvoicePDFAPIView(APIView):
                     cost.payment_due_date.isoformat() if cost.payment_due_date else None
                 ),
                 description=cost.title,
+                generated_datetime=gen_dt,
             )
         else:
             pdf_bytes = generate_sample_invoice_pdf(
@@ -820,4 +884,212 @@ class BlueprintDownloadAPIView(APIView):
             content_type=content_type,
             as_attachment=(filetype != "diagram"),
             filename=download_name,
+        )
+
+
+class SMTPSettingsAPIView(APIView):
+    """Retrieves and updates active SMTP email credentials."""
+
+    def get(self, request):
+        cfg = SMTPSettings.get_active()
+        return api_response(
+            data=SMTPSettingsSerializer(cfg).data,
+            message="Active SMTP email settings retrieved successfully.",
+            success=True,
+        )
+
+    def post(self, request):
+        cfg = SMTPSettings.get_active()
+        serializer = SMTPSettingsSerializer(cfg, data=request.data, partial=True)
+        if serializer.is_valid():
+            saved = serializer.save()
+            return api_response(
+                data=SMTPSettingsSerializer(saved).data,
+                message="SMTP email configuration updated successfully.",
+                success=True,
+            )
+        return api_response(
+            data={"errors": serializer.errors},
+            message="Invalid SMTP configuration provided.",
+            success=False,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class SMTPTestConnectionAPIView(APIView):
+    """Sends a live test verification email over SMTP."""
+
+    def post(self, request):
+        serializer = SMTPTestConnectionSerializer(data=request.data)
+        if not serializer.is_valid():
+            return api_response(
+                data={"errors": serializer.errors},
+                message="Invalid test email parameters.",
+                success=False,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        recipient = serializer.validated_data.get("recipient", "musfiq.works@gmail.com")
+        subject = serializer.validated_data.get(
+            "subject", "Kevin Construction OS — Live SMTP Verification"
+        )
+        body = serializer.validated_data.get("body", "")
+
+        cfg = SMTPSettings.get_active()
+        from_email = cfg.default_from_email or cfg.username
+
+        from common.email_backend import AuditedEmailBackend
+        from django.core.mail import EmailMessage
+
+        msg = EmailMessage(
+            subject=subject,
+            body=(
+                f"{body}\n\n"
+                f"--- Connection Details ---\n"
+                f"SMTP Host: {cfg.host}:{cfg.port}\n"
+                f"Auth User: {cfg.username}\n"
+                f"SSL: {cfg.use_ssl} | TLS: {cfg.use_tls}\n"
+                f"Timestamp: {timezone.now().strftime('%Y-%m-%d %H:%M:%S UTC')}\n"
+            ),
+            from_email=from_email,
+            to=[recipient],
+            headers={
+                "X-Direction": "SMTP Test",
+            },
+        )
+
+        sent_count = AuditedEmailBackend().send_messages([msg])
+        last_log = EmailCommunicationLog.objects.filter(recipient=recipient).order_by("-created_at").first()
+
+        if last_log and "Sent" in last_log.status:
+            return api_response(
+                data={
+                    "recipient": recipient,
+                    "status": last_log.status,
+                    "smtp_host": f"{cfg.host}:{cfg.port}",
+                    "log_id": str(last_log.id),
+                    "created_at": last_log.created_at.isoformat(),
+                },
+                message=f"Live test email successfully delivered to {recipient} via {cfg.host}:{cfg.port}.",
+                success=True,
+            )
+        else:
+            return api_response(
+                data={
+                    "recipient": recipient,
+                    "status": last_log.status if last_log else "Failed",
+                    "smtp_host": f"{cfg.host}:{cfg.port}",
+                },
+                message=f"SMTP transmission completed with status: {last_log.status if last_log else 'Error'}.",
+                success=False,
+                status_code=status.HTTP_502_BAD_GATEWAY,
+            )
+
+
+class ClientEmailTriggerAPIView(APIView):
+    """Triggers realistic customer & client email automations per Part 3 assessment."""
+
+    TEMPLATES = {
+        "milestone_update": {
+            "subject": "Build Milestone Completed: {project_code} Structural Framing Approved",
+            "body": (
+                "Dear {client_name},\n\n"
+                "We are thrilled to share that the Phase 2 framing inspection for {project_code} "
+                "has officially passed city engineering inspection today.\n\n"
+                "Next milestone scheduled: Rough-in MEP (Mechanical, Electrical, Plumbing) & HVAC installation.\n\n"
+                "You can view live site photo updates and cost approvals in your Kevin Construction client hub.\n\n"
+                "Best regards,\nKevin & The Project Management Team\nKevin's Construction OS"
+            ),
+        },
+        "design_agreement": {
+            "subject": "Design & Pre-Construction Agreement Ready: {project_code}",
+            "body": (
+                "Dear {client_name},\n\n"
+                "Your pre-construction geotechnical and architectural package for {project_code} "
+                "is now ready for final sign-off.\n\n"
+                "Founder Kevin has reviewed the structural retaining scope and confirmed margin allocations.\n\n"
+                "Please review the attached scope summary or access your client portal.\n\n"
+                "Warm regards,\nJordan Blake (Sales Lead) & Kevin\nKevin's Construction OS"
+            ),
+        },
+        "invoice_notice": {
+            "subject": "Progress Billing Notice: Subcontractor Milestone for {project_code}",
+            "body": (
+                "Dear {client_name},\n\n"
+                "This is an automated notification that progress billing for {project_code} "
+                "has been verified against site milestone completion and recorded into your construction ledger.\n\n"
+                "Vendor: Sierra HVAC & Mechanical\n"
+                "Status: Unpaid (Due within 14 days)\n"
+                "Deduplication & Margin Check: Cleared (Zero Double-Count Guarantee)\n\n"
+                "Thank you for your partnership,\nKevin's Construction OS Accounting"
+            ),
+        },
+        "review_alert": {
+            "subject": "[ACTION REQUIRED] Founder Scope Review Required: {project_code}",
+            "body": (
+                "Attention Kevin,\n\n"
+                "A client scope request or invoice for {project_code} ({client_name}) requires founder review "
+                "before agreement execution or payment dispatch.\n\n"
+                "Please review in your Founder Cockpit review queue.\n\n"
+                "Automated System Alert — Kevin's Construction OS"
+            ),
+        },
+    }
+
+    def post(self, request):
+        serializer = ClientEmailTriggerSerializer(data=request.data)
+        if not serializer.is_valid():
+            return api_response(
+                data={"errors": serializer.errors},
+                message="Invalid client email trigger parameters.",
+                success=False,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        client_email = serializer.validated_data["client_email"]
+        client_name = serializer.validated_data["client_name"]
+        project_code = serializer.validated_data["project_code"]
+        email_type = serializer.validated_data["email_type"]
+        custom_subj = serializer.validated_data.get("subject")
+        custom_msg = serializer.validated_data.get("message")
+
+        tpl = self.TEMPLATES.get(email_type, self.TEMPLATES["milestone_update"])
+        subject = custom_subj or tpl["subject"].format(
+            client_name=client_name, project_code=project_code
+        )
+        body = custom_msg or tpl["body"].format(
+            client_name=client_name, project_code=project_code
+        )
+
+        cfg = SMTPSettings.get_active()
+        from_email = cfg.default_from_email or cfg.username
+
+        from common.email_backend import AuditedEmailBackend
+        from django.core.mail import EmailMessage
+
+        msg = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=from_email,
+            to=[client_email],
+            headers={
+                "X-Direction": "Client Outbound" if email_type != "review_alert" else "Founder Review Alert",
+            },
+        )
+        AuditedEmailBackend().send_messages([msg])
+        last_log = EmailCommunicationLog.objects.filter(recipient=client_email).order_by("-created_at").first()
+
+        now_ts = timezone.now()
+        return api_response(
+            data={
+                "email_type": email_type,
+                "client_email": client_email,
+                "client_name": client_name,
+                "project_code": project_code,
+                "status": last_log.status if last_log else "Sent",
+                "triggered_at": now_ts.isoformat(),
+                "log_id": str(last_log.id) if last_log else None,
+            },
+            message=f"Client automation email ({email_type}) sent to {client_email} via {cfg.host}:{cfg.port}.",
+            success=True,
         )

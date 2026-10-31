@@ -20,33 +20,68 @@ class AuditedEmailBackend(BaseEmailBackend):
         if not email_messages:
             return 0
 
-        from crm.models import EmailCommunicationLog
+        from crm.models import EmailCommunicationLog, SMTPSettings
 
         sent_count = 0
         smtp_backend = None
-        if getattr(settings, "SMTP_HOST", ""):
-            smtp_backend = DjangoSMTPEmailBackend(
-                host=settings.SMTP_HOST,
-                port=settings.SMTP_PORT,
-                username=settings.SMTP_USER,
-                password=settings.SMTP_PASSWORD,
-                use_tls=settings.SMTP_USE_TLS,
-            )
+        smtp_cfg = None
+        try:
+            smtp_cfg = SMTPSettings.get_active()
+        except Exception:
+            smtp_cfg = None
+
+        host = smtp_cfg.host if smtp_cfg else getattr(settings, "SMTP_HOST", "")
+        port = int(smtp_cfg.port if smtp_cfg else getattr(settings, "SMTP_PORT", 465))
+        user = smtp_cfg.username if smtp_cfg else getattr(settings, "SMTP_USER", "")
+        raw_pw = smtp_cfg.password if smtp_cfg else getattr(settings, "SMTP_PASSWORD", "")
+        pw = (raw_pw or "").replace(" ", "")
+        use_ssl = bool(smtp_cfg.use_ssl if smtp_cfg else getattr(settings, "SMTP_USE_SSL", True))
+        use_tls = bool(smtp_cfg.use_tls if smtp_cfg else getattr(settings, "SMTP_USE_TLS", False))
+        default_from = (
+            (smtp_cfg.default_from_email if smtp_cfg else getattr(settings, "DEFAULT_FROM_EMAIL", ""))
+            or user
+            or "ops-automation@kevinconstruction.com"
+        )
+        fallback_to = (
+            (smtp_cfg.kevin_email if smtp_cfg else getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", ""))
+            or "musfiq.works@gmail.com"
+        )
+
+        if host and user and pw:
+            try:
+                smtp_backend = DjangoSMTPEmailBackend(
+                    host=host,
+                    port=port,
+                    username=user,
+                    password=pw,
+                    use_ssl=use_ssl,
+                    use_tls=use_tls,
+                    timeout=15,
+                    alias="smtp",
+                )
+            except Exception as e:
+                logger.warning("Failed to initialize SMTP backend: %s", e)
 
         for msg in email_messages:
-            recipient_str = ", ".join(msg.to) if msg.to else settings.NOTIFICATION_RECIPIENT_EMAIL
+            if not msg.from_email:
+                msg.from_email = default_from
+            if not msg.to:
+                msg.to = [fallback_to]
+
+            recipient_str = ", ".join(msg.to)
             attachment_names = []
             for att in getattr(msg, "attachments", []) or []:
                 if isinstance(att, tuple) and len(att) >= 1:
                     attachment_names.append(str(att[0]))
 
-            status_val = "Sent"
+            status_val = "Logged (Local)"
             if smtp_backend:
                 try:
                     smtp_backend.send_messages([msg])
+                    status_val = "Sent via SMTP"
                 except Exception as exc:
-                    logger.warning("SMTP relay failed, recorded in local audit log: %s", exc)
-                    status_val = "Logged (Local)"
+                    logger.warning("SMTP relay failed: %s", exc)
+                    status_val = f"Failed ({exc.__class__.__name__})"
 
             custom_headers = getattr(msg, "extra_headers", {}) or {}
             direction = custom_headers.get("X-Direction", "Outbound Alert")
@@ -54,7 +89,7 @@ class AuditedEmailBackend(BaseEmailBackend):
 
             log_kwargs = {
                 "subject": msg.subject[:255],
-                "sender": (msg.from_email or settings.DEFAULT_FROM_EMAIL)[:255],
+                "sender": (msg.from_email or default_from)[:255],
                 "recipient": recipient_str[:255],
                 "direction": direction,
                 "status": status_val,

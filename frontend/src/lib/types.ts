@@ -167,6 +167,7 @@ export interface ProjectCost {
   project_name: string;
   project_code: string;
   invoice_date: string | null;
+  event_timestamp?: string;
   amount: string;
   currency: string;
   payment_status: string;
@@ -201,6 +202,8 @@ export interface EmailCommunicationLog {
 export interface DashboardSummary {
   kpis: {
     total_pipeline_value: string;
+    weighted_pipeline_value?: string;
+    average_deal_size?: string;
     active_opportunities_count: number;
     kevin_review_opportunities_count: number;
     active_projects_count: number;
@@ -216,11 +219,25 @@ export interface DashboardSummary {
     stage: string;
     count: number;
     total_value: string;
+    probability_percent?: number;
+    weighted_value?: string;
   }>;
   projects_by_phase: Array<{
     phase: string;
     count: number;
     total_budget: string;
+  }>;
+  kevin_review_deals?: Array<{
+    id: string;
+    name: string;
+    client_name: string;
+    client_phone?: string;
+    estimated_value: string;
+    stage: string;
+    kevin_review_notes: string;
+    next_follow_up_date: string | null;
+    sales_owner?: string;
+    created_at?: string;
   }>;
   notion_workspace: NotionWorkspaceConfig;
 }
@@ -233,6 +250,24 @@ export interface SimulatorTriggerResponse {
   action_taken: "created_new" | "duplicate_skipped" | "updated_existing";
   duplicate_prevented: boolean;
   needs_clarification: boolean;
+  event_timestamp?: string;
+  triggered_at?: string;
   cost_record: ProjectCost;
 }
+
+export interface SMTPSettings {
+  id: string;
+  host: string;
+  port: number;
+  username: string;
+  password?: string;
+  use_ssl: boolean;
+  use_tls: boolean;
+  default_from_email: string;
+  kevin_email: string;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 

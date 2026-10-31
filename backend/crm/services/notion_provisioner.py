@@ -80,7 +80,29 @@ class NotionProvisionerService:
     def get_or_create_config(self) -> NotionWorkspaceConfig:
         cfg = NotionWorkspaceConfig.objects.first()
         if not cfg:
-            cfg = NotionWorkspaceConfig.objects.create(hub_page_id=self.root_page_id)
+            if self.root_page_id and self.root_page_id != "4098194e-c3e8-811a-b5b1-c1b79f62bce1":
+                cfg = NotionWorkspaceConfig.objects.create(
+                    hub_page_id=self.root_page_id,
+                    hub_page_url=f"https://app.notion.com/p/{self.root_page_id.replace('-', '')}",
+                    contacts_db_id="",
+                    contacts_db_url="",
+                    opportunities_db_id="",
+                    opportunities_db_url="",
+                    activities_db_id="",
+                    activities_db_url="",
+                    projects_db_id="",
+                    projects_db_url="",
+                    tasks_db_id="",
+                    tasks_db_url="",
+                    materials_db_id="",
+                    materials_db_url="",
+                    costs_db_id="",
+                    costs_db_url="",
+                    sales_dashboard_page_id="",
+                    sales_dashboard_url="",
+                )
+            else:
+                cfg = NotionWorkspaceConfig.objects.create(hub_page_id=self.root_page_id)
         return cfg
 
     def seed_local_database(self) -> dict[str, int]:

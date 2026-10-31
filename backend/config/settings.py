@@ -194,15 +194,16 @@ MAILERS = {
         "BACKEND": "common.email_backend.AuditedEmailBackend",
     },
 }
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "ops-automation@kevinconstruction.com")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "Kevin's Construction OS <musfiq.works@gmail.com>")
 NOTIFICATION_RECIPIENT_EMAIL = os.getenv(
-    "NOTIFICATION_RECIPIENT_EMAIL", "kevin@kevinconstruction.com"
+    "NOTIFICATION_RECIPIENT_EMAIL", "musfiq.works@gmail.com"
 )
-SMTP_HOST = os.getenv("EMAIL_HOST", "")
-SMTP_PORT = int(os.getenv("EMAIL_PORT", "587"))
-SMTP_USER = os.getenv("EMAIL_HOST_USER", "")
-SMTP_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
-SMTP_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() in ("true", "1", "yes")
+SMTP_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("EMAIL_PORT", "465"))
+SMTP_USER = os.getenv("EMAIL_HOST_USER", "musfiq.works@gmail.com")
+SMTP_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "***REMOVED***")
+SMTP_USE_SSL = os.getenv("EMAIL_USE_SSL", "True").lower() in ("true", "1", "yes")
+SMTP_USE_TLS = os.getenv("EMAIL_USE_TLS", "False").lower() in ("true", "1", "yes")
 
 # Notion API Settings
 NOTION_API_KEY = os.getenv("NOTION_API_KEY", "")

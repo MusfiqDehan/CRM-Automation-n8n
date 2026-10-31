@@ -18,7 +18,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-kevin_os_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - crm_prod_postgres_data:/var/lib/postgresql/data
+      - crm_prod_postgres_data:/var/lib/postgresql
     networks:
       - crm_internal
     healthcheck:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import date, timedelta
+from datetime import UTC, date, timedelta
 from decimal import Decimal
 from typing import Any
 import httpx
@@ -87,11 +87,11 @@ class NotionProvisionerService:
         """Seeds realistic luxury residential construction records ($3M+ homes) if not already seeded."""
         today = date.today()
 
-        # 1. Contacts & Enquiries
+        # 1. Contacts & Enquiries (configured with verified test emails)
         c1, _ = Contact.objects.update_or_create(
-            email="arthur.henderson@oakridgecapital.com",
+            name="Arthur & Clara Henderson",
             defaults={
-                "name": "Arthur & Clara Henderson",
+                "email": "musfiq.works+client1@gmail.com",
                 "contact_type": Contact.ContactType.ACTIVE_CLIENT,
                 "phone": "+1 (415) 890-4412",
                 "company_or_household": "Henderson Family Trust",
@@ -101,9 +101,9 @@ class NotionProvisionerService:
             },
         )
         c2, _ = Contact.objects.update_or_create(
-            email="elena.rostova@pacificventures.io",
+            name="Dr. Elena Rostova",
             defaults={
-                "name": "Dr. Elena Rostova",
+                "email": "musfiq.works+client2@gmail.com",
                 "contact_type": Contact.ContactType.PROSPECTIVE_CLIENT,
                 "phone": "+1 (415) 622-9180",
                 "company_or_household": "Rostova Coastal Residence",
@@ -113,9 +113,9 @@ class NotionProvisionerService:
             },
         )
         c3, _ = Contact.objects.update_or_create(
-            email="david.chen@crestwoodholdings.com",
+            name="David & Mei Chen",
             defaults={
-                "name": "David & Mei Chen",
+                "email": "musfiq.works+client3@gmail.com",
                 "contact_type": Contact.ContactType.PROSPECTIVE_CLIENT,
                 "phone": "+1 (650) 401-7731",
                 "company_or_household": "Chen Hilltop Estate",
@@ -125,9 +125,9 @@ class NotionProvisionerService:
             },
         )
         c4, _ = Contact.objects.update_or_create(
-            email="m.sterling@sterlinglawgroup.com",
+            name="Marcus Sterling",
             defaults={
-                "name": "Marcus Sterling",
+                "email": "musfiq.works+client4@gmail.com",
                 "contact_type": Contact.ContactType.PROSPECTIVE_CLIENT,
                 "phone": "+1 (415) 319-8820",
                 "company_or_household": "Sterling Family",
@@ -621,6 +621,8 @@ class NotionProvisionerService:
                         },
                         "Referral Source": {"rich_text": {}},
                         "Enquiry Summary": {"rich_text": {}},
+                        "Created At (Notion)": {"created_time": {}},
+                        "Last Edited (Notion)": {"last_edited_time": {}},
                     },
                 },
             )
@@ -667,6 +669,8 @@ class NotionProvisionerService:
                         "Target Completion": {"date": {}},
                         "Progress %": {"number": {"format": "number"}},
                         "Latest Update": {"rich_text": {}},
+                        "Created At (Notion)": {"created_time": {}},
+                        "Last Edited (Notion)": {"last_edited_time": {}},
                     },
                 },
             )
@@ -735,6 +739,8 @@ class NotionProvisionerService:
                                 "single_property": {},
                             }
                         },
+                        "Created At (Notion)": {"created_time": {}},
+                        "Last Edited (Notion)": {"last_edited_time": {}},
                     },
                 },
             )
@@ -780,6 +786,8 @@ class NotionProvisionerService:
                                 "single_property": {},
                             }
                         },
+                        "Created At (Notion)": {"created_time": {}},
+                        "Last Edited (Notion)": {"last_edited_time": {}},
                     },
                 },
             )
@@ -836,6 +844,8 @@ class NotionProvisionerService:
                                 "single_property": {},
                             }
                         },
+                        "Created At (Notion)": {"created_time": {}},
+                        "Last Edited (Notion)": {"last_edited_time": {}},
                     },
                 },
             )
@@ -879,6 +889,8 @@ class NotionProvisionerService:
                                 "single_property": {},
                             }
                         },
+                        "Created At (Notion)": {"created_time": {}},
+                        "Last Edited (Notion)": {"last_edited_time": {}},
                     },
                 },
             )
@@ -900,6 +912,10 @@ class NotionProvisionerService:
                         "Supplier": {"rich_text": {}},
                         "Document Reference": {"rich_text": {}},
                         "Invoice Date": {"date": {}},
+                        "Event Timestamp": {"date": {}},
+                        "Exact Timestamp (UTC)": {"rich_text": {}},
+                        "Created At (Notion)": {"created_time": {}},
+                        "Last Edited (Notion)": {"last_edited_time": {}},
                         "Amount": {"number": {"format": "dollar"}},
                         "Currency": {
                             "select": {
@@ -933,6 +949,8 @@ class NotionProvisionerService:
                                 "single_property": {},
                             }
                         },
+                        "Created At (Notion)": {"created_time": {}},
+                        "Last Edited (Notion)": {"last_edited_time": {}},
                     },
                 },
             )
@@ -1330,13 +1348,10 @@ class NotionProvisionerService:
         # 7. Project Costs & Invoices (Part 3)
         if cfg.costs_db_id:
             existing_map = self._get_existing_pages_map(cfg.costs_db_id, "Cost Description")
-            for cost in ProjectCost.objects.select_related("project").filter(
-                notion_page_id__isnull=True
-            ):
-                if cost.title in existing_map:
+            for cost in ProjectCost.objects.select_related("project").all():
+                if not cost.notion_page_id and cost.title in existing_map:
                     cost.notion_page_id, cost.notion_url = existing_map[cost.title]
                     cost.save(update_fields=["notion_page_id", "notion_url"])
-                    continue
                 self.upsert_cost_in_notion(cost, cfg)
 
     def upsert_cost_in_notion(
@@ -1361,6 +1376,14 @@ class NotionProvisionerService:
             "Clarification / Review Notes": {"rich_text": _rt(cost.clarification_notes)},
             "Notified Person": {"rich_text": _rt(cost.notified_person)},
         }
+        ts = cost.event_timestamp or cost.created_at
+        if ts:
+            if timezone.is_naive(ts):
+                ts = timezone.make_aware(ts, UTC)
+            else:
+                ts = ts.astimezone(UTC)
+            props["Event Timestamp"] = {"date": {"start": ts.strftime("%Y-%m-%dT%H:%M:%SZ")}}
+            props["Exact Timestamp (UTC)"] = {"rich_text": _rt(ts.strftime("%Y-%m-%d %H:%M:%S UTC"))}
         if cost.invoice_date:
             props["Invoice Date"] = {"date": {"start": cost.invoice_date.isoformat()}}
         if cost.payment_due_date:

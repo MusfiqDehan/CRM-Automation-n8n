@@ -31,3 +31,4 @@ test-results/
 backend/scripts/
 frontend/e2e/
 .vscode/
+traefik/

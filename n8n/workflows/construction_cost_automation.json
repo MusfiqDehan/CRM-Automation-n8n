@@ -55,7 +55,7 @@
         "url": "http://backend:8017/api/v1/invoices/process/",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ title: $json.title, supplier: $json.supplier, document_reference: $json.document_reference, project_reference: $json.project_reference, invoice_date: $json.invoice_date, amount: $json.amount, currency: $json.currency, payment_status: $json.payment_status, payment_due_date: $json.payment_due_date, source_email: $json.source_email, sync_to_notion: true }) }}",
+        "jsonBody": "={{ JSON.stringify({ title: $json.title, supplier: $json.supplier, document_reference: $json.document_reference, project_reference: $json.project_reference, invoice_date: $json.invoice_date, event_timestamp: $json.event_timestamp, amount: $json.amount, currency: $json.currency, payment_status: $json.payment_status, payment_due_date: $json.payment_due_date, source_email: $json.source_email, sync_to_notion: true }) }}",
         "options": {}
       },
       "id": "b1f4c001-1111-4444-8888-000000000004",

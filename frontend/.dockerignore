@@ -1,0 +1,9 @@
+node_modules
+.next
+test-results
+playwright-report
+bun.lockb
+.git
+.gitignore
+*.tsbuildinfo
+

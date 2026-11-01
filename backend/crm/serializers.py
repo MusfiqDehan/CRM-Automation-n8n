@@ -180,6 +180,12 @@ class OpportunitySerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
+    def to_internal_value(self, data):
+        if isinstance(data, dict) and data.get("next_follow_up_date") == "":
+            data = data.copy()
+            data["next_follow_up_date"] = None
+        return super().to_internal_value(data)
+
     def validate_name(self, value: str) -> str:
         cleaned = value.strip()
         if len(cleaned) < 3:

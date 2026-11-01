@@ -71,7 +71,7 @@ export const opportunitySchema = z.object({
   ]),
   requires_kevin_review: z.boolean().default(false),
   kevin_review_notes: z.string().trim().optional().default(""),
-  next_follow_up_date: z.string().trim().optional().default(""),
+  next_follow_up_date: z.string().trim().optional().nullable().default(""),
   qualification_notes: z.string().trim().optional().default(""),
 });
 

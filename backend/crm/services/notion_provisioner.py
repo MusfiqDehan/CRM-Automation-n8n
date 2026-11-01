@@ -1453,3 +1453,55 @@ class NotionProvisionerService:
             cost.notion_url = resp.get("url", "")
             cost.save(update_fields=["notion_page_id", "notion_url"])
         return cost
+
+    def upsert_opportunity_in_notion(
+        self, opp: Opportunity, cfg: NotionWorkspaceConfig | None = None
+    ) -> Opportunity:
+        """Creates or updates an Opportunity page inside the Notion 'Opportunities / Deals' DB."""
+        if not self.api_key:
+            return opp
+        cfg = cfg or self.get_or_create_config()
+        if not cfg.opportunities_db_id:
+            return opp
+
+        props: dict[str, Any] = {
+            "Opportunity Name": {"title": _rt(opp.name)},
+            "Stage": {"select": {"name": opp.stage}},
+            "Sales Owner": {"rich_text": _rt(opp.sales_owner)},
+            "Estimated Value": {"number": float(opp.estimated_value or 0)},
+            "Design Agreement Status": {"select": {"name": opp.design_agreement_status or "Not Started"}},
+            "Construction Agreement Status": {
+                "select": {"name": opp.construction_agreement_status or "Not Started"}
+            },
+            "Requires Kevin's Review": {"checkbox": bool(opp.requires_kevin_review)},
+            "Kevin Review Notes": {"rich_text": _rt(opp.kevin_review_notes or "")},
+            "Qualification Notes": {"rich_text": _rt(opp.qualification_notes or "")},
+        }
+        if opp.next_follow_up_date:
+            props["Next Follow-Up Date"] = {
+                "date": {"start": _format_date(opp.next_follow_up_date)}
+            }
+        else:
+            props["Next Follow-Up Date"] = {"date": None}
+
+        if opp.contact and opp.contact.notion_page_id:
+            props["Contact"] = {"relation": [{"id": opp.contact.notion_page_id}]}
+        if opp.linked_project and opp.linked_project.notion_page_id:
+            props["Construction Project"] = {
+                "relation": [{"id": opp.linked_project.notion_page_id}]
+            }
+
+        if opp.notion_page_id:
+            resp = self._request("PATCH", f"/pages/{opp.notion_page_id}", {"properties": props})
+        else:
+            resp = self._request(
+                "POST",
+                "/pages",
+                {"parent": {"database_id": cfg.opportunities_db_id}, "properties": props},
+            )
+
+        if resp:
+            opp.notion_page_id = resp["id"]
+            opp.notion_url = resp.get("url", "")
+            opp.save(update_fields=["notion_page_id", "notion_url"])
+        return opp

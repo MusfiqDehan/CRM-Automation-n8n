@@ -380,4 +380,38 @@ def test_smtp_settings_and_client_email_triggers(api_client: APIClient, seeded_d
     assert client_res.json()["data"]["client_email"] == "musfiq.works+client1@gmail.com"
 
 
+@pytest.mark.django_db
+def test_opportunity_patch_and_kevin_review_approval(api_client: APIClient, seeded_db):
+    # 1. Locate an opportunity requiring Kevin's review
+    opp = Opportunity.objects.filter(requires_kevin_review=True).first()
+    assert opp is not None
+    assert opp.requires_kevin_review is True
+
+    # 2. Patch opportunity to clear review flag, advance stage, and record Kevin review notes
+    patch_res = api_client.patch(
+        f"/api/v1/opportunities/{opp.id}/",
+        {
+            "requires_kevin_review": False,
+            "stage": "3. Design Agreement",
+            "design_agreement_status": "Signed & Executed",
+            "kevin_review_notes": "Approved for architectural phase with 10% mobilization retainer.",
+        },
+        format="json",
+    )
+    assert patch_res.status_code == 200
+    body = patch_res.json()
+    assert body["success"] is True
+    assert body["data"]["requires_kevin_review"] is False
+    assert body["data"]["stage"] == "3. Design Agreement"
+    assert body["data"]["design_agreement_status"] == "Signed & Executed"
+    assert "Approved for architectural phase" in body["data"]["kevin_review_notes"]
+
+    # 3. Reload from DB and verify persistence
+    opp.refresh_from_db()
+    assert opp.requires_kevin_review is False
+    assert opp.stage == "3. Design Agreement"
+    assert opp.design_agreement_status == "Signed & Executed"
+
+
+
 

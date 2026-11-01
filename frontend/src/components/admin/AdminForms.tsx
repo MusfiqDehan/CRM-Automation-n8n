@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { ValidatedModalForm } from "@/components/common/ValidatedModalForm";
 import { Field, DropdownSelect } from "@/components/ui/primitives";
 import { ApiError, apiClient } from "@/lib/api-client";
-import type { SimulatorTriggerResponse } from "@/lib/types";
+import type { Opportunity, SimulatorTriggerResponse } from "@/lib/types";
 import {
   contactSchema,
   customInvoiceSchema,
@@ -177,11 +178,38 @@ const emptyDeal = {
   qualification_notes: "",
 };
 
-export function DealFormModal({ isOpen, onClose, onSaved }: ModalProps) {
+export interface DealFormModalProps extends ModalProps {
+  deal?: Opportunity | null;
+}
+
+export function DealFormModal({ isOpen, onClose, onSaved, deal }: DealFormModalProps) {
   const [form, setForm] = useState(emptyDeal);
   const { errors, generalError, submitting, run, reset } = useFormSubmit();
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm({ ...form, [k]: e.target.value });
+
+  const isEditing = Boolean(deal?.id);
+
+  useEffect(() => {
+    if (deal) {
+      setForm({
+        name: deal.name || "",
+        stage: deal.stage || "1. New Enquiry",
+        sales_owner: deal.sales_owner || "Jordan Blake (Sales Lead)",
+        estimated_value: String(deal.estimated_value || "0"),
+        design_agreement_status: deal.design_agreement_status || "Not Started",
+        construction_agreement_status: deal.construction_agreement_status || "Not Started",
+        requires_kevin_review: Boolean(deal.requires_kevin_review),
+        kevin_review_notes: deal.kevin_review_notes || "",
+        next_follow_up_date: deal.next_follow_up_date
+          ? String(deal.next_follow_up_date).split("T")[0]
+          : "",
+        qualification_notes: deal.qualification_notes || "",
+      });
+    } else {
+      setForm(emptyDeal);
+    }
+  }, [deal, isOpen]);
 
   const close = () => {
     reset();
@@ -190,30 +218,98 @@ export function DealFormModal({ isOpen, onClose, onSaved }: ModalProps) {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await run(opportunitySchema, form, (data) => apiClient.post("/opportunities/", data), "Could not save this deal.");
+    const payload = {
+      ...form,
+      next_follow_up_date: form.next_follow_up_date ? form.next_follow_up_date : null,
+    };
+    const endpoint = isEditing ? `/opportunities/${deal!.id}/` : "/opportunities/";
+    const res = await run(
+      opportunitySchema,
+      payload,
+      (data) => (isEditing ? apiClient.patch(endpoint, data) : apiClient.post(endpoint, data)),
+      isEditing ? "Could not update this deal." : "Could not save this deal."
+    );
     if (res) {
       setForm(emptyDeal);
-      onSaved(res.message || "Deal added.");
+      onSaved(res.message || (isEditing ? "Deal updated successfully." : "Deal added."));
       close();
     }
   };
 
+  const modalTitle = isEditing
+    ? form.requires_kevin_review
+      ? "Review & Approve Deal"
+      : "Edit Deal"
+    : "Add a new deal";
+
+  const modalSubtitle = isEditing
+    ? "Update deal pipeline stage, agreement status, or founder review decision."
+    : "A home you might build for a client.";
+
+  const submitLabel = isEditing
+    ? deal?.requires_kevin_review && !form.requires_kevin_review
+      ? "Approve & Save Deal"
+      : "Save Changes"
+    : "Create Deal";
+
   return (
     <ValidatedModalForm
       isOpen={isOpen}
-      title="Add a new deal"
-      subtitle="A home you might build for a client."
+      title={modalTitle}
+      subtitle={modalSubtitle}
       onClose={close}
       onSubmit={submit}
-      submitLabel="Create Deal"
+      submitLabel={submitLabel}
       submitting={submitting}
       generalError={generalError}
     >
+      {/* If this deal is flagged for Kevin's review, show executive callout */}
+      {isEditing && deal?.requires_kevin_review && (
+        <div className="rounded-xl border border-amber-300 dark:border-amber-700/80 bg-amber-50 dark:bg-amber-950/40 p-3.5 flex items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <span className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300">
+              <AlertTriangle className="w-4 h-4" />
+            </span>
+            <div className="text-xs">
+              <span className="font-bold text-amber-900 dark:text-amber-200">
+                Flagged for Kevin&apos;s Review
+              </span>
+              <p className="text-amber-700 dark:text-amber-400 mt-0.5">
+                {form.requires_kevin_review
+                  ? "Requires founder approval before client signing or stage advancement."
+                  : "Review flag will be cleared upon saving."}
+              </p>
+            </div>
+          </div>
+          {form.requires_kevin_review ? (
+            <button
+              type="button"
+              onClick={() => setForm((prev) => ({ ...prev, requires_kevin_review: false }))}
+              className="shrink-0 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition cursor-pointer shadow-xs inline-flex items-center gap-1.5"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Mark Approved</span>
+            </button>
+          ) : (
+            <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-xs font-semibold">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Approved</span>
+            </span>
+          )}
+        </div>
+      )}
+
       <Field label="Deal name" required error={errors.name}>
-        <input className="input" value={form.name} onChange={set("name")} placeholder="e.g. Mercer Hillside Residence" />
+        <input
+          className="input"
+          value={form.name}
+          onChange={set("name")}
+          placeholder="e.g. Mercer Hillside Residence"
+        />
       </Field>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Where is it at?">
+        <Field label="Where is it at? (Pipeline Stage)">
           <DropdownSelect
             value={form.stage}
             onChange={(val) => setForm((prev) => ({ ...prev, stage: val }))}
@@ -223,39 +319,99 @@ export function DealFormModal({ isOpen, onClose, onSaved }: ModalProps) {
               { value: "3. Design Agreement", label: "3. Design Agreement", description: "Architectural retainers" },
               { value: "4. Construction Agreement", label: "4. Construction Agreement", description: "Pre-construction signing" },
               { value: "5. Won — Handed to Ops", label: "5. Won — Handed to Ops", description: "Breaking ground / PM handoff" },
+              { value: "Closed Lost", label: "Closed Lost", description: "Deal did not materialize" },
             ]}
           />
         </Field>
         <Field label="Estimated value (USD)" required error={errors.estimated_value}>
-          <input type="number" className="input" value={form.estimated_value} onChange={set("estimated_value")} />
+          <input
+            type="number"
+            className="input"
+            value={form.estimated_value}
+            onChange={set("estimated_value")}
+          />
         </Field>
       </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Who owns this deal?" error={errors.sales_owner}>
-          <input className="input" value={form.sales_owner} onChange={set("sales_owner")} />
+          <input
+            className="input"
+            value={form.sales_owner}
+            onChange={set("sales_owner")}
+          />
         </Field>
         <Field label="Next follow-up">
-          <input type="date" className="input" value={form.next_follow_up_date} onChange={set("next_follow_up_date")} />
+          <input
+            type="date"
+            className="input"
+            value={form.next_follow_up_date}
+            onChange={set("next_follow_up_date")}
+          />
         </Field>
       </div>
-      <div className="rounded-2xl bg-amber-50/70 p-4 ring-1 ring-amber-200/70">
-        <label className="flex cursor-pointer items-center gap-3 text-sm font-medium text-amber-900">
+
+      {/* Agreements Status */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field label="Design Agreement Status">
+          <DropdownSelect
+            value={form.design_agreement_status}
+            onChange={(val) => setForm((prev) => ({ ...prev, design_agreement_status: val }))}
+            options={[
+              { value: "Not Started", label: "Not Started" },
+              { value: "Sent to Client", label: "Sent to Client" },
+              { value: "Under Review", label: "Under Review" },
+              { value: "Signed & Executed", label: "Signed & Executed" },
+            ]}
+          />
+        </Field>
+        <Field label="Construction Agreement Status">
+          <DropdownSelect
+            value={form.construction_agreement_status}
+            onChange={(val) => setForm((prev) => ({ ...prev, construction_agreement_status: val }))}
+            options={[
+              { value: "Not Started", label: "Not Started" },
+              { value: "Sent to Client", label: "Sent to Client" },
+              { value: "Under Review", label: "Under Review" },
+              { value: "Signed & Executed", label: "Signed & Executed" },
+            ]}
+          />
+        </Field>
+      </div>
+
+      <Field label="Qualification & Client Scope Notes" error={errors.qualification_notes}>
+        <textarea
+          rows={2}
+          className="input"
+          value={form.qualification_notes}
+          onChange={set("qualification_notes")}
+          placeholder="Lot details, architectural preferences, client timeline..."
+        />
+      </Field>
+
+      <div className="rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 p-4 ring-1 ring-amber-200/70 dark:ring-amber-800/50">
+        <label className="flex cursor-pointer items-center gap-3 text-sm font-medium text-amber-900 dark:text-amber-200">
           <input
             type="checkbox"
             checked={form.requires_kevin_review}
             onChange={(e) => setForm({ ...form, requires_kevin_review: e.target.checked })}
             className="h-4 w-4 rounded accent-amber-600"
           />
-          Kevin needs to look at this
+          Requires Kevin&apos;s Review (Founder Approval Needed)
         </label>
-        {form.requires_kevin_review && (
-          <textarea
-            rows={2}
-            className="input mt-3"
-            value={form.kevin_review_notes}
-            onChange={set("kevin_review_notes")}
-            placeholder="What should Kevin check?"
-          />
+        {(form.requires_kevin_review || form.kevin_review_notes) && (
+          <div className="mt-3">
+            <label className="block text-xs font-semibold text-amber-800 dark:text-amber-300 mb-1">
+              Founder Review Notes / Approval Decision:
+            </label>
+            <textarea
+              rows={2}
+              className="input bg-white dark:bg-slate-900"
+              value={form.kevin_review_notes}
+              onChange={set("kevin_review_notes")}
+              placeholder="e.g. Approved with 10% mobilization deposit requirement, or note items needing clarification."
+            />
+          </div>
         )}
       </div>
     </ValidatedModalForm>

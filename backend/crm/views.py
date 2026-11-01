@@ -123,6 +123,19 @@ class OpportunityListCreateAPIView(BaseListCreateAPIView):
     ]
     entity_name = "Opportunity"
 
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == 201 and response.data and response.data.get("success"):
+            new_id = response.data.get("data", {}).get("id")
+            if new_id:
+                try:
+                    opp = Opportunity.objects.select_related("contact", "linked_project").filter(pk=new_id).first()
+                    if opp:
+                        NotionProvisionerService().upsert_opportunity_in_notion(opp)
+                except Exception as e:
+                    logger.warning(f"Failed to sync newly created opportunity {new_id} to Notion: {e}")
+        return response
+
 
 class OpportunityDetailAPIView(BaseDetailAPIView):
     """
@@ -135,6 +148,28 @@ class OpportunityDetailAPIView(BaseDetailAPIView):
     queryset = Opportunity.objects.select_related("contact", "linked_project").all()
     serializer_class = OpportunitySerializer
     entity_name = "Opportunity"
+
+    def patch(self, request, pk: str, *args, **kwargs):
+        response = super().patch(request, pk, *args, **kwargs)
+        if response.status_code == 200:
+            try:
+                opp = Opportunity.objects.select_related("contact", "linked_project").filter(pk=pk).first()
+                if opp:
+                    NotionProvisionerService().upsert_opportunity_in_notion(opp)
+            except Exception as e:
+                logger.warning(f"Failed to sync updated opportunity {pk} to Notion: {e}")
+        return response
+
+    def put(self, request, pk: str, *args, **kwargs):
+        response = super().put(request, pk, *args, **kwargs)
+        if response.status_code == 200:
+            try:
+                opp = Opportunity.objects.select_related("contact", "linked_project").filter(pk=pk).first()
+                if opp:
+                    NotionProvisionerService().upsert_opportunity_in_notion(opp)
+            except Exception as e:
+                logger.warning(f"Failed to sync updated opportunity {pk} to Notion: {e}")
+        return response
 
 
 # ==============================================================================

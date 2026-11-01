@@ -10,6 +10,7 @@ import {
   ChevronDown,
   Clock,
   DollarSign,
+  Edit2,
   ExternalLink,
   FileSpreadsheet,
   FileText,
@@ -91,6 +92,7 @@ export function AdminDashboard() {
   // Modals state
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [isDealOpen, setIsDealOpen] = useState(false);
+  const [editingDeal, setEditingDeal] = useState<Opportunity | null>(null);
   const [isProjectOpen, setIsProjectOpen] = useState(false);
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
   const [isSmtpSettingsOpen, setIsSmtpSettingsOpen] = useState(false);
@@ -907,7 +909,26 @@ export function AdminDashboard() {
                   setSelectedPipelineStage("");
                   setCrmSubTab("deals");
                 }}
-                onNewDealClick={() => setIsDealOpen(true)}
+                onNewDealClick={() => {
+                  setEditingDeal(null);
+                  setIsDealOpen(true);
+                }}
+                onReviewDeal={async (dealSummary) => {
+                  try {
+                    const opp = await apiClient.get<Opportunity>(
+                      `/opportunities/${dealSummary.id}/`
+                    );
+                    setEditingDeal(opp);
+                    setIsDealOpen(true);
+                  } catch (err) {
+                    showToast(
+                      err instanceof Error
+                        ? err.message
+                        : "Failed to load deal details.",
+                      "error"
+                    );
+                  }
+                }}
               />
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-2">
@@ -961,7 +982,10 @@ export function AdminDashboard() {
                     ...(selectedPipelineStage ? { stage: selectedPipelineStage } : {}),
                     ...(selectedReviewFilter ? { requires_kevin_review: selectedReviewFilter } : {}),
                   }}
-                  onAddClick={() => setIsDealOpen(true)}
+                  onAddClick={() => {
+                    setEditingDeal(null);
+                    setIsDealOpen(true);
+                  }}
                   addButtonLabel="New Deal"
                   searchPlaceholder="Search deals, sales owners, clients..."
                   filters={[
@@ -1073,11 +1097,38 @@ export function AdminDashboard() {
                       ),
                     },
                     {
-                      key: "notion",
-                      header: "",
-                      className: "w-8 text-right",
+                      key: "actions",
+                      header: "Actions",
+                      className: "w-44 text-right",
                       render: (row) => (
-                        <OpenLink href={row.notion_url} label="Open in Notion" />
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingDeal(row);
+                              setIsDealOpen(true);
+                            }}
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer transition ${
+                              row.requires_kevin_review
+                                ? "bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/80 shadow-2xs"
+                                : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700"
+                            }`}
+                            title={row.requires_kevin_review ? "Review & Approve Deal" : "Edit Deal"}
+                          >
+                            {row.requires_kevin_review ? (
+                              <>
+                                <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                                <span>Review</span>
+                              </>
+                            ) : (
+                              <>
+                                <Edit2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                                <span>Edit</span>
+                              </>
+                            )}
+                          </button>
+                          <OpenLink href={row.notion_url} label="Open in Notion" />
+                        </div>
                       ),
                     },
                   ]}
@@ -2027,10 +2078,15 @@ export function AdminDashboard() {
       />
       <DealFormModal
         isOpen={isDealOpen}
-        onClose={() => setIsDealOpen(false)}
+        deal={editingDeal}
+        onClose={() => {
+          setIsDealOpen(false);
+          setEditingDeal(null);
+        }}
         onSaved={(msg) => {
           showToast(msg, "success");
           setRefreshCounter((c) => c + 1);
+          setEditingDeal(null);
         }}
       />
       <ProjectFormModal

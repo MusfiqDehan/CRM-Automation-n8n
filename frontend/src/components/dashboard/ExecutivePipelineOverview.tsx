@@ -22,6 +22,7 @@ interface ExecutivePipelineOverviewProps {
   onFilterStage?: (stage: string) => void;
   onFilterReview?: () => void;
   onNewDealClick?: () => void;
+  onReviewDeal?: (deal: { id: string; name: string }) => void;
 }
 
 export function ExecutivePipelineOverview({
@@ -29,6 +30,7 @@ export function ExecutivePipelineOverview({
   onFilterStage,
   onFilterReview,
   onNewDealClick,
+  onReviewDeal,
 }: ExecutivePipelineOverviewProps) {
   const kpis = summary?.kpis;
   const stages = summary?.stages_breakdown || [];
@@ -325,16 +327,31 @@ export function ExecutivePipelineOverview({
 
                 <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                   <span>Client: {deal.client_name}</span>
-                  {onFilterReview && (
+                  <div className="flex items-center gap-2">
+                    {onFilterReview && (
+                      <button
+                        type="button"
+                        onClick={onFilterReview}
+                        className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-[11px] underline cursor-pointer"
+                      >
+                        Filter Table
+                      </button>
+                    )}
                     <button
                       type="button"
-                      onClick={onFilterReview}
-                      className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                      onClick={() => {
+                        if (onReviewDeal) {
+                          onReviewDeal(deal);
+                        } else if (onFilterReview) {
+                          onFilterReview();
+                        }
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs inline-flex items-center gap-1 cursor-pointer transition shadow-2xs"
                     >
                       <span>Review Deal</span>
                       <ArrowRight className="w-3 h-3" />
                     </button>
-                  )}
+                  </div>
                 </div>
               </div>
             ))}

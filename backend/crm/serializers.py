@@ -442,10 +442,10 @@ class InvoiceExtractRequestSerializer(serializers.Serializer):
 class InvoiceProcessRequestSerializer(serializers.Serializer):
     """Validates extracted cost payload for idempotent deduplication, Notion sync, and notification."""
 
-    title = serializers.CharField(max_length=220, required=False, allow_blank=True, default="")
-    supplier = serializers.CharField(max_length=180, required=False, allow_blank=True, default="")
-    document_reference = serializers.CharField(max_length=100, required=False, allow_blank=True, default="")
-    project_reference = serializers.CharField(max_length=220, required=False, allow_blank=True, default="")
+    title = serializers.CharField(max_length=220, required=False, allow_blank=True, allow_null=True, default="")
+    supplier = serializers.CharField(max_length=180, required=False, allow_blank=True, allow_null=True, default="Unknown Supplier / Subcontractor")
+    document_reference = serializers.CharField(max_length=100, required=False, allow_blank=True, allow_null=True, default="")
+    project_reference = serializers.CharField(max_length=220, required=False, allow_blank=True, allow_null=True, default="")
     invoice_date = serializers.DateField(required=False, allow_null=True, default=None)
     event_timestamp = serializers.DateTimeField(required=False, allow_null=True, default=None)
     amount = serializers.DecimalField(
@@ -461,6 +461,15 @@ class InvoiceProcessRequestSerializer(serializers.Serializer):
     supporting_document_url = serializers.URLField(required=False, allow_blank=True, default="")
     source_email = serializers.EmailField(required=False, allow_blank=True, default="vendor@supplier.com")
     sync_to_notion = serializers.BooleanField(default=True, required=False)
+
+    def to_internal_value(self, data):
+        if isinstance(data, dict):
+            data = data.copy()
+            if not data.get("supplier"):
+                data["supplier"] = "Unknown Supplier / Subcontractor"
+            if not data.get("title"):
+                data["title"] = "Construction Cost / Invoice"
+        return super().to_internal_value(data)
 
 
 class SMTPSettingsSerializer(serializers.ModelSerializer):

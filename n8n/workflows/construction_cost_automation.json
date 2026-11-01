@@ -38,7 +38,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const extracted = $input.first().json.data || $input.first().json;\nconst needsReviewReasons = [];\n\nif (!extracted.project_reference || extracted.project_reference.toLowerCase().includes('unknown')) {\n  needsReviewReasons.push('Missing or unrecognized Construction Project reference in vendor submission.');\n}\nif (!extracted.document_reference) {\n  needsReviewReasons.push('Missing invoice/receipt document reference.');\n}\nif (Number(extracted.amount || 0) <= 0) {\n  needsReviewReasons.push('Missing or zero invoice amount.');\n}\n\nreturn [{\n  json: {\n    ...extracted,\n    pre_check_needs_clarification: needsReviewReasons.length > 0,\n    pre_check_reasons: needsReviewReasons\n  }\n}];"
+        "jsCode": "const extracted = $input.first().json.data || $input.first().json;\nconst needsReviewReasons = [];\n\nif (!extracted.project_reference || String(extracted.project_reference).toLowerCase().includes('unknown')) {\n  needsReviewReasons.push('Missing or unrecognized Construction Project reference in vendor submission.');\n}\nif (!extracted.document_reference) {\n  needsReviewReasons.push('Missing invoice/receipt document reference.');\n}\nif (Number(extracted.amount || 0) <= 0) {\n  needsReviewReasons.push('Missing or zero invoice amount.');\n}\n\nreturn [{\n  json: {\n    ...extracted,\n    supplier: extracted.supplier || 'Unknown Supplier / Subcontractor',\n    title: extracted.title || 'Construction Cost / Invoice',\n    pre_check_needs_clarification: needsReviewReasons.length > 0,\n    pre_check_reasons: needsReviewReasons\n  }\n}];"
       },
       "id": "b1f4c001-1111-4444-8888-000000000003",
       "name": "3. Validate Fields & Pre-Check Clarification Rules",

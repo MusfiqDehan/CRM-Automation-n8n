@@ -225,3 +225,14 @@ DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 N8N_WEBHOOK_URL = os.getenv(
     "N8N_WEBHOOK_URL", "http://n8n:5678/webhook/construction-cost-intake"
 )
+
+# Public Domain & API URLs (used for sample invoice PDF links, Notion properties, email notifications)
+PUBLIC_BASE_URL = os.getenv(
+    "PUBLIC_BASE_URL",
+    "http://localhost:8017" if DEBUG else "https://crm.musfiqdehan.com",
+).rstrip("/")
+PUBLIC_API_URL = os.getenv(
+    "PUBLIC_API_URL",
+    f"{PUBLIC_BASE_URL}/api/v1",
+).rstrip("/")
+

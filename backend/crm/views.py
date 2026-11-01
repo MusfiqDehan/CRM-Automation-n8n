@@ -3,6 +3,8 @@ from __future__ import annotations
 import base64
 from datetime import date, timedelta
 from decimal import Decimal
+import logging
+from pathlib import Path
 import httpx
 from django.conf import settings
 from django.db.models import Count, Sum
@@ -52,6 +54,8 @@ from crm.serializers import (
 from crm.services.cost_processor import CostAutomationProcessor
 from crm.services.llm_extractor import InvoiceExtractorService, generate_sample_invoice_pdf
 from crm.services.notion_provisioner import NotionProvisionerService
+
+logger = logging.getLogger(__name__)
 
 
 # ==============================================================================
@@ -857,32 +861,72 @@ class BlueprintDownloadAPIView(APIView):
     """Generates and serves executive solution blueprints (.docx, .pdf, .png)."""
 
     def get(self, request, filetype: str):
-        from scripts.generate_submission_docs import main as generate_docs
+        paths: dict[str, str] = {}
+        candidate_dirs = [
+            Path("/docs"),
+            Path(settings.BASE_DIR).parent / "docs",
+            Path(settings.BASE_DIR) / "docs",
+        ]
+        found_dir = None
+        for d in candidate_dirs:
+            if d.exists() and (
+                (d / "Part1_Pain_Points_and_Proposed_Solutions.pdf").exists()
+                or (d / "Executive_Architecture_and_Solutions.pdf").exists()
+            ):
+                found_dir = d
+                break
 
-        paths = generate_docs()
+        if found_dir:
+            pdf_path = (
+                found_dir / "Part1_Pain_Points_and_Proposed_Solutions.pdf"
+                if (found_dir / "Part1_Pain_Points_and_Proposed_Solutions.pdf").exists()
+                else found_dir / "Executive_Architecture_and_Solutions.pdf"
+            )
+            docx_path = (
+                found_dir / "Part1_Pain_Points_and_Proposed_Solutions.docx"
+                if (found_dir / "Part1_Pain_Points_and_Proposed_Solutions.docx").exists()
+                else found_dir / "Executive_Architecture_and_Solutions.docx"
+            )
+            diagram_path = (
+                found_dir / "Workflow_Architecture_Diagram.png"
+                if (found_dir / "Workflow_Architecture_Diagram.png").exists()
+                else found_dir / "workflow_diagram.png"
+            )
+            paths = {
+                "docx": str(docx_path),
+                "pdf": str(pdf_path),
+                "diagram": str(diagram_path),
+            }
+        else:
+            try:
+                from scripts.generate_submission_docs import main as generate_docs
+                paths = generate_docs()
+            except Exception as e:
+                logger.error("Failed to generate submission docs: %s", e)
+
         mapping = {
             "docx": (
-                paths["docx"],
+                paths.get("docx", ""),
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 "Executive_Architecture_and_Solutions.docx",
             ),
             "pdf": (
-                paths["pdf"],
+                paths.get("pdf", ""),
                 "application/pdf",
                 "Executive_Architecture_and_Solutions.pdf",
             ),
             "diagram": (
-                paths["diagram"],
+                paths.get("diagram", ""),
                 "image/png",
                 "Workflow_Architecture_Diagram.png",
             ),
         }
-        if filetype not in mapping:
+        if filetype not in mapping or not paths.get(filetype) or not Path(paths[filetype]).exists():
             return api_response(
                 data={"allowed": list(mapping.keys())},
-                message="Invalid document type requested.",
+                message=f"Document file for '{filetype}' is not available.",
                 success=False,
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=status.HTTP_404_NOT_FOUND,
             )
         file_path, content_type, download_name = mapping[filetype]
         return FileResponse(

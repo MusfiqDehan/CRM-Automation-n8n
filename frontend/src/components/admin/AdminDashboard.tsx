@@ -10,6 +10,7 @@ import {
   ChevronDown,
   Clock,
   DollarSign,
+  ExternalLink,
   FileSpreadsheet,
   FileText,
   Filter,
@@ -1651,6 +1652,23 @@ export function AdminDashboard() {
                               : "Clean"}
                           </div>
                         </div>
+                        {lastSimulation.cost_record.supporting_document_url && (
+                          <div className="mt-3 flex flex-wrap items-center gap-3 pt-2.5 border-t border-emerald-200/70 dark:border-emerald-800/70 text-xs">
+                            <a
+                              href={lastSimulation.cost_record.supporting_document_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 font-semibold text-white shadow-xs transition-colors"
+                            >
+                              <FileText className="h-3.5 w-3.5" />
+                              View Rendered PDF ({lastSimulation.cost_record.document_reference}.pdf)
+                              <ExternalLink className="h-3 w-3 opacity-80" />
+                            </a>
+                            <span className="text-[11px] font-mono text-emerald-800 dark:text-emerald-300 break-all">
+                              {lastSimulation.cost_record.supporting_document_url}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1767,10 +1785,24 @@ export function AdminDashboard() {
                       },
                       {
                         key: "notion",
-                        header: "",
-                        className: "w-8 text-right",
+                        header: "Actions",
+                        className: "w-28 text-right",
                         render: (row) => (
-                          <OpenLink href={row.notion_url} label="Open in Notion" />
+                          <div className="flex items-center justify-end gap-2">
+                            {row.supporting_document_url ? (
+                              <a
+                                href={row.supporting_document_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                title="View Rendered PDF Invoice"
+                                className="inline-flex items-center gap-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-2xs transition-colors"
+                              >
+                                <FileText className="h-3 w-3" />
+                                PDF
+                              </a>
+                            ) : null}
+                            <OpenLink href={row.notion_url} label="Open in Notion" />
+                          </div>
                         ),
                       },
                     ]}

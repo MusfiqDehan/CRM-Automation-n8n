@@ -84,10 +84,19 @@ class CostAutomationProcessor:
         if payment_status == "Unpaid" and not payment_due_date:
             clarification_reasons.append("Unpaid invoice submitted without an explicit Payment Due Date.")
 
-        supporting_url = (
-            payload.get("supporting_document_url")
-            or f"http://localhost:8017/api/v1/docs/sample-invoice/{doc_ref}/"
-        )
+        # Determine canonical public API url for PDF invoice rendering
+        api_base = getattr(
+            settings,
+            "PUBLIC_API_URL",
+            "http://localhost:8017/api/v1" if getattr(settings, "DEBUG", False) else "https://crm.musfiqdehan.com/api/v1",
+        ).rstrip("/")
+
+        supporting_url = payload.get("supporting_document_url")
+        if not supporting_url:
+            supporting_url = f"{api_base}/docs/sample-invoice/{doc_ref}/"
+        elif "localhost:8017" in supporting_url:
+            supporting_url = supporting_url.replace("http://localhost:8017/api/v1", api_base)
+
         if not title:
             title = f"{supplier} — {doc_ref}"
 
@@ -114,6 +123,8 @@ class CostAutomationProcessor:
         if existing:
             existing.submission_count += 1
             existing.event_timestamp = event_ts
+            if "localhost:8017" in existing.supporting_document_url or not existing.supporting_document_url:
+                existing.supporting_document_url = supporting_url
             same_amount = existing.amount == amount
             same_status = existing.payment_status == payment_status
             same_project = (existing.project_id == getattr(matched_project, "id", None)) or (
@@ -154,6 +165,8 @@ class CostAutomationProcessor:
             existing.payment_status = payment_status
             existing.amount = amount
             existing.currency = currency
+            if "localhost:8017" in existing.supporting_document_url or not existing.supporting_document_url:
+                existing.supporting_document_url = supporting_url
             if matched_project:
                 existing.project = matched_project
             if payment_due_date:

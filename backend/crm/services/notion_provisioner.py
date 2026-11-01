@@ -434,6 +434,12 @@ class NotionProvisionerService:
         )
 
         # 7. Initial Project Costs & Invoices (Part 3)
+        api_base = getattr(
+            settings,
+            "PUBLIC_API_URL",
+            "http://localhost:8017/api/v1" if getattr(settings, "DEBUG", False) else "https://crm.musfiqdehan.com/api/v1",
+        ).rstrip("/")
+
         ProjectCost.objects.update_or_create(
             supplier="Pacific Lumber & Structural Supply",
             document_reference="INV-2026-0881",
@@ -445,7 +451,7 @@ class NotionProvisionerService:
                 "currency": ProjectCost.Currency.USD,
                 "payment_status": ProjectCost.PaymentStatus.PAID,
                 "payment_due_date": today + timedelta(days=14),
-                "supporting_document_url": "http://localhost:8017/api/v1/docs/sample-invoice/INV-2026-0881/",
+                "supporting_document_url": f"{api_base}/docs/sample-invoice/INV-2026-0881/",
                 "source_email": "ar@pacificlumber.com",
                 "submission_count": 1,
                 "needs_clarification": False,
@@ -464,7 +470,7 @@ class NotionProvisionerService:
                 "currency": ProjectCost.Currency.USD,
                 "payment_status": ProjectCost.PaymentStatus.UNPAID,
                 "payment_due_date": today + timedelta(days=12),
-                "supporting_document_url": "http://localhost:8017/api/v1/docs/sample-invoice/INV-2026-0912/",
+                "supporting_document_url": f"{api_base}/docs/sample-invoice/INV-2026-0912/",
                 "source_email": "billing@apexelectrical.com",
                 "submission_count": 1,
                 "needs_clarification": False,
@@ -483,7 +489,7 @@ class NotionProvisionerService:
                 "currency": ProjectCost.Currency.USD,
                 "payment_status": ProjectCost.PaymentStatus.UNPAID,
                 "payment_due_date": today + timedelta(days=10),
-                "supporting_document_url": "http://localhost:8017/api/v1/docs/sample-invoice/REC-2026-0449/",
+                "supporting_document_url": f"{api_base}/docs/sample-invoice/REC-2026-0449/",
                 "source_email": "dispatch@bayareagrading.com",
                 "submission_count": 1,
                 "needs_clarification": True,
@@ -1419,7 +1425,15 @@ class NotionProvisionerService:
         if cost.payment_due_date:
             props["Payment Due Date"] = {"date": {"start": _format_date(cost.payment_due_date)}}
         if cost.supporting_document_url:
-            props["Supporting Document"] = {"url": cost.supporting_document_url}
+            doc_url = cost.supporting_document_url
+            if "localhost:8017" in doc_url:
+                api_base = getattr(
+                    settings,
+                    "PUBLIC_API_URL",
+                    "https://crm.musfiqdehan.com/api/v1",
+                ).rstrip("/")
+                doc_url = doc_url.replace("http://localhost:8017/api/v1", api_base)
+            props["Supporting Document"] = {"url": doc_url}
         if cost.source_email:
             props["Source Email"] = {"email": cost.source_email}
         if cost.project and cost.project.notion_page_id:

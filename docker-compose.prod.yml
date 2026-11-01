@@ -51,6 +51,8 @@ services:
       POSTGRES_PORT: 5432
       USE_SQLITE: "False"
       DJANGO_DEBUG: "False"
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://crm.musfiqdehan.com}
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-https://crm.musfiqdehan.com/api/v1}
     volumes:
       - crm_prod_media_data:/app/media
       - ./docs:/docs:ro

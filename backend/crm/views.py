@@ -935,13 +935,19 @@ class SMTPTestConnectionAPIView(APIView):
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-        recipient = serializer.validated_data.get("recipient", "musfiq.works@gmail.com")
+        cfg = SMTPSettings.get_active()
+        recipient = (
+            serializer.validated_data.get("recipient")
+            or getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "")
+            or cfg.kevin_email
+            or cfg.username
+            or "ops-automation@crm.musfiqdehan.com"
+        )
         subject = serializer.validated_data.get(
             "subject", "Kevin Construction OS — Live SMTP Verification"
         )
         body = serializer.validated_data.get("body", "")
 
-        cfg = SMTPSettings.get_active()
         from_email = cfg.default_from_email or cfg.username
 
         from common.email_backend import AuditedEmailBackend

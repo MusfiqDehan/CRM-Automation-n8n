@@ -31,20 +31,20 @@ export function SMTPSettingsModal({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   // Form State
-  const [host, setHost] = useState("smtp.gmail.com");
+  const [host, setHost] = useState("");
   const [port, setPort] = useState(465);
-  const [username, setUsername] = useState("musfiq.works@gmail.com");
-  const [password, setPassword] = useState("***REMOVED***");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [hasPassword, setHasPassword] = useState(false);
   const [useSsl, setUseSsl] = useState(true);
   const [useTls, setUseTls] = useState(false);
-  const [fromEmail, setFromEmail] = useState("Kevin's Construction OS <musfiq.works@gmail.com>");
-  const [kevinEmail, setKevinEmail] = useState("musfiq.works@gmail.com");
+  const [fromEmail, setFromEmail] = useState("");
+  const [kevinEmail, setKevinEmail] = useState("");
 
   // Test Connection State
-  const [testRecipient, setTestRecipient] = useState("musfiq.works@gmail.com");
+  const [testRecipient, setTestRecipient] = useState("");
   const [testResult, setTestResult] = useState<{
     success: boolean;
     message: string;
@@ -63,12 +63,16 @@ export function SMTPSettingsModal({
         if (d) {
           setHost(d.host || "smtp.gmail.com");
           setPort(d.port || 465);
-          setUsername(d.username || "musfiq.works@gmail.com");
-          setPassword(d.password || "***REMOVED***");
+          setUsername(d.username || "");
+          setPassword(""); // Clear password from state; never render actual secret
+          setHasPassword(Boolean(d.has_password));
           setUseSsl(d.use_ssl ?? true);
           setUseTls(d.use_tls ?? false);
-          setFromEmail(d.default_from_email || "Kevin's Construction OS <musfiq.works@gmail.com>");
-          setKevinEmail(d.kevin_email || "musfiq.works@gmail.com");
+          setFromEmail(d.default_from_email || "");
+          setKevinEmail(d.kevin_email || "");
+          if (d.kevin_email || d.username) {
+            setTestRecipient(d.kevin_email || d.username || "");
+          }
         }
       })
       .catch((err) => {
@@ -83,16 +87,21 @@ export function SMTPSettingsModal({
     e.preventDefault();
     setSaving(true);
     try {
-      await apiClient.post("/settings/smtp/", {
+      const payload: Record<string, unknown> = {
         host: host.trim(),
         port: Number(port),
         username: username.trim(),
-        password: password.replace(/\s+/g, ""),
         use_ssl: useSsl,
         use_tls: useTls,
         default_from_email: fromEmail.trim(),
         kevin_email: kevinEmail.trim(),
-      });
+      };
+      if (password.trim()) {
+        payload.password = password.replace(/\s+/g, "");
+      }
+      await apiClient.post("/settings/smtp/", payload);
+      setHasPassword(true);
+      setPassword("");
       if (onSuccessToast) {
         onSuccessToast("SMTP settings saved successfully! Future email triggers will use these credentials.");
       }
@@ -185,7 +194,7 @@ export function SMTPSettingsModal({
                   <span>Google Gmail SMTP Integration Active</span>
                 </div>
                 <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-                  Default credentials are set to <span className="font-mono font-semibold">musfiq.works@gmail.com</span> using an app password. You can edit any parameter below or test live sending with real client emails.
+                  Default credentials are dynamically managed by the backend and loaded from environment variables ({username ? <span className="font-mono font-semibold">{username}</span> : "system defaults"}). App passwords are write-only and hidden for security.
                 </p>
               </div>
 
@@ -231,8 +240,7 @@ export function SMTPSettingsModal({
                     type="email"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    required
-                    placeholder="musfiq.works@gmail.com"
+                    placeholder="user@gmail.com"
                     className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-mono text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -242,21 +250,25 @@ export function SMTPSettingsModal({
                       <KeyRound className="h-3.5 w-3.5 text-slate-400" />
                       App Password
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline"
-                    >
-                      {showPassword ? "Hide" : "Show"}
-                    </button>
+                    {hasPassword ? (
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                        <ShieldCheck className="h-3 w-3" /> Configured (Hidden)
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-amber-500 font-medium">Not configured</span>
+                    )}
                   </div>
                   <input
-                    type={showPassword ? "text" : "password"}
+                    type="password"
+                    autoComplete="new-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    required
-                    placeholder="16-character Google App Password"
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-mono text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                    placeholder={
+                      hasPassword
+                        ? "•••••••••••••••• (Configured — leave blank to keep)"
+                        : "Enter 16-character Google App Password"
+                    }
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-mono text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-400"
                   />
                 </div>
               </div>
@@ -313,8 +325,7 @@ export function SMTPSettingsModal({
                     type="text"
                     value={fromEmail}
                     onChange={(e) => setFromEmail(e.target.value)}
-                    required
-                    placeholder="Kevin's Construction OS <musfiq.works@gmail.com>"
+                    placeholder="Kevin's Construction OS <ops@example.com>"
                     className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -326,8 +337,7 @@ export function SMTPSettingsModal({
                     type="email"
                     value={kevinEmail}
                     onChange={(e) => setKevinEmail(e.target.value)}
-                    required
-                    placeholder="musfiq.works@gmail.com"
+                    placeholder="kevin@example.com"
                     className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-mono text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -352,7 +362,7 @@ export function SMTPSettingsModal({
                 type="email"
                 value={testRecipient}
                 onChange={(e) => setTestRecipient(e.target.value)}
-                placeholder="musfiq.works@gmail.com"
+                placeholder="recipient@example.com"
                 className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-mono text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
               />
               <button
@@ -373,27 +383,24 @@ export function SMTPSettingsModal({
             {/* Quick Test Recipient Pills */}
             <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
               <span className="text-slate-400">Quick Test Targets:</span>
-              <button
-                type="button"
-                onClick={() => setTestRecipient("musfiq.works@gmail.com")}
-                className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 transition cursor-pointer"
-              >
-                musfiq.works@gmail.com (Founder)
-              </button>
-              <button
-                type="button"
-                onClick={() => setTestRecipient("musfiq.works+client1@gmail.com")}
-                className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 transition cursor-pointer"
-              >
-                +client1 (Arthur Henderson PRJ-101)
-              </button>
-              <button
-                type="button"
-                onClick={() => setTestRecipient("musfiq.works+client2@gmail.com")}
-                className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 transition cursor-pointer"
-              >
-                +client2 (Elena Rostova PRJ-102)
-              </button>
+              {kevinEmail ? (
+                <button
+                  type="button"
+                  onClick={() => setTestRecipient(kevinEmail)}
+                  className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 transition cursor-pointer"
+                >
+                  {kevinEmail} (Founder / Admin)
+                </button>
+              ) : null}
+              {username && username !== kevinEmail ? (
+                <button
+                  type="button"
+                  onClick={() => setTestRecipient(username)}
+                  className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 transition cursor-pointer"
+                >
+                  {username} (SMTP User)
+                </button>
+              ) : null}
             </div>
 
             {/* Test Result Message */}

@@ -261,6 +261,7 @@ export interface SMTPSettings {
   port: number;
   username: string;
   password?: string;
+  has_password?: boolean;
   use_ssl: boolean;
   use_tls: boolean;
   default_from_email: string;

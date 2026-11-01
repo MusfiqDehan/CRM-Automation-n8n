@@ -460,6 +460,8 @@ class InvoiceProcessRequestSerializer(serializers.Serializer):
 class SMTPSettingsSerializer(serializers.ModelSerializer):
     """Serializer for admin to view and edit SMTP configuration."""
 
+    has_password = serializers.SerializerMethodField()
+
     class Meta:
         model = SMTPSettings
         fields = [
@@ -468,6 +470,7 @@ class SMTPSettingsSerializer(serializers.ModelSerializer):
             "port",
             "username",
             "password",
+            "has_password",
             "use_ssl",
             "use_tls",
             "default_from_email",
@@ -477,15 +480,60 @@ class SMTPSettingsSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+        extra_kwargs = {
+            "password": {"required": False, "allow_blank": True},
+            "username": {"required": False, "allow_blank": True},
+            "host": {"required": False, "allow_blank": True},
+            "default_from_email": {"required": False, "allow_blank": True},
+            "kevin_email": {"required": False, "allow_blank": True},
+        }
+
+    def get_has_password(self, obj: SMTPSettings) -> bool:
+        from django.conf import settings
+
+        return bool(obj.password or getattr(settings, "SMTP_PASSWORD", ""))
+
+    def to_representation(self, instance: SMTPSettings) -> dict:
+        from django.conf import settings
+
+        data = super().to_representation(instance)
+        # Render default credentials dynamically from env variables if blank
+        if not data.get("host"):
+            data["host"] = getattr(settings, "SMTP_HOST", "smtp.gmail.com") or "smtp.gmail.com"
+        if not data.get("port"):
+            data["port"] = int(getattr(settings, "SMTP_PORT", 465) or 465)
+        if not data.get("username"):
+            data["username"] = getattr(settings, "SMTP_USER", "") or ""
+        if not data.get("default_from_email"):
+            data["default_from_email"] = (
+                getattr(settings, "DEFAULT_FROM_EMAIL", "")
+                or f"Kevin's Construction OS <{data['username']}>" if data.get("username") else ""
+            )
+        if not data.get("kevin_email"):
+            data["kevin_email"] = getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "") or data.get("username", "")
+
+        # Never reveal the app password to frontend after render
+        data["password"] = ""
+        return data
 
     def validate_password(self, value: str) -> str:
         return (value or "").strip().replace(" ", "")
+
+    def update(self, instance: SMTPSettings, validated_data: dict) -> SMTPSettings:
+        # If password is empty or not passed, keep the existing password
+        if "password" in validated_data:
+            pw = validated_data["password"]
+            if not pw:
+                validated_data.pop("password", None)
+            else:
+                validated_data["password"] = pw.strip().replace(" ", "")
+        return super().update(instance, validated_data)
 
 
 class SMTPTestConnectionSerializer(serializers.Serializer):
     """Allows testing outbound SMTP transmission to any recipient."""
 
-    recipient = serializers.EmailField(required=False, default="musfiq.works@gmail.com")
+    recipient = serializers.EmailField(required=False, allow_blank=True, default="")
     subject = serializers.CharField(
         max_length=255,
         required=False,

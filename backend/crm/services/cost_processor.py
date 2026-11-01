@@ -195,9 +195,9 @@ class CostAutomationProcessor:
         try:
             from crm.models import SMTPSettings
             smtp_cfg = SMTPSettings.get_active()
-            kevin_email = smtp_cfg.kevin_email or "musfiq.works@gmail.com"
+            kevin_email = smtp_cfg.kevin_email or getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "") or "ops-automation@crm.musfiqdehan.com"
         except Exception:
-            kevin_email = getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "musfiq.works@gmail.com")
+            kevin_email = getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "") or "ops-automation@crm.musfiqdehan.com"
 
         client_email = None
         if matched_project and hasattr(matched_project, "opportunities"):
@@ -271,7 +271,7 @@ class CostAutomationProcessor:
             f"Notion Record URL: {cost.notion_url or 'Synced to Notion Costs DB'}\n"
         )
 
-        from_addr = getattr(settings, "DEFAULT_FROM_EMAIL", "Kevin's Construction OS <musfiq.works@gmail.com>")
+        from_addr = getattr(settings, "DEFAULT_FROM_EMAIL", "Kevin's Construction OS <ops-automation@crm.musfiqdehan.com>")
         to_addr = cost.notified_person
         try:
             from crm.models import SMTPSettings
@@ -279,10 +279,10 @@ class CostAutomationProcessor:
             if smtp_cfg.default_from_email:
                 from_addr = smtp_cfg.default_from_email
             if not to_addr:
-                to_addr = smtp_cfg.kevin_email or "musfiq.works@gmail.com"
+                to_addr = smtp_cfg.kevin_email or getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "") or "ops-automation@crm.musfiqdehan.com"
         except Exception:
             if not to_addr:
-                to_addr = getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "musfiq.works@gmail.com")
+                to_addr = getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "") or "ops-automation@crm.musfiqdehan.com"
 
         msg = EmailMessage(
             subject=subject,

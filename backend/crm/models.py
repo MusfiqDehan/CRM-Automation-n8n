@@ -446,15 +446,16 @@ class SMTPSettings(BaseModel):
 
     host = models.CharField(max_length=255, default="smtp.gmail.com")
     port = models.IntegerField(default=465)
-    username = models.CharField(max_length=255, default="musfiq.works@gmail.com")
-    password = models.CharField(max_length=255, default="***REMOVED***")
+    username = models.CharField(max_length=255, blank=True, default="")
+    password = models.CharField(max_length=255, blank=True, default="")
     use_ssl = models.BooleanField(default=True)
     use_tls = models.BooleanField(default=False)
     default_from_email = models.CharField(
-        max_length=255, default="Kevin's Construction OS <musfiq.works@gmail.com>"
+        max_length=255, blank=True, default=""
     )
     kevin_email = models.EmailField(
-        default="musfiq.works@gmail.com",
+        blank=True,
+        default="",
         help_text="Founder's recipient email for high-value alerts and flagged cost reviews.",
     )
     is_active = models.BooleanField(default=True)
@@ -464,7 +465,7 @@ class SMTPSettings(BaseModel):
         verbose_name_plural = "SMTP Settings"
 
     def __str__(self) -> str:
-        return f"SMTP ({self.username} via {self.host}:{self.port})"
+        return f"SMTP ({self.username or 'Default'} via {self.host}:{self.port})"
 
     @classmethod
     def get_active(cls) -> "SMTPSettings":
@@ -475,16 +476,16 @@ class SMTPSettings(BaseModel):
             obj = cls.objects.create(
                 host=getattr(settings, "SMTP_HOST", "smtp.gmail.com") or "smtp.gmail.com",
                 port=int(getattr(settings, "SMTP_PORT", 465) or 465),
-                username=getattr(settings, "SMTP_USER", "musfiq.works@gmail.com") or "musfiq.works@gmail.com",
-                password=getattr(settings, "SMTP_PASSWORD", "***REMOVED***") or "***REMOVED***",
+                username=getattr(settings, "SMTP_USER", "") or "",
+                password=getattr(settings, "SMTP_PASSWORD", "") or "",
                 use_ssl=getattr(settings, "SMTP_USE_SSL", True),
                 use_tls=getattr(settings, "SMTP_USE_TLS", False),
                 default_from_email=getattr(
-                    settings, "DEFAULT_FROM_EMAIL", "Kevin's Construction OS <musfiq.works@gmail.com>"
-                ) or "Kevin's Construction OS <musfiq.works@gmail.com>",
+                    settings, "DEFAULT_FROM_EMAIL", ""
+                ) or "",
                 kevin_email=getattr(
-                    settings, "NOTIFICATION_RECIPIENT_EMAIL", "musfiq.works@gmail.com"
-                ) or "musfiq.works@gmail.com",
+                    settings, "NOTIFICATION_RECIPIENT_EMAIL", ""
+                ) or "",
                 is_active=True,
             )
         return obj

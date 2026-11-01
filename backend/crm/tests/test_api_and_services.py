@@ -336,19 +336,23 @@ def test_smtp_settings_and_client_email_triggers(api_client: APIClient, seeded_d
     data = get_res.json()["data"]
     assert data["host"] == "smtp.gmail.com"
     assert data["port"] == 465
-    assert data["username"] == "musfiq.works@gmail.com"
+    assert data["password"] == ""
 
     # 2. UPDATE SMTP settings
     update_res = api_client.post(
         "/api/v1/settings/smtp/",
         {
+            "username": "musfiq.works@gmail.com",
+            "password": "testapppassword1",
             "default_from_email": "Kevin's Construction OS <musfiq.works@gmail.com>",
             "kevin_email": "musfiq.works@gmail.com",
         },
         format="json",
     )
     assert update_res.status_code == 200
-    assert update_res.json()["data"]["kevin_email"] == "musfiq.works@gmail.com"
+    assert update_res.json()["data"]["username"] == "musfiq.works@gmail.com"
+    assert update_res.json()["data"]["password"] == ""
+    assert update_res.json()["data"]["has_password"] is True
 
     # 3. Test SMTP live verification trigger
     test_res = api_client.post(

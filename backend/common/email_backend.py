@@ -30,21 +30,22 @@ class AuditedEmailBackend(BaseEmailBackend):
         except Exception:
             smtp_cfg = None
 
-        host = smtp_cfg.host if smtp_cfg else getattr(settings, "SMTP_HOST", "")
-        port = int(smtp_cfg.port if smtp_cfg else getattr(settings, "SMTP_PORT", 465))
-        user = smtp_cfg.username if smtp_cfg else getattr(settings, "SMTP_USER", "")
-        raw_pw = smtp_cfg.password if smtp_cfg else getattr(settings, "SMTP_PASSWORD", "")
+        host = (smtp_cfg.host if smtp_cfg and smtp_cfg.host else getattr(settings, "SMTP_HOST", "")) or "smtp.gmail.com"
+        port = int(smtp_cfg.port if smtp_cfg and smtp_cfg.port else getattr(settings, "SMTP_PORT", 465))
+        user = (smtp_cfg.username if smtp_cfg and smtp_cfg.username else getattr(settings, "SMTP_USER", ""))
+        raw_pw = (smtp_cfg.password if smtp_cfg and smtp_cfg.password else getattr(settings, "SMTP_PASSWORD", ""))
         pw = (raw_pw or "").replace(" ", "")
-        use_ssl = bool(smtp_cfg.use_ssl if smtp_cfg else getattr(settings, "SMTP_USE_SSL", True))
-        use_tls = bool(smtp_cfg.use_tls if smtp_cfg else getattr(settings, "SMTP_USE_TLS", False))
+        use_ssl = bool(smtp_cfg.use_ssl if smtp_cfg and smtp_cfg.use_ssl is not None else getattr(settings, "SMTP_USE_SSL", True))
+        use_tls = bool(smtp_cfg.use_tls if smtp_cfg and smtp_cfg.use_tls is not None else getattr(settings, "SMTP_USE_TLS", False))
         default_from = (
-            (smtp_cfg.default_from_email if smtp_cfg else getattr(settings, "DEFAULT_FROM_EMAIL", ""))
+            (smtp_cfg.default_from_email if smtp_cfg and smtp_cfg.default_from_email else getattr(settings, "DEFAULT_FROM_EMAIL", ""))
             or user
-            or "ops-automation@kevinconstruction.com"
+            or "ops-automation@crm.musfiqdehan.com"
         )
         fallback_to = (
-            (smtp_cfg.kevin_email if smtp_cfg else getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", ""))
-            or "musfiq.works@gmail.com"
+            (smtp_cfg.kevin_email if smtp_cfg and smtp_cfg.kevin_email else getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", ""))
+            or user
+            or "ops-automation@crm.musfiqdehan.com"
         )
 
         if host and user and pw:

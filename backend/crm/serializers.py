@@ -475,6 +475,28 @@ class InvoiceProcessRequestSerializer(serializers.Serializer):
                 data["payment_status"] = "Unpaid"
             if data.get("amount") is None:
                 data["amount"] = "0.00"
+
+            import re
+            from datetime import datetime
+            def _clean_date(val):
+                if not val:
+                    return None
+                val_s = str(val).strip()
+                if not val_s:
+                    return None
+                m = re.search(r'(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})', val_s)
+                if m:
+                    return f"{int(m.group(1)):04d}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
+                for fmt in ('%Y-%m-%d', '%B %d, %Y', '%b %d, %Y', '%m/%d/%Y', '%d/%m/%Y'):
+                    try:
+                        return datetime.strptime(val_s, fmt).date().isoformat()
+                    except Exception:
+                        pass
+                return None
+
+            data["invoice_date"] = _clean_date(data.get("invoice_date"))
+            data["payment_due_date"] = _clean_date(data.get("payment_due_date"))
+
         return super().to_internal_value(data)
 
 

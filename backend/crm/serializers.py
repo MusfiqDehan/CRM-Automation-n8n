@@ -452,10 +452,10 @@ class InvoiceProcessRequestSerializer(serializers.Serializer):
         max_digits=12, decimal_places=2, required=False, allow_null=True, default=None
     )
     currency = serializers.ChoiceField(
-        choices=["USD", "CAD", "EUR", "GBP"], default="USD", required=False
+        choices=["USD", "CAD", "EUR", "GBP"], default="USD", required=False, allow_null=True
     )
     payment_status = serializers.ChoiceField(
-        choices=["Paid", "Unpaid", "Partially Paid"], default="Unpaid", required=False
+        choices=["Paid", "Unpaid", "Partially Paid"], default="Unpaid", required=False, allow_null=True
     )
     payment_due_date = serializers.DateField(required=False, allow_null=True, default=None)
     supporting_document_url = serializers.URLField(required=False, allow_blank=True, default="")
@@ -469,6 +469,12 @@ class InvoiceProcessRequestSerializer(serializers.Serializer):
                 data["supplier"] = "Unknown Supplier / Subcontractor"
             if not data.get("title"):
                 data["title"] = "Construction Cost / Invoice"
+            if not data.get("currency"):
+                data["currency"] = "USD"
+            if not data.get("payment_status"):
+                data["payment_status"] = "Unpaid"
+            if data.get("amount") is None:
+                data["amount"] = "0.00"
         return super().to_internal_value(data)
 
 

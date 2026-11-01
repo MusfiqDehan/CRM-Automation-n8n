@@ -13,6 +13,8 @@ services:
     image: postgres:18-alpine
     container_name: crm_prod_db
     restart: always
+    mem_limit: 512m
+    cpus: 1.0
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-kevin_construction_os_prod}
       POSTGRES_USER: ${POSTGRES_USER:-kevin_os_user}
@@ -40,6 +42,8 @@ services:
       dockerfile: Dockerfile.prod
     container_name: crm_prod_backend
     restart: always
+    mem_limit: 768m
+    cpus: 1.5
     env_file:
       - .env.prod
     environment:
@@ -59,10 +63,10 @@ services:
     command: >
       sh -c "/app/.venv/bin/python manage.py migrate --noinput &&
              /app/.venv/bin/python manage.py collectstatic --noinput &&
-             exec /app/.venv/bin/gunicorn config.wsgi:application --bind 0.0.0.0:8017 --workers 3 --timeout 120 --access-logfile - --error-logfile -"
+             exec /app/.venv/bin/gunicorn config.wsgi:application --bind 0.0.0.0:8017 --workers 2 --threads 2 --max-requests 1000 --max-requests-jitter 100 --timeout 120 --access-logfile - --error-logfile -"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8017/api/v1/health/ || exit 1"]
-      interval: 15s
+      interval: 30s
       timeout: 5s
       start_period: 60s
       retries: 5
@@ -89,6 +93,8 @@ services:
     image: n8nio/n8n:latest
     container_name: crm_prod_n8n
     restart: always
+    mem_limit: 768m
+    cpus: 1.0
     env_file:
       - .env.prod
     environment:
@@ -105,6 +111,9 @@ services:
       - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
       - EXECUTIONS_DATA_SAVE_ON_ERROR=all
       - EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS=true
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
+      - EXECUTIONS_DATA_PRUNE_MAX_COUNT=5000
     volumes:
       - crm_prod_n8n_data:/home/node/.n8n
       - ./n8n/workflows:/workflows:ro
@@ -148,6 +157,8 @@ services:
         NEXT_PUBLIC_NOTION_HUB_URL: ${NEXT_PUBLIC_NOTION_HUB_URL:-https://app.notion.com/p/Kevin-s-Construction-OS-Production-40a8194ec3e881e08797e4c0d8bc6c4e}
     container_name: crm_prod_frontend
     restart: always
+    mem_limit: 512m
+    cpus: 1.0
     env_file:
       - .env.prod
     environment:

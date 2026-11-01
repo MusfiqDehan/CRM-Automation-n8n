@@ -1557,8 +1557,8 @@ export function AdminDashboard() {
                       </button>
                     </div>
 
-                    {/* 5 One-Click Scenario Buttons */}
-                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
+                    {/* One-Click Scenario Buttons */}
+                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-6">
                       {[
                         {
                           key: "1_unpaid_invoice",
@@ -1584,6 +1584,11 @@ export function AdminDashboard() {
                           key: "5_flagged_clarification",
                           title: "5. Ambiguous Invoice",
                           desc: "Missing job code -> Flags for review",
+                        },
+                        {
+                          key: "6_field_employee_asif",
+                          title: "6. Asif -> Kevin",
+                          desc: "Asif • $27.5k Framing • musfiq.works+pc1",
                         },
                       ].map((sc) => (
                         <button

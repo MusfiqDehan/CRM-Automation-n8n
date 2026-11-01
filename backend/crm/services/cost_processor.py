@@ -219,9 +219,12 @@ class CostAutomationProcessor:
                 client_email = first_opp.contact.email
 
         notified_recipient = (
-            kevin_email
-            if needs_flag
-            else (client_email or "musfiq.works+client1@gmail.com")
+            payload.get("notified_person")
+            or (
+                kevin_email
+                if needs_flag
+                else (client_email or kevin_email or "musfiq.works+kevin@gmail.com")
+            )
         )
 
         new_cost = ProjectCost.objects.create(

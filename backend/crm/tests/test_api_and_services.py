@@ -262,6 +262,7 @@ def test_simulator_all_5_scenarios(api_client: APIClient, seeded_db, monkeypatch
         ("3_duplicate_submission", "duplicate_skipped"),
         ("4_status_update_paid", "updated_existing"),
         ("5_flagged_clarification", "created_new"),
+        ("6_field_employee_asif", "created_new"),
     ]
     for scenario_key, expected_action in expected_actions:
         resp = api_client.post(

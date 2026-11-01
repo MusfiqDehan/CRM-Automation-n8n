@@ -666,6 +666,20 @@ class AutomationSimulatorAPIView(APIView):
             "days_until_due": 7,
             "description": "Emergency saturday concrete boom pump service (No valid PRJ code on ticket)",
         },
+        "6_field_employee_asif": {
+            "label": "Scenario 6: Field Employee Asif Subcontractor Invoice (Potential Client)",
+            "email_sender": "musfiq.works+asif@gmail.com",
+            "email_subject": "Invoice INV-2026-ASIF-001 — Framing Rough-In for PRJ-101 (Client: musfiq.works+pc1@gmail.com)",
+            "supplier": "Pacific Crest Framing & Steel",
+            "document_reference": "INV-2026-ASIF-001",
+            "project_reference": "PRJ-101 Oakridge Estate (Client: musfiq.works+pc1@gmail.com)",
+            "amount": "27500.00",
+            "currency": "USD",
+            "payment_status": "Unpaid",
+            "days_until_due": 14,
+            "description": "Framing rough-in labor and materials submitted by field employee Asif",
+            "notified_person": "musfiq.works+kevin@gmail.com",
+        },
     }
 
     def post(self, request):
@@ -674,7 +688,7 @@ class AutomationSimulatorAPIView(APIView):
 
         if scenario_key == "custom" and isinstance(custom_payload, dict):
             spec = {
-                "label": "Custom Vendor Invoice Submission",
+                "label": custom_payload.get("label", "Custom Vendor Invoice Submission"),
                 "email_sender": custom_payload.get("email_sender", "vendor@subcontractor.com"),
                 "email_subject": custom_payload.get(
                     "email_subject",
@@ -688,6 +702,7 @@ class AutomationSimulatorAPIView(APIView):
                 "payment_status": custom_payload.get("payment_status", "Unpaid"),
                 "days_until_due": int(custom_payload.get("days_until_due", 14)),
                 "description": custom_payload.get("description", "Custom construction cost submission"),
+                "notified_person": custom_payload.get("notified_person", "musfiq.works+kevin@gmail.com"),
             }
         else:
             if scenario_key not in self.SCENARIOS:
@@ -767,6 +782,8 @@ class AutomationSimulatorAPIView(APIView):
             email_body=inbound_log.body_preview,
             attachment_base64=pdf_b64,
         )
+        if spec.get("notified_person"):
+            extracted["notified_person"] = spec["notified_person"]
 
         if n8n_triggered and n8n_result_data:
             cost_dict = n8n_result_data["cost"]

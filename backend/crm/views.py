@@ -1201,3 +1201,615 @@ class ClientEmailTriggerAPIView(APIView):
             message=f"Client automation email ({email_type}) sent to {client_email} via {cfg.host}:{cfg.port}.",
             success=True,
         )
+
+
+# ==============================================================================
+# 16. Authentication & Dynamic OAuth Configuration Endpoints
+# ==============================================================================
+from django.contrib.auth import authenticate, get_user_model
+from common.tenancy import Organization, OrganizationMember, PlatformSettings, Invitation
+from common.permissions import IsPlatformSuperAdmin, IsOrganizationOwnerOrAdmin, FeatureFlagPermission
+from crm.services.auth_service import JWTService, GoogleOAuthService
+from crm.services.traefik_sync import sync_traefik_custom_domains
+from crm.serializers import (
+    PlatformSettingsSerializer,
+    OrganizationSerializer,
+    OrganizationMemberSerializer,
+    InvitationSerializer,
+    GoogleAuthRequestSerializer,
+    LoginRequestSerializer,
+)
+
+User = get_user_model()
+
+
+class OAuthPublicConfigAPIView(APIView):
+    """
+    Returns public branding and dynamically resolved Google OAuth Client ID for the active tenant.
+    If the active tenant has enabled its own custom Google OAuth, returns the client's OAuth Client ID.
+    Otherwise, returns the platform superadmin's global Google OAuth Client ID.
+    """
+
+    def get(self, request, *args, **kwargs):
+        tenant = getattr(request, "tenant", None)
+        creds = GoogleOAuthService.resolve_credentials(tenant)
+        platform = PlatformSettings.get_settings()
+
+        tenant_data = None
+        if tenant:
+            tenant_data = {
+                "id": str(tenant.id),
+                "name": tenant.name,
+                "slug": tenant.slug,
+                "subdomain_host": tenant.subdomain_host,
+                "custom_domain": tenant.custom_domain,
+                "custom_domain_verified": tenant.custom_domain_verified,
+                "is_active": tenant.is_active,
+                "currency": tenant.currency,
+                "feature_flags": tenant.get_feature_flags(),
+                "logo_url": tenant.logo_url,
+                "primary_color": tenant.primary_color,
+            }
+
+        return api_response(
+            data={
+                "platform_name": platform.platform_name,
+                "base_domain": platform.base_domain,
+                "tenant": tenant_data,
+                "google_oauth": {
+                    "enabled": bool(creds.get("client_id")),
+                    "client_id": creds.get("client_id", ""),
+                    "source": creds.get("source", "platform"),
+                    "brand_name": creds.get("organization_name") or platform.platform_name,
+                },
+            },
+            message="Dynamic OAuth configuration retrieved successfully.",
+            success=True,
+        )
+
+
+class LoginAPIView(APIView):
+    """
+    Authenticates user via email/username and password.
+    Returns HS256 JWT access and refresh tokens embedding user and tenant role.
+    """
+
+    def post(self, request, *args, **kwargs):
+        serializer = LoginRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        login_id = serializer.validated_data["username_or_email"].strip()
+        password = serializer.validated_data["password"]
+
+        user = User.objects.filter(email__iexact=login_id).first() or User.objects.filter(username__iexact=login_id).first()
+        if not user or not user.check_password(password):
+            return api_response(
+                message="Invalid email/username or password.",
+                success=False,
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if not user.is_active:
+            return api_response(
+                message="User account is deactivated.",
+                success=False,
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+
+        tenant = getattr(request, "tenant", None)
+        role = "Client"
+        if user.is_superuser:
+            role = "Superadmin"
+        elif tenant:
+            membership = OrganizationMember.objects.filter(organization=tenant, user=user, is_active=True).first()
+            if membership:
+                role = membership.role
+
+        tokens = JWTService.generate_token_pair(user, tenant, role=role)
+        return api_response(
+            data={
+                "tokens": tokens,
+                "user": {
+                    "id": str(user.id),
+                    "username": user.username,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "is_superuser": bool(user.is_superuser),
+                },
+                "organization": {
+                    "id": str(tenant.id) if tenant else None,
+                    "name": tenant.name if tenant else None,
+                    "slug": tenant.slug if tenant else None,
+                } if tenant else None,
+                "role": role,
+            },
+            message="Login successful.",
+            success=True,
+        )
+
+
+class GoogleOAuthAPIView(APIView):
+    """
+    Verifies Google ID token against active tenant's or platform's credentials.
+    Supports invitation acceptance linking and automatic user provisioning.
+    """
+
+    def post(self, request, *args, **kwargs):
+        serializer = GoogleAuthRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        id_token = serializer.validated_data["id_token"]
+        invitation_token = serializer.validated_data.get("invitation_token", "").strip()
+
+        tenant = getattr(request, "tenant", None)
+        try:
+            google_profile = GoogleOAuthService.verify_token(id_token, organization=tenant)
+        except Exception as exc:
+            return api_response(
+                message=str(exc),
+                success=False,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        email = google_profile["email"].lower()
+        user = User.objects.filter(email__iexact=email).first()
+        if not user:
+            base_username = email.split("@")[0].replace("+", "_")
+            candidate = base_username
+            idx = 1
+            while User.objects.filter(username=candidate).exists():
+                candidate = f"{base_username}_{idx}"
+                idx += 1
+            name_parts = google_profile.get("name", "").split(" ", 1)
+            first_name = name_parts[0] if name_parts else ""
+            last_name = name_parts[1] if len(name_parts) > 1 else ""
+            user = User.objects.create_user(
+                username=candidate,
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+            )
+
+        role = "Client"
+        if user.is_superuser:
+            role = "Superadmin"
+
+        # Handle invitation token if provided
+        if invitation_token:
+            invitation = Invitation.objects.filter(token=invitation_token, status=Invitation.Status.PENDING).first()
+            if invitation and not invitation.is_expired:
+                invitation.status = Invitation.Status.ACCEPTED
+                invitation.save()
+                if invitation.organization:
+                    tenant = invitation.organization
+                    role = invitation.role
+                    OrganizationMember.objects.update_or_create(
+                        organization=tenant,
+                        user=user,
+                        defaults={"role": role, "is_active": True},
+                    )
+
+        if not user.is_superuser and tenant:
+            membership = OrganizationMember.objects.filter(organization=tenant, user=user, is_active=True).first()
+            if membership:
+                role = membership.role
+            else:
+                # If tenant has no members yet, make first user Owner
+                if not OrganizationMember.objects.filter(organization=tenant).exists():
+                    role = OrganizationMember.Role.OWNER
+                    OrganizationMember.objects.create(organization=tenant, user=user, role=role, is_active=True)
+
+        tokens = JWTService.generate_token_pair(user, tenant, role=role)
+        return api_response(
+            data={
+                "tokens": tokens,
+                "user": {
+                    "id": str(user.id),
+                    "username": user.username,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "is_superuser": bool(user.is_superuser),
+                },
+                "organization": {
+                    "id": str(tenant.id) if tenant else None,
+                    "name": tenant.name if tenant else None,
+                    "slug": tenant.slug if tenant else None,
+                } if tenant else None,
+                "role": role,
+            },
+            message=f"Google authentication successful as {email}.",
+            success=True,
+        )
+
+
+class MeAPIView(APIView):
+    """Returns profile of currently authenticated user, active tenant memberships, and feature flags."""
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return api_response(
+                data={"is_authenticated": False},
+                message="Unauthenticated.",
+                success=True,
+            )
+
+        tenant = getattr(request, "tenant", None)
+        memberships = OrganizationMember.objects.filter(user=user, is_active=True).select_related("organization")
+        active_role = "Client"
+        if user.is_superuser:
+            active_role = "Superadmin"
+        elif tenant:
+            m = memberships.filter(organization=tenant).first()
+            if m:
+                active_role = m.role
+
+        org_list = [
+            {
+                "id": str(m.organization.id),
+                "name": m.organization.name,
+                "slug": m.organization.slug,
+                "subdomain_host": m.organization.subdomain_host,
+                "custom_domain": m.organization.custom_domain,
+                "role": m.role,
+                "is_active": m.organization.is_active,
+            }
+            for m in memberships
+        ]
+
+        return api_response(
+            data={
+                "is_authenticated": True,
+                "user": {
+                    "id": str(user.id),
+                    "username": user.username,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "is_superuser": bool(user.is_superuser),
+                },
+                "active_organization": {
+                    "id": str(tenant.id) if tenant else None,
+                    "name": tenant.name if tenant else None,
+                    "slug": tenant.slug if tenant else None,
+                    "subdomain_host": tenant.subdomain_host if tenant else None,
+                    "custom_domain": tenant.custom_domain if tenant else None,
+                    "currency": tenant.currency if tenant else "USD",
+                    "feature_flags": tenant.get_feature_flags() if tenant else {},
+                    "is_active": tenant.is_active if tenant else True,
+                } if tenant else None,
+                "active_role": active_role,
+                "organizations": org_list,
+            },
+            message="Current user profile retrieved successfully.",
+            success=True,
+        )
+
+
+# ==============================================================================
+# 17. Platform Superadmin Control Plane (APIViews)
+# ==============================================================================
+class PlatformSettingsAPIView(APIView):
+    """
+    Platform Superadmin endpoint to view and update platform Google OAuth and global settings.
+    """
+
+    permission_classes = [IsPlatformSuperAdmin]
+
+    def get(self, request, *args, **kwargs):
+        platform = PlatformSettings.get_settings()
+        serializer = PlatformSettingsSerializer(platform)
+        return api_response(
+            data=serializer.data,
+            message="Platform settings retrieved successfully.",
+            success=True,
+        )
+
+    def patch(self, request, *args, **kwargs):
+        platform = PlatformSettings.get_settings()
+        serializer = PlatformSettingsSerializer(platform, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return api_response(
+            data=serializer.data,
+            message="Platform settings updated successfully.",
+            success=True,
+        )
+
+
+class SuperadminOrganizationListCreateAPIView(APIView):
+    """
+    Platform Superadmin directory of all client organizations.
+    Allows listing all tenants and provisioning new client tenants.
+    """
+
+    permission_classes = [IsPlatformSuperAdmin]
+
+    def get(self, request, *args, **kwargs):
+        orgs = Organization.objects.all().order_by("-created_at")
+        serializer = OrganizationSerializer(orgs, many=True)
+        return api_response(
+            data={"results": serializer.data, "count": orgs.count()},
+            message="All client organizations retrieved successfully.",
+            success=True,
+        )
+
+    def post(self, request, *args, **kwargs):
+        serializer = OrganizationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        org = serializer.save()
+        sync_traefik_custom_domains()
+        return api_response(
+            data=OrganizationSerializer(org).data,
+            message=f"Client organization '{org.name}' provisioned successfully.",
+            success=True,
+            status_code=status.HTTP_201_CREATED,
+        )
+
+
+class SuperadminOrganizationDetailAPIView(APIView):
+    """
+    Platform Superadmin control to:
+    - Enable / Disable any client (is_active)
+    - Enable / Disable any page, feature, or sub-feature (feature_flags)
+    - Update domain or dynamic review thresholds
+    """
+
+    permission_classes = [IsPlatformSuperAdmin]
+
+    def get(self, request, pk: str, *args, **kwargs):
+        org = Organization.objects.filter(id=pk).first()
+        if not org:
+            return api_response(message="Organization not found.", success=False, status_code=status.HTTP_404_NOT_FOUND)
+        return api_response(data=OrganizationSerializer(org).data, success=True)
+
+    def patch(self, request, pk: str, *args, **kwargs):
+        org = Organization.objects.filter(id=pk).first()
+        if not org:
+            return api_response(message="Organization not found.", success=False, status_code=status.HTTP_404_NOT_FOUND)
+
+        # Handle nested feature_flags partial patch merge
+        data = request.data.copy()
+        if "feature_flags" in data and isinstance(data["feature_flags"], dict):
+            current_flags = org.get_feature_flags()
+            current_flags.update(data["feature_flags"])
+            data["feature_flags"] = current_flags
+
+        serializer = OrganizationSerializer(org, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        updated_org = serializer.save()
+        return api_response(
+            data=OrganizationSerializer(updated_org).data,
+            message=f"Organization '{updated_org.name}' updated successfully.",
+            success=True,
+        )
+
+    def delete(self, request, pk: str, *args, **kwargs):
+        org = Organization.objects.filter(id=pk).first()
+        if not org:
+            return api_response(message="Organization not found.", success=False, status_code=status.HTTP_404_NOT_FOUND)
+        name = org.name
+        org.delete()
+        sync_traefik_custom_domains()
+        return api_response(message=f"Organization '{name}' deleted successfully.", success=True)
+
+
+class SuperadminInvitationAPIView(APIView):
+    """
+    Superadmin invites a new Client Owner to onboard their organization.
+    """
+
+    permission_classes = [IsPlatformSuperAdmin]
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get("email", "").strip().lower()
+        invited_name = request.data.get("invited_name", "").strip()
+        org_name = request.data.get("organization_name", "").strip()
+        org_slug = request.data.get("organization_slug", "").strip().lower()
+
+        if not email:
+            return api_response(message="Email is required.", success=False, status_code=status.HTTP_400_BAD_REQUEST)
+        if not org_slug:
+            org_slug = email.split("@")[0].replace(".", "-")
+
+        # Provision organization if not already exists
+        org = Organization.objects.filter(slug=org_slug).first()
+        if not org:
+            org = Organization.objects.create(
+                name=org_name or f"{invited_name or org_slug.title()}'s Organization",
+                slug=org_slug,
+                is_active=True,
+            )
+
+        token = Invitation.generate_token()
+        invitation = Invitation.objects.create(
+            invitation_type=Invitation.InvitationType.CLIENT_ONBOARDING,
+            email=email,
+            invited_name=invited_name,
+            organization=org,
+            role=OrganizationMember.Role.OWNER,
+            token=token,
+            invited_by=request.user,
+            expires_at=timezone.now() + timedelta(days=14),
+        )
+
+        invite_url = f"https://{org.subdomain_host}/invite?token={token}"
+        return api_response(
+            data={
+                "invitation": InvitationSerializer(invitation).data,
+                "invite_url": invite_url,
+            },
+            message=f"Client onboarding invitation generated for {email}.",
+            success=True,
+            status_code=status.HTTP_201_CREATED,
+        )
+
+
+# ==============================================================================
+# 18. Client Tenant Settings & Team Member Management (APIViews)
+# ==============================================================================
+class TenantSettingsAPIView(APIView):
+    """
+    Client Owner/Admin updates their organization's custom domain, review thresholds,
+    and client Google OAuth Client ID & Secret.
+    """
+
+    permission_classes = [IsOrganizationOwnerOrAdmin]
+
+    def get(self, request, *args, **kwargs):
+        tenant = request.tenant
+        if not tenant:
+            return api_response(message="No active organization tenant.", success=False, status_code=status.HTTP_400_BAD_REQUEST)
+        serializer = OrganizationSerializer(tenant)
+        return api_response(data=serializer.data, success=True)
+
+    def patch(self, request, *args, **kwargs):
+        tenant = request.tenant
+        if not tenant:
+            return api_response(message="No active organization tenant.", success=False, status_code=status.HTTP_400_BAD_REQUEST)
+
+        # Allow updating custom domain, thresholds, client google oauth, currency, logo
+        allowed_fields = [
+            "name",
+            "custom_domain",
+            "deal_review_threshold",
+            "invoice_review_threshold",
+            "executive_recipient_email",
+            "use_custom_google_oauth",
+            "google_oauth_client_id",
+            "google_oauth_client_secret",
+            "currency",
+            "logo_url",
+            "primary_color",
+        ]
+        patch_data = {k: v for k, v in request.data.items() if k in allowed_fields}
+        serializer = OrganizationSerializer(tenant, data=patch_data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        updated = serializer.save()
+        return api_response(
+            data=OrganizationSerializer(updated).data,
+            message="Client organization settings updated successfully.",
+            success=True,
+        )
+
+
+class TenantMemberListCreateAPIView(APIView):
+    """
+    Lists active members of the tenant or invites a new member.
+    """
+
+    permission_classes = [IsOrganizationOwnerOrAdmin]
+
+    def get(self, request, *args, **kwargs):
+        tenant = request.tenant
+        members = OrganizationMember.objects.filter(organization=tenant).select_related("user")
+        serializer = OrganizationMemberSerializer(members, many=True)
+        return api_response(data={"results": serializer.data, "count": members.count()}, success=True)
+
+    def post(self, request, *args, **kwargs):
+        tenant = request.tenant
+        email = request.data.get("email", "").strip().lower()
+        role = request.data.get("role", OrganizationMember.Role.PM)
+        invited_name = request.data.get("invited_name", "").strip()
+
+        if not email:
+            return api_response(message="Email is required.", success=False, status_code=status.HTTP_400_BAD_REQUEST)
+
+        token = Invitation.generate_token()
+        invitation = Invitation.objects.create(
+            invitation_type=Invitation.InvitationType.TEAM_MEMBER,
+            email=email,
+            invited_name=invited_name,
+            organization=tenant,
+            role=role,
+            token=token,
+            invited_by=request.user,
+            expires_at=timezone.now() + timedelta(days=7),
+        )
+        return api_response(
+            data=InvitationSerializer(invitation).data,
+            message=f"Team member invitation sent to {email}.",
+            success=True,
+            status_code=status.HTTP_201_CREATED,
+        )
+
+
+class AcceptInvitationAPIView(APIView):
+    """
+    Public endpoint to view invitation details and accept an invitation.
+    """
+
+    def get(self, request, *args, **kwargs):
+        token = request.GET.get("token", "").strip()
+        if not token:
+            return api_response(message="Token is required.", success=False, status_code=status.HTTP_400_BAD_REQUEST)
+
+        invitation = Invitation.objects.filter(token=token).first()
+        if not invitation:
+            return api_response(message="Invitation not found.", success=False, status_code=status.HTTP_404_NOT_FOUND)
+
+        if invitation.status != Invitation.Status.PENDING:
+            return api_response(message=f"Invitation has already been {invitation.status.lower()}.", success=False, status_code=status.HTTP_400_BAD_REQUEST)
+
+        if invitation.is_expired:
+            invitation.status = Invitation.Status.EXPIRED
+            invitation.save()
+            return api_response(message="Invitation has expired.", success=False, status_code=status.HTTP_400_BAD_REQUEST)
+
+        return api_response(
+            data=InvitationSerializer(invitation).data,
+            message="Invitation is valid.",
+            success=True,
+        )
+
+    def post(self, request, *args, **kwargs):
+        token = request.data.get("token", "").strip()
+        password = request.data.get("password", "")
+        username = request.data.get("username", "")
+
+        invitation = Invitation.objects.filter(token=token, status=Invitation.Status.PENDING).first()
+        if not invitation or invitation.is_expired:
+            return api_response(message="Invalid or expired invitation token.", success=False, status_code=status.HTTP_400_BAD_REQUEST)
+
+        email = invitation.email.lower()
+        user = User.objects.filter(email__iexact=email).first()
+        if not user:
+            uname = username or email.split("@")[0]
+            if User.objects.filter(username=uname).exists():
+                uname = f"{uname}_{secrets.token_hex(2)}"
+            user = User.objects.create_user(username=uname, email=email, password=password or secrets.token_urlsafe(16))
+        elif password:
+            user.set_password(password)
+            user.save()
+
+        # Link user to organization
+        if invitation.organization:
+            OrganizationMember.objects.update_or_create(
+                organization=invitation.organization,
+                user=user,
+                defaults={"role": invitation.role, "is_active": True},
+            )
+
+        invitation.status = Invitation.Status.ACCEPTED
+        invitation.save()
+
+        tokens = JWTService.generate_token_pair(user, invitation.organization, role=invitation.role)
+        return api_response(
+            data={
+                "tokens": tokens,
+                "user": {
+                    "id": str(user.id),
+                    "username": user.username,
+                    "email": user.email,
+                },
+                "organization": {
+                    "id": str(invitation.organization.id) if invitation.organization else None,
+                    "slug": invitation.organization.slug if invitation.organization else None,
+                    "name": invitation.organization.name if invitation.organization else None,
+                } if invitation.organization else None,
+                "role": invitation.role,
+            },
+            message="Invitation accepted successfully.",
+            success=True,
+        )
+

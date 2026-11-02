@@ -200,6 +200,22 @@ class Opportunity(BaseModel):
     next_follow_up_date = models.DateField(null=True, blank=True, db_index=True)
     qualification_notes = models.TextField(blank=True, default="")
 
+    @property
+    def requires_executive_review(self) -> bool:
+        return self.requires_kevin_review
+
+    @requires_executive_review.setter
+    def requires_executive_review(self, value: bool) -> None:
+        self.requires_kevin_review = value
+
+    @property
+    def executive_review_notes(self) -> str:
+        return self.kevin_review_notes
+
+    @executive_review_notes.setter
+    def executive_review_notes(self, value: str) -> None:
+        self.kevin_review_notes = value
+
     def __str__(self) -> str:
         return f"{self.name} [{self.stage}]"
 
@@ -468,12 +484,19 @@ class SMTPSettings(BaseModel):
         return f"SMTP ({self.username or 'Default'} via {self.host}:{self.port})"
 
     @classmethod
-    def get_active(cls) -> "SMTPSettings":
+    def get_active(cls, organization=None) -> "SMTPSettings":
         from django.conf import settings
+        from common.middleware import get_current_tenant
 
-        obj = cls.objects.filter(is_active=True).first()
+        org = organization or get_current_tenant()
+        qs = cls.objects.filter(is_active=True)
+        if org:
+            obj = qs.filter(organization=org).first()
+        else:
+            obj = qs.first()
         if not obj:
             obj = cls.objects.create(
+                organization=org,
                 host=getattr(settings, "SMTP_HOST", "smtp.gmail.com") or "smtp.gmail.com",
                 port=int(getattr(settings, "SMTP_PORT", 465) or 465),
                 username=getattr(settings, "SMTP_USER", "") or "",
@@ -485,7 +508,7 @@ class SMTPSettings(BaseModel):
                 ) or "",
                 kevin_email=getattr(
                     settings, "NOTIFICATION_RECIPIENT_EMAIL", ""
-                ) or "",
+                ) or (org.executive_recipient_email if org else ""),
                 is_active=True,
             )
         return obj

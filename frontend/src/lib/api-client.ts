@@ -70,15 +70,65 @@ export class ApiClient {
     return url.toString();
   }
 
+  public setAuthToken(token: string | null) {
+    if (typeof window !== "undefined") {
+      if (token) {
+        localStorage.setItem("beamline_access_token", token);
+      } else {
+        localStorage.removeItem("beamline_access_token");
+      }
+    }
+  }
+
+  public getAuthToken(): string | null {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("beamline_access_token");
+    }
+    return null;
+  }
+
+  public setTenantSlug(slug: string | null) {
+    if (typeof window !== "undefined") {
+      if (slug) {
+        localStorage.setItem("beamline_tenant_slug", slug);
+      } else {
+        localStorage.removeItem("beamline_tenant_slug");
+      }
+    }
+  }
+
+  public getTenantSlug(): string | null {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("beamline_tenant_slug");
+      if (stored) return stored;
+      // Derive from subdomain if on something.beamline.musfiqdehan.com or something.localhost
+      const host = window.location.hostname;
+      if (host.includes(".beamline.musfiqdehan.com") || host.includes(".localhost")) {
+        const sub = host.split(".")[0];
+        if (sub && sub !== "www" && sub !== "app") return sub;
+      }
+    }
+    return "kevin";
+  }
+
+  public clearAuth() {
+    this.setAuthToken(null);
+  }
+
   public async request<T>(
     endpoint: string,
     options: RequestInit = {},
     params?: Record<string, string | number | boolean | undefined | null>
   ): Promise<ApiEnvelope<T>> {
     const url = this.buildUrl(endpoint, params);
+    const token = this.getAuthToken();
+    const tenantSlug = this.getTenantSlug();
+
     const headers: Record<string, string> = {
       Accept: "application/json",
       ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(tenantSlug ? { "X-Tenant-Slug": tenantSlug } : {}),
       ...((options.headers as Record<string, string>) || {}),
     };
 

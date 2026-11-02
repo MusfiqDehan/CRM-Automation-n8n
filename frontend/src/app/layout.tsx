@@ -10,9 +10,9 @@ const urbanist = Urbanist({
 });
 
 export const metadata: Metadata = {
-  title: "Kevin's Construction OS — Luxury Residential Operations",
+  title: "Beamline — Multi-Tenant Construction CRM & Autonomous Operations OS",
   description:
-    "Clients, deals, building projects and supplier invoices for custom home builders — all in one simple workspace.",
+    "White-labeled CRM, 4-phase project execution, autonomous invoice deduplication, and executive triage for high-value custom home builders.",
 };
 
 export default function RootLayout({

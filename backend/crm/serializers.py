@@ -607,3 +607,157 @@ class ClientEmailTriggerSerializer(serializers.Serializer):
     subject = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
     message = serializers.CharField(required=False, allow_blank=True, default="")
 
+
+# ==============================================================================
+# Multi-Tenancy, SuperAdmin & Authentication Serializers
+# ==============================================================================
+from common.tenancy import Organization, OrganizationMember, PlatformSettings, Invitation
+
+
+class PlatformSettingsSerializer(serializers.ModelSerializer):
+    has_google_secret = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PlatformSettings
+        fields = [
+            "id",
+            "platform_name",
+            "base_domain",
+            "google_oauth_client_id",
+            "google_oauth_client_secret",
+            "has_google_secret",
+            "google_oauth_enabled",
+            "allow_self_registration",
+            "updated_at",
+        ]
+        extra_kwargs = {
+            "google_oauth_client_secret": {"write_only": True, "required": False, "allow_blank": True},
+        }
+
+    def get_has_google_secret(self, obj: PlatformSettings) -> bool:
+        return bool(obj.google_oauth_client_secret)
+
+    def update(self, instance: PlatformSettings, validated_data: dict) -> PlatformSettings:
+        secret = validated_data.get("google_oauth_client_secret")
+        if secret == "":
+            validated_data.pop("google_oauth_client_secret", None)
+        return super().update(instance, validated_data)
+
+
+class OrganizationSerializer(serializers.ModelSerializer):
+    subdomain_host = serializers.CharField(read_only=True)
+    member_count = serializers.SerializerMethodField()
+    project_count = serializers.SerializerMethodField()
+    has_google_secret = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Organization
+        fields = [
+            "id",
+            "name",
+            "slug",
+            "subdomain_host",
+            "custom_domain",
+            "custom_domain_verified",
+            "is_active",
+            "currency",
+            "deal_review_threshold",
+            "invoice_review_threshold",
+            "executive_recipient_email",
+            "use_custom_google_oauth",
+            "google_oauth_client_id",
+            "google_oauth_client_secret",
+            "has_google_secret",
+            "feature_flags",
+            "logo_url",
+            "primary_color",
+            "member_count",
+            "project_count",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "subdomain_host", "created_at", "updated_at"]
+        extra_kwargs = {
+            "google_oauth_client_secret": {"write_only": True, "required": False, "allow_blank": True},
+        }
+
+    def get_member_count(self, obj: Organization) -> int:
+        return obj.members.filter(is_active=True).count()
+
+    def get_project_count(self, obj: Organization) -> int:
+        return getattr(obj, "crm_constructionproject_records", obj.constructionproject_set if hasattr(obj, "constructionproject_set") else None).count() if hasattr(obj, "crm_constructionproject_records") else 0
+
+    def get_has_google_secret(self, obj: Organization) -> bool:
+        return bool(obj.google_oauth_client_secret)
+
+    def update(self, instance: Organization, validated_data: dict) -> Organization:
+        secret = validated_data.get("google_oauth_client_secret")
+        if secret == "":
+            validated_data.pop("google_oauth_client_secret", None)
+        # If custom domain was updated, trigger Traefik dynamic sync
+        domain_changed = "custom_domain" in validated_data and validated_data["custom_domain"] != instance.custom_domain
+        instance = super().update(instance, validated_data)
+        if domain_changed:
+            from crm.services.traefik_sync import sync_traefik_custom_domains
+            sync_traefik_custom_domains()
+        return instance
+
+
+class OrganizationMemberSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="user.username", read_only=True)
+    email = serializers.EmailField(source="user.email", read_only=True)
+    first_name = serializers.CharField(source="user.first_name", read_only=True)
+    last_name = serializers.CharField(source="user.last_name", read_only=True)
+
+    class Meta:
+        model = OrganizationMember
+        fields = [
+            "id",
+            "organization",
+            "user",
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "role",
+            "is_active",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
+
+
+class InvitationSerializer(serializers.ModelSerializer):
+    organization_slug = serializers.CharField(source="organization.slug", read_only=True)
+    organization_name = serializers.CharField(source="organization.name", read_only=True)
+    invited_by_username = serializers.CharField(source="invited_by.username", read_only=True)
+
+    class Meta:
+        model = Invitation
+        fields = [
+            "id",
+            "invitation_type",
+            "email",
+            "invited_name",
+            "organization",
+            "organization_slug",
+            "organization_name",
+            "role",
+            "token",
+            "status",
+            "invited_by",
+            "invited_by_username",
+            "expires_at",
+            "created_at",
+        ]
+        read_only_fields = ["id", "token", "created_at"]
+
+
+class GoogleAuthRequestSerializer(serializers.Serializer):
+    id_token = serializers.CharField(required=True)
+    invitation_token = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class LoginRequestSerializer(serializers.Serializer):
+    username_or_email = serializers.CharField(required=True)
+    password = serializers.CharField(required=True)
+

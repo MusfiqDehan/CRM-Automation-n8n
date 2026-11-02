@@ -70,6 +70,8 @@ export interface Opportunity {
   construction_agreement_status: string;
   requires_kevin_review: boolean;
   kevin_review_notes: string;
+  requires_executive_review?: boolean;
+  executive_review_notes?: string;
   next_follow_up_date: string | null;
   qualification_notes: string;
   notion_page_id: string | null;
@@ -269,6 +271,141 @@ export interface SMTPSettings {
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface FeatureFlags {
+  // Top-level Pages
+  page_overview?: boolean;
+  page_crm?: boolean;
+  page_projects?: boolean;
+  page_automation?: boolean;
+  // CRM Sub-Features
+  sub_crm_deals?: boolean;
+  sub_crm_contacts?: boolean;
+  sub_crm_activities?: boolean;
+  // Project Management Sub-Features
+  sub_projects_board?: boolean;
+  sub_projects_tasks?: boolean;
+  sub_projects_materials?: boolean;
+  // Automation & Finance Sub-Features
+  sub_automation_invoices?: boolean;
+  sub_automation_emails?: boolean;
+  sub_automation_simulator?: boolean;
+  // Governance, White-Label & Integrations
+  sub_executive_triage?: boolean;
+  sub_custom_domain?: boolean;
+  sub_custom_google_oauth?: boolean;
+  sub_integration_notion?: boolean;
+  sub_integration_smtp?: boolean;
+  sub_team_invitations?: boolean;
+  [key: string]: boolean | undefined;
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  subdomain_host: string;
+  custom_domain: string | null;
+  custom_domain_verified: boolean;
+  is_active: boolean;
+  currency: string;
+  deal_review_threshold: string;
+  invoice_review_threshold: string;
+  executive_recipient_email: string;
+  use_custom_google_oauth: boolean;
+  google_oauth_client_id: string;
+  google_oauth_client_secret?: string;
+  has_google_secret?: boolean;
+  feature_flags: FeatureFlags;
+  logo_url: string;
+  primary_color: string;
+  member_count?: number;
+  project_count?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PlatformSettings {
+  id: string;
+  platform_name: string;
+  base_domain: string;
+  google_oauth_client_id: string;
+  google_oauth_client_secret?: string;
+  has_google_secret?: boolean;
+  google_oauth_enabled: boolean;
+  allow_self_registration: boolean;
+  updated_at?: string;
+}
+
+export interface OrganizationMember {
+  id: string;
+  organization: string;
+  user: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: "Owner" | "Admin" | "PM" | "Sales" | "Field" | "Accountant" | "Client";
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface Invitation {
+  id: string;
+  invitation_type: "CLIENT_ONBOARDING" | "TEAM_MEMBER";
+  email: string;
+  invited_name: string;
+  organization: string | null;
+  organization_slug?: string;
+  organization_name?: string;
+  role: string;
+  token: string;
+  status: "Pending" | "Accepted" | "Expired" | "Revoked";
+  invited_by?: number;
+  invited_by_username?: string;
+  expires_at: string;
+  created_at: string;
+}
+
+export interface AuthTokens {
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+  token_type: string;
+}
+
+export interface AuthUser {
+  id: string;
+  username: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  is_superuser: boolean;
+}
+
+export interface OAuthPublicConfig {
+  platform_name: string;
+  base_domain: string;
+  tenant: {
+    id: string;
+    name: string;
+    slug: string;
+    subdomain_host: string;
+    custom_domain: string | null;
+    custom_domain_verified: boolean;
+    is_active: boolean;
+    currency: string;
+    feature_flags: FeatureFlags;
+    logo_url: string;
+    primary_color: string;
+  } | null;
+  google_oauth: {
+    enabled: boolean;
+    client_id: string;
+    source: "platform" | "client";
+    brand_name: string;
+  };
 }
 
 

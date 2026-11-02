@@ -28,6 +28,17 @@ from crm.views import (
     SMTPSettingsAPIView,
     SMTPTestConnectionAPIView,
     ClientEmailTriggerAPIView,
+    OAuthPublicConfigAPIView,
+    LoginAPIView,
+    GoogleOAuthAPIView,
+    MeAPIView,
+    PlatformSettingsAPIView,
+    SuperadminOrganizationListCreateAPIView,
+    SuperadminOrganizationDetailAPIView,
+    SuperadminInvitationAPIView,
+    TenantSettingsAPIView,
+    TenantMemberListCreateAPIView,
+    AcceptInvitationAPIView,
 )
 
 urlpatterns = [
@@ -118,4 +129,32 @@ urlpatterns = [
     # 15. Client & Stakeholder Email Automations (Part 3 Assessment)
     path("client-emails/trigger/", ClientEmailTriggerAPIView.as_view(), name="client-email-trigger"),
     path("client-emails/trigger", ClientEmailTriggerAPIView.as_view()),
+
+    # 16. Multi-Tenant Auth & Dynamic OAuth Endpoints
+    path("auth/oauth-config/", OAuthPublicConfigAPIView.as_view(), name="oauth-config"),
+    path("auth/oauth-config", OAuthPublicConfigAPIView.as_view()),
+    path("auth/login/", LoginAPIView.as_view(), name="auth-login"),
+    path("auth/login", LoginAPIView.as_view()),
+    path("auth/google/", GoogleOAuthAPIView.as_view(), name="auth-google"),
+    path("auth/google", GoogleOAuthAPIView.as_view()),
+    path("auth/me/", MeAPIView.as_view(), name="auth-me"),
+    path("auth/me", MeAPIView.as_view()),
+
+    # 17. Platform Superadmin Control Plane
+    path("superadmin/platform-settings/", PlatformSettingsAPIView.as_view(), name="superadmin-platform-settings"),
+    path("superadmin/platform-settings", PlatformSettingsAPIView.as_view()),
+    path("superadmin/organizations/", SuperadminOrganizationListCreateAPIView.as_view(), name="superadmin-organizations-list"),
+    path("superadmin/organizations", SuperadminOrganizationListCreateAPIView.as_view()),
+    path("superadmin/organizations/<str:pk>/", SuperadminOrganizationDetailAPIView.as_view(), name="superadmin-organization-detail"),
+    path("superadmin/organizations/<str:pk>", SuperadminOrganizationDetailAPIView.as_view()),
+    path("superadmin/invitations/", SuperadminInvitationAPIView.as_view(), name="superadmin-invitations"),
+    path("superadmin/invitations", SuperadminInvitationAPIView.as_view()),
+
+    # 18. Client Tenant Settings & Team Invitations
+    path("tenant/settings/", TenantSettingsAPIView.as_view(), name="tenant-settings"),
+    path("tenant/settings", TenantSettingsAPIView.as_view()),
+    path("tenant/members/", TenantMemberListCreateAPIView.as_view(), name="tenant-members"),
+    path("tenant/members", TenantMemberListCreateAPIView.as_view()),
+    path("invitations/accept/", AcceptInvitationAPIView.as_view(), name="invitations-accept"),
+    path("invitations/accept", AcceptInvitationAPIView.as_view()),
 ]

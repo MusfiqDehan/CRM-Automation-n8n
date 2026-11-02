@@ -84,6 +84,15 @@ class CostAutomationProcessor:
         if payment_status == "Unpaid" and not payment_due_date:
             clarification_reasons.append("Unpaid invoice submitted without an explicit Payment Due Date.")
 
+        # Dynamic Threshold Evaluation from Organization Settings: determines executive routing
+        is_above_threshold = False
+        from common.middleware import get_current_tenant
+        active_org = (matched_project.organization if matched_project and matched_project.organization else None) or get_current_tenant()
+        if active_org and hasattr(active_org, "invoice_review_threshold"):
+            thresh = active_org.invoice_review_threshold
+            if amount >= thresh:
+                is_above_threshold = True
+
         # Determine canonical public API url for PDF invoice rendering
         api_base = getattr(
             settings,
@@ -218,12 +227,13 @@ class CostAutomationProcessor:
             if first_opp and first_opp.contact and first_opp.contact.email:
                 client_email = first_opp.contact.email
 
+        exec_email = (active_org.executive_recipient_email if active_org and active_org.executive_recipient_email else kevin_email)
         notified_recipient = (
             payload.get("notified_person")
             or (
-                kevin_email
-                if needs_flag
-                else (client_email or kevin_email or "musfiq.works+kevin@gmail.com")
+                exec_email
+                if (needs_flag or is_above_threshold)
+                else (client_email or exec_email or "musfiq.works+kevin@gmail.com")
             )
         )
 

@@ -15,20 +15,31 @@ import {
   FileSpreadsheet,
   FileText,
   Filter,
+  Globe,
+  KeyRound,
   Layers,
   LayoutDashboard,
+  Lock,
+  LogOut,
   Mail,
   Moon,
   Play,
   Plus,
   RefreshCw,
   Search,
+  ShieldAlert,
+  ShieldCheck,
+  Sliders,
   Sparkles,
   Sun,
+  User,
   Users,
   Workflow,
   X,
 } from "lucide-react";
+import { AuthModal } from "@/components/auth/AuthModal";
+import { SuperAdminModal } from "@/components/admin/SuperAdminModal";
+import { TenantSettingsModal } from "@/components/admin/TenantSettingsModal";
 import {
   ContactFormModal,
   DealFormModal,
@@ -50,12 +61,16 @@ import {
 import { apiClient } from "@/lib/api-client";
 import { formatCompactCurrency, formatCurrency, formatDate, formatDateTimeWithSeconds } from "@/lib/format";
 import type {
+  AuthTokens,
+  AuthUser,
   ConstructionProject,
   Contact,
   DashboardSummary,
   EmailCommunicationLog,
   MaterialOrder,
+  OAuthPublicConfig,
   Opportunity,
+  Organization,
   ProjectCost,
   ProjectTask,
   SimulatorTriggerResponse,
@@ -68,6 +83,17 @@ export function AdminDashboard() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(true);
   const [refreshCounter, setRefreshCounter] = useState(0);
+
+  // Multi-Tenant & Auth state
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [currentRole, setCurrentRole] = useState<string>("Owner");
+  const [activeOrg, setActiveOrg] = useState<Organization | null>(null);
+  const [userOrgs, setUserOrgs] = useState<
+    Array<{ id: string; name: string; slug: string; role: string; is_active: boolean }>
+  >([]);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isTenantSettingsOpen, setIsTenantSettingsOpen] = useState(false);
+  const [isSuperAdminOpen, setIsSuperAdminOpen] = useState(false);
 
   // Sub-tab toggles
   const [crmSubTab, setCrmSubTab] = useState<"deals" | "contacts">("deals");
@@ -154,6 +180,42 @@ export function AdminDashboard() {
       setToast((prev) => (prev?.text === text ? null : prev));
     }, 4500);
   };
+
+  const fetchAuthAndTenant = useCallback(async () => {
+    try {
+      const [meRes, configRes] = await Promise.all([
+        apiClient.get<{
+          is_authenticated: boolean;
+          user?: AuthUser;
+          active_role?: string;
+          active_organization?: Organization;
+          organizations?: Array<{
+            id: string;
+            name: string;
+            slug: string;
+            role: string;
+            is_active: boolean;
+          }>;
+        }>("/auth/me/"),
+        apiClient.get<OAuthPublicConfig>("/auth/oauth-config/"),
+      ]);
+
+      if (meRes?.is_authenticated && meRes.user) {
+        setCurrentUser(meRes.user);
+        setCurrentRole(meRes.active_role || "Owner");
+        setUserOrgs(meRes.organizations || []);
+      }
+      if (configRes?.tenant) {
+        setActiveOrg(configRes.tenant as unknown as Organization);
+      }
+    } catch (err) {
+      console.warn("Could not load auth/me", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAuthAndTenant();
+  }, [fetchAuthAndTenant, refreshCounter]);
 
   const fetchSummary = useCallback(async () => {
     setLoadingSummary(true);
@@ -250,6 +312,21 @@ export function AdminDashboard() {
     },
   ];
 
+  const filteredNavItems = navItems.filter((item) => {
+    if (!activeOrg?.feature_flags) return true;
+    if (item.id === "overview") return activeOrg.feature_flags.page_overview !== false;
+    if (item.id === "crm") return activeOrg.feature_flags.page_crm !== false;
+    if (item.id === "projects") return activeOrg.feature_flags.page_projects !== false;
+    if (item.id === "automation") return activeOrg.feature_flags.page_automation !== false;
+    return true;
+  });
+
+  useEffect(() => {
+    if (filteredNavItems.length > 0 && !filteredNavItems.some((n) => n.id === activeTab)) {
+      setActiveTab(filteredNavItems[0].id);
+    }
+  }, [filteredNavItems, activeTab]);
+
   const pageMeta: Record<AdminTab, { title: string; subtitle: string }> = {
     overview: {
       title: "Executive Dashboard",
@@ -303,14 +380,14 @@ export function AdminDashboard() {
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">
-                  Kevin&apos;s OS
+                  Beamline
                 </span>
                 <span className="rounded-md bg-indigo-50 dark:bg-indigo-950/70 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:text-indigo-300">
-                  Admin
+                  {currentRole}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Luxury Residential Suite
+              <p className="text-[11px] font-mono text-indigo-600 dark:text-indigo-400 truncate max-w-[170px]" title={activeOrg?.custom_domain || activeOrg?.subdomain_host || "kevin.beamline.musfiqdehan.com"}>
+                {activeOrg?.custom_domain || activeOrg?.subdomain_host || "kevin.beamline.musfiqdehan.com"}
               </p>
             </div>
           </div>
@@ -321,7 +398,7 @@ export function AdminDashboard() {
               Operations
             </span>
             <nav className="mt-2 space-y-1">
-              {navItems.map((item) => {
+              {filteredNavItems.map((item) => {
                 const Icon = item.icon;
                 const active = activeTab === item.id;
                 return (
@@ -421,7 +498,7 @@ export function AdminDashboard() {
         className="fixed bottom-0 left-0 right-0 z-40 lg:hidden border-t border-slate-200/90 bg-white/95 backdrop-blur-md dark:border-slate-800/90 dark:bg-[#0f1523]/95 shadow-xl transition-colors duration-200"
       >
         <div className="grid grid-cols-4 h-16 max-w-lg mx-auto px-2">
-          {navItems.map((item) => {
+          {filteredNavItems.map((item) => {
             const Icon = item.icon;
             const active = activeTab === item.id;
             return (
@@ -469,7 +546,7 @@ export function AdminDashboard() {
                     {pageMeta[activeTab].title}
                   </h1>
                   <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                    Kevin&apos;s OS
+                    Beamline
                   </span>
                 </div>
               </div>
@@ -560,6 +637,48 @@ export function AdminDashboard() {
                   <span>Ingest Bill</span>
                 </button>
               )}
+
+              {/* Platform Superadmin Control Plane Button (Available to Superadmin or dev preview) */}
+              {(currentUser?.is_superuser || currentRole === "Superadmin" || !currentUser) && (
+                <button
+                  type="button"
+                  onClick={() => setIsSuperAdminOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-semibold text-purple-700 shadow-xs transition hover:bg-purple-100 hover:border-purple-300 dark:border-purple-800 dark:bg-purple-950/60 dark:text-purple-300 cursor-pointer"
+                  title="Platform Superadmin: Global Client Management, Google OAuth & Feature Matrix"
+                >
+                  <ShieldCheck className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                  <span className="hidden sm:inline">Superadmin</span>
+                </button>
+              )}
+
+              {/* Client Organization Settings Modal Trigger */}
+              <button
+                type="button"
+                onClick={() => setIsTenantSettingsOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+                title="Client Organization Settings: Subdomain, Custom Domain, Review Thresholds, Client Google OAuth & Team Invites"
+              >
+                <Sliders className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                <span className="hidden sm:inline">Org Settings</span>
+              </button>
+
+              {/* Auth / Profile Pill Button */}
+              <button
+                type="button"
+                onClick={() => setIsAuthModalOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow-xs transition hover:bg-slate-50 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+                title={currentUser ? `Signed in as ${currentUser.username} (${currentRole})` : "Sign In to Beamline"}
+              >
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600/10 text-[10px] font-bold text-indigo-600 dark:bg-indigo-400/20 dark:text-indigo-300">
+                  {currentUser ? currentUser.username.charAt(0).toUpperCase() : <User className="h-3 w-3" />}
+                </div>
+                <span className="hidden md:inline font-semibold">
+                  {currentUser ? currentUser.username : "Sign In"}
+                </span>
+                <span className="hidden lg:inline rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                  {currentRole}
+                </span>
+              </button>
 
               {/* SMTP Settings Quick Modal Trigger */}
               <button
@@ -654,6 +773,29 @@ export function AdminDashboard() {
 
         {/* Content Body - Full Width Responsive Layout (Padding bottom pb-28 on mobile for bottom navbar) */}
         <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 2xl:px-10 py-6 sm:py-8 space-y-8 pb-28 lg:pb-8">
+          {activeOrg && !activeOrg.is_active && !currentUser?.is_superuser ? (
+            <div className="flex flex-col items-center justify-center p-12 text-center min-h-[50vh] rounded-2xl border border-red-200 bg-red-50/50 dark:border-red-900/40 dark:bg-red-950/20">
+              <div className="h-14 w-14 rounded-2xl bg-red-100 flex items-center justify-center text-red-600 dark:bg-red-950/80 dark:text-red-400 mb-4 shadow-lg shadow-red-500/10">
+                <ShieldAlert className="h-7 w-7" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                Client Organization Suspended
+              </h2>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 max-w-md">
+                Workspace <strong>{activeOrg.name}</strong> ({activeOrg.subdomain_host}) has been deactivated by the platform administrator.
+              </p>
+              <div className="mt-6 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="btn-secondary text-xs"
+                >
+                  Switch Account / Superadmin
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
           {/* ======================================================== */}
           {/* TAB 1: OVERVIEW DASHBOARD                                 */}
           {/* ======================================================== */}
@@ -2064,6 +2206,8 @@ export function AdminDashboard() {
               )}
             </div>
           )}
+          </>
+          )}
         </main>
       </div>
 
@@ -2112,6 +2256,38 @@ export function AdminDashboard() {
         isOpen={isSmtpSettingsOpen}
         onClose={() => setIsSmtpSettingsOpen(false)}
         onSuccessToast={(msg) => showToast(msg, "success")}
+      />
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        currentUser={currentUser}
+        currentRole={currentRole}
+        onAuthSuccess={(user, role, tokens, orgSlug) => {
+          setCurrentUser(user);
+          setCurrentRole(role);
+          setRefreshCounter((c) => c + 1);
+        }}
+        onLogout={() => {
+          apiClient.clearAuth();
+          setCurrentUser(null);
+          setCurrentRole("Guest");
+          setRefreshCounter((c) => c + 1);
+        }}
+      />
+      <TenantSettingsModal
+        isOpen={isTenantSettingsOpen}
+        onClose={() => setIsTenantSettingsOpen(false)}
+        onSettingsUpdated={(updated) => {
+          setActiveOrg(updated);
+          setRefreshCounter((c) => c + 1);
+        }}
+      />
+      <SuperAdminModal
+        isOpen={isSuperAdminOpen}
+        onClose={() => setIsSuperAdminOpen(false)}
+        onOrganizationsChanged={() => {
+          setRefreshCounter((c) => c + 1);
+        }}
       />
     </div>
   );

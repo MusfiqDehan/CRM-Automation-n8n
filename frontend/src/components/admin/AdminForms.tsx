@@ -111,7 +111,7 @@ export function ContactFormModal({ isOpen, onClose, onSaved }: ModalProps) {
       subtitle="Someone who asked about building with you, a client, or a partner."
       onClose={close}
       onSubmit={submit}
-      submitLabel="Create Contact"
+      submitLabel="Create contact"
       submitting={submitting}
       generalError={generalError}
     >
@@ -248,9 +248,9 @@ export function DealFormModal({ isOpen, onClose, onSaved, deal }: DealFormModalP
 
   const submitLabel = isEditing
     ? deal?.requires_kevin_review && !form.requires_kevin_review
-      ? "Approve & Save Deal"
-      : "Save Changes"
-    : "Create Deal";
+      ? "Approve & save deal"
+      : "Save changes"
+    : "Create deal";
 
   return (
     <ValidatedModalForm
@@ -285,10 +285,10 @@ export function DealFormModal({ isOpen, onClose, onSaved, deal }: DealFormModalP
             <button
               type="button"
               onClick={() => setForm((prev) => ({ ...prev, requires_kevin_review: false }))}
-              className="shrink-0 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition cursor-pointer shadow-xs inline-flex items-center gap-1.5"
+              className="btn-secondary btn-xs"
             >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Mark Approved</span>
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Mark approved
             </button>
           ) : (
             <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-xs font-semibold">
@@ -462,7 +462,7 @@ export function ProjectFormModal({ isOpen, onClose, onSaved }: ModalProps) {
       subtitle="A checklist for every stage — planning, building, handover and warranty — is set up for you."
       onClose={close}
       onSubmit={submit}
-      submitLabel="Create Project"
+      submitLabel="Create project"
       submitting={submitting}
       generalError={generalError}
     >
@@ -562,7 +562,7 @@ export function InvoiceFormModal({
       subtitle="We read it, match it to the right project and let the team know — just like when one arrives by email."
       onClose={close}
       onSubmit={submit}
-      submitLabel="Add Invoice"
+      submitLabel="Add invoice"
       submitting={submitting}
       generalError={generalError}
     >

@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   AlertCircle,
   ArrowLeft,
-  ArrowRight,
   Building2,
   CheckCircle2,
   Globe,
@@ -15,9 +14,9 @@ import {
   ShieldCheck,
   User,
   UserPlus,
-  X,
 } from "lucide-react";
 import { BeamLineLogo, BeamLineMark } from "@/components/brand/BeamLineLogo";
+import { Modal, ModalBody, ModalHeader } from "@/components/ui/overlay";
 import { apiClient } from "@/lib/api-client";
 import type { AuthTokens, AuthUser, OAuthPublicConfig, Organization } from "@/lib/types";
 
@@ -229,30 +228,18 @@ export function AuthModal({
   const googleConfig = oauthConfig?.google_oauth;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-xs">
-      <div className="relative w-full max-w-md rounded-2xl border border-stone-200 bg-white p-6 shadow-2xl dark:border-stone-800 dark:bg-stone-900">
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-stone-800 dark:hover:text-stone-200"
-        >
-          <X className="h-5 w-5" />
-        </button>
-
-        {/* Modal Header */}
-        <div className="mb-6 flex items-center gap-3">
-          <BeamLineMark className="size-11" />
-          <div>
-            <h2 className="text-lg font-bold text-stone-900 dark:text-white">
-              {currentUser ? "Authentication & Profile" : "Sign In to BeamLine"}
-            </h2>
-            <p className="text-xs text-stone-500 dark:text-stone-400">
-              {activeTenant?.name
-                ? `${activeTenant.name} (${activeTenant.subdomain_host})`
-                : "Multi-Tenant Construction CRM Platform"}
-            </p>
-          </div>
-        </div>
-
+    <Modal isOpen={isOpen} onClose={onClose} size="sm">
+      <ModalHeader
+        title={currentUser ? "Your account" : "Sign in to BeamLine"}
+        subtitle={
+          activeTenant?.name
+            ? `${activeTenant.name} · ${activeTenant.subdomain_host}`
+            : "Multi-tenant construction CRM platform"
+        }
+        icon={<BeamLineMark className="size-10" title="BeamLine" />}
+        onClose={onClose}
+      />
+      <ModalBody>
         {/* Dynamic Tenant & OAuth Banner */}
         {activeTenant && (
           <div className="mb-5 rounded-xl border border-amber-100 bg-amber-50/60 p-3 dark:border-amber-900/50 dark:bg-amber-950/30">
@@ -311,14 +298,15 @@ export function AuthModal({
             </div>
 
             <button
+              type="button"
               onClick={() => {
                 onLogout();
                 onClose();
               }}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-100 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-950/50 cursor-pointer"
+              className="btn-danger w-full"
             >
               <LogOut className="h-4 w-4" />
-              Sign Out
+              Sign out
             </button>
           </div>
         ) : (
@@ -357,7 +345,7 @@ export function AuthModal({
             </div>
 
             {errorMsg && (
-              <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
+              <div className="mb-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>{errorMsg}</span>
               </div>
@@ -426,7 +414,7 @@ export function AuthModal({
                         placeholder="kevin or kevin@kevinbuild.com"
                         value={loginId}
                         onChange={(e) => setLoginId(e.target.value)}
-                        className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
+                        className="input py-2 pl-9 pr-3"
                       />
                     </div>
                   </div>
@@ -443,7 +431,7 @@ export function AuthModal({
                         placeholder="••••••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
+                        className="input py-2 pl-9 pr-3"
                       />
                     </div>
                   </div>
@@ -495,7 +483,7 @@ export function AuthModal({
                       placeholder="e.g. Apex Custom Homes"
                       value={regOrgName}
                       onChange={(e) => setRegOrgName(e.target.value)}
-                      className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
+                      className="input py-2 pl-9 pr-3"
                     />
                   </div>
                 </div>
@@ -512,7 +500,7 @@ export function AuthModal({
                       placeholder="e.g. Jane Builder"
                       value={regFullName}
                       onChange={(e) => setRegFullName(e.target.value)}
-                      className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
+                      className="input py-2 pl-9 pr-3"
                     />
                   </div>
                 </div>
@@ -529,7 +517,7 @@ export function AuthModal({
                       placeholder="jane@apexhomes.com"
                       value={regEmail}
                       onChange={(e) => setRegEmail(e.target.value)}
-                      className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
+                      className="input py-2 pl-9 pr-3"
                     />
                   </div>
                 </div>
@@ -547,7 +535,7 @@ export function AuthModal({
                       placeholder="••••••••••••"
                       value={regPassword}
                       onChange={(e) => setRegPassword(e.target.value)}
-                      className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
+                      className="input py-2 pl-9 pr-3"
                     />
                   </div>
                 </div>
@@ -564,8 +552,8 @@ export function AuthModal({
             )}
           </div>
         )}
-      </div>
-    </div>
+      </ModalBody>
+    </Modal>
   );
 }
 
@@ -846,7 +834,7 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
             </div>
 
             {errorMsg && (
-              <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
+              <div className="mb-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>{errorMsg}</span>
               </div>
@@ -915,7 +903,7 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
                         placeholder="kevin or kevin@kevinbuild.com"
                         value={loginId}
                         onChange={(e) => setLoginId(e.target.value)}
-                        className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
+                        className="input py-2 pl-9 pr-3"
                       />
                     </div>
                   </div>
@@ -932,7 +920,7 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
                         placeholder="••••••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
+                        className="input py-2 pl-9 pr-3"
                       />
                     </div>
                   </div>
@@ -984,7 +972,7 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
                       placeholder="e.g. Apex Custom Homes"
                       value={regOrgName}
                       onChange={(e) => setRegOrgName(e.target.value)}
-                      className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
+                      className="input py-2 pl-9 pr-3"
                     />
                   </div>
                 </div>
@@ -1001,7 +989,7 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
                       placeholder="e.g. Jane Builder"
                       value={regFullName}
                       onChange={(e) => setRegFullName(e.target.value)}
-                      className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
+                      className="input py-2 pl-9 pr-3"
                     />
                   </div>
                 </div>
@@ -1018,7 +1006,7 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
                       placeholder="jane@apexhomes.com"
                       value={regEmail}
                       onChange={(e) => setRegEmail(e.target.value)}
-                      className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
+                      className="input py-2 pl-9 pr-3"
                     />
                   </div>
                 </div>
@@ -1036,7 +1024,7 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
                       placeholder="••••••••••••"
                       value={regPassword}
                       onChange={(e) => setRegPassword(e.target.value)}
-                      className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
+                      className="input py-2 pl-9 pr-3"
                     />
                   </div>
                 </div>

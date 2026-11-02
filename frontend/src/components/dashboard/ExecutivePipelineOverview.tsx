@@ -8,11 +8,11 @@ import {
   Clock,
   DollarSign,
   ExternalLink,
-  FileCheck2,
   Layers,
+  Plus,
+  X,
   Sparkles,
   TrendingUp,
-  Users,
 } from "lucide-react";
 import type { DashboardSummary } from "@/lib/types";
 import { formatCompactCurrency, formatCurrency, formatDateTimeWithSeconds } from "@/lib/format";
@@ -36,6 +36,11 @@ export function ExecutivePipelineOverview({
   const stages = summary?.stages_breakdown || [];
   const reviewDeals = summary?.kevin_review_deals || [];
   const notionDashboardUrl = summary?.notion_workspace?.sales_dashboard_url;
+  const reviewCount = kpis?.kevin_review_opportunities_count ?? 0;
+  const totalPipeline = Number(kpis?.total_pipeline_value || 0);
+  const weightedPipeline = Number(kpis?.weighted_pipeline_value || 0);
+  const realizationPercent = totalPipeline > 0 ? Math.round((weightedPipeline / totalPipeline) * 100) : 0;
+  const reviewClientNames = Array.from(new Set(reviewDeals.map((d) => d.client_name).filter(Boolean)));
 
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
 
@@ -67,7 +72,7 @@ export function ExecutivePipelineOverview({
               $3M+ Luxury Portfolio
             </span>
             <span className="hidden md:inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60">
-              4 Active Builds
+              {kpis?.active_projects_count ?? 0} active builds
             </span>
           </div>
           <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-400 mt-1 leading-relaxed">
@@ -81,7 +86,7 @@ export function ExecutivePipelineOverview({
               href={notionDashboardUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-stone-50 text-stone-700 hover:text-stone-900 text-xs font-semibold border border-stone-200 shadow-xs hover:border-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 dark:text-stone-200 dark:border-stone-700 transition"
+              className="btn-secondary btn-sm"
               title="Open full Executive Sales Dashboard in Notion"
             >
               <span>Notion Sales Dashboard</span>
@@ -92,9 +97,10 @@ export function ExecutivePipelineOverview({
             <button
               type="button"
               onClick={onNewDealClick}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-sm shadow-amber-600/20 transition cursor-pointer"
+              className="btn-primary btn-sm"
             >
-              <span>+ New Deal</span>
+              <Plus className="h-4 w-4" />
+              New deal
             </button>
           )}
         </div>
@@ -116,9 +122,9 @@ export function ExecutivePipelineOverview({
             {formatCompactCurrency(kpis?.total_pipeline_value)}
           </div>
           <div className="mt-1 flex items-center justify-between text-xs text-stone-500 dark:text-stone-400">
-            <span>{kpis?.active_opportunities_count ?? 4} Luxury Custom Deals</span>
+            <span>{kpis?.active_opportunities_count ?? 0} active deals</span>
             <span className="font-semibold text-amber-600 dark:text-amber-400">
-              Avg {formatCompactCurrency(kpis?.average_deal_size || "3525000")}
+              Avg {formatCompactCurrency(kpis?.average_deal_size || "0")}
             </span>
           </div>
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-amber-500" />
@@ -133,21 +139,23 @@ export function ExecutivePipelineOverview({
             </span>
           </div>
           <div className="mt-2 text-2xl font-extrabold tracking-tight text-amber-600 dark:text-amber-400 font-mono">
-            {formatCompactCurrency(kpis?.weighted_pipeline_value || "8925000")}
+            {formatCompactCurrency(kpis?.weighted_pipeline_value || "0")}
           </div>
           <div className="mt-1 flex items-center justify-between text-xs text-stone-500 dark:text-stone-400">
             <span>Stage Probability Factored</span>
             <span className="font-semibold text-amber-600 dark:text-amber-400">
-              ~63% Realization
+              ~{realizationPercent}% realization
             </span>
           </div>
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-amber-500" />
         </div>
 
         {/* Card 3: Kevin's Review Queue */}
-        <div
+        <button
+          type="button"
           onClick={onFilterReview}
-          className="p-4 rounded-2xl bg-white dark:bg-stone-900/90 border border-stone-200 dark:border-stone-800 shadow-xs relative overflow-hidden group hover:border-amber-500/60 transition cursor-pointer"
+          disabled={!onFilterReview}
+          className="p-4 text-left rounded-2xl bg-white dark:bg-stone-900/90 border border-stone-200 dark:border-stone-800 shadow-xs relative overflow-hidden group hover:border-amber-500/60 transition cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-amber-200 dark:focus-visible:ring-amber-900 disabled:cursor-default"
         >
           <div className="flex items-center justify-between text-xs font-medium text-stone-500 dark:text-stone-400">
             <span>Requires Kevin&apos;s Review</span>
@@ -156,17 +164,17 @@ export function ExecutivePipelineOverview({
             </span>
           </div>
           <div className="mt-2 text-2xl font-extrabold tracking-tight text-amber-600 dark:text-amber-400 font-mono flex items-center gap-2">
-            <span>{kpis?.kevin_review_opportunities_count ?? 2} Priority Deals</span>
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
+            <span>{reviewCount} priority deals</span>
+            {reviewCount > 0 && <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />}
           </div>
           <div className="mt-1 flex items-center justify-between text-xs text-stone-500 dark:text-stone-400">
-            <span>Rostova &amp; Chen</span>
-            <span className="font-semibold text-amber-600 dark:text-amber-400 hover:underline">
-              Review Queue →
+            <span className="truncate">{reviewClientNames.slice(0, 2).join(" & ") || "Queue clear"}</span>
+            <span className="inline-flex shrink-0 items-center gap-1 font-semibold text-amber-700 group-hover:underline dark:text-amber-400">
+              Review queue <ArrowRight className="h-3 w-3" />
             </span>
           </div>
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-rose-500" />
-        </div>
+        </button>
 
         {/* Card 4: Sales Lead Accountability */}
         <div className="p-4 rounded-2xl bg-white dark:bg-stone-900/90 border border-stone-200 dark:border-stone-800 shadow-xs relative overflow-hidden group hover:border-emerald-500/40 transition">
@@ -207,9 +215,10 @@ export function ExecutivePipelineOverview({
             <button
               type="button"
               onClick={() => handleStageClick(selectedStage)}
-              className="text-xs text-amber-500 hover:text-amber-400 underline font-medium cursor-pointer self-start sm:self-auto"
+              className="btn-ghost btn-xs self-start sm:self-auto"
             >
-              Clear Stage Filter
+              <X className="h-3.5 w-3.5" />
+              Clear stage filter
             </button>
           )}
         </div>
@@ -332,9 +341,9 @@ export function ExecutivePipelineOverview({
                       <button
                         type="button"
                         onClick={onFilterReview}
-                        className="text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 text-[11px] underline cursor-pointer"
+                        className="btn-ghost btn-xs"
                       >
-                        Filter Table
+                        Filter table
                       </button>
                     )}
                     <button
@@ -346,10 +355,10 @@ export function ExecutivePipelineOverview({
                           onFilterReview();
                         }
                       }}
-                      className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs inline-flex items-center gap-1 cursor-pointer transition shadow-2xs"
+                      className="btn-primary btn-xs"
                     >
-                      <span>Review Deal</span>
-                      <ArrowRight className="w-3 h-3" />
+                      Review deal
+                      <ArrowRight className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </div>

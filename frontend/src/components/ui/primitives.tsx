@@ -55,15 +55,23 @@ export function Tabs<T extends string>({
   tabs,
   value,
   onChange,
+  size = "md",
+  ariaLabel,
+  className = "",
 }: {
   tabs: Array<{ id: T; label: string; count?: number }>;
   value: T;
   onChange: (id: T) => void;
+  /** `sm` is used for in-page sub-views; `md` for primary page tabs. */
+  size?: "sm" | "md";
+  ariaLabel?: string;
+  className?: string;
 }) {
   return (
     <div
       role="tablist"
-      className="inline-flex max-w-full overflow-x-auto rounded-xl bg-stone-100 p-1 dark:bg-stone-900 border border-transparent dark:border-stone-800"
+      aria-label={ariaLabel}
+      className={`inline-flex max-w-full overflow-x-auto rounded-xl border border-stone-200/80 bg-stone-100 p-1 dark:border-stone-800 dark:bg-stone-900 ${className}`}
     >
       {tabs.map((t) => {
         const active = t.id === value;
@@ -74,10 +82,12 @@ export function Tabs<T extends string>({
             type="button"
             aria-selected={active}
             onClick={() => onChange(t.id)}
-            className={`flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition cursor-pointer ${
+            className={`flex items-center gap-2 whitespace-nowrap rounded-lg font-semibold transition cursor-pointer ${
+              size === "sm" ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm"
+            } ${
               active
                 ? "bg-white text-stone-900 shadow-xs dark:bg-stone-800 dark:text-white"
-                : "text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200"
+                : "text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200"
             }`}
           >
             {t.label}
@@ -212,16 +222,16 @@ export function SectionIntro({
   action,
 }: {
   title: string;
-  description?: string;
+  description?: React.ReactNode;
   action?: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div>
+      <div className="min-w-0">
         <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-100">{title}</h2>
         {description && <p className="mt-0.5 text-sm text-stone-500 dark:text-stone-400">{description}</p>}
       </div>
-      {action}
+      {action && <div className="flex shrink-0 flex-wrap items-center gap-2">{action}</div>}
     </div>
   );
 }
@@ -231,4 +241,3 @@ export function SectionIntro({
 /* ------------------------------------------------------------------ */
 export { DropdownSelect } from "./DropdownSelect";
 export type { DropdownOption, DropdownSelectProps } from "./DropdownSelect";
-

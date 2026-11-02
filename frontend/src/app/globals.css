@@ -27,32 +27,61 @@ body {
   color: var(--color-stone-100);
 }
 
-/* ---------- Shared building blocks ---------- */
-.card {
-  @apply rounded-2xl border border-stone-200/80 bg-white shadow-xs transition-colors dark:border-stone-800 dark:bg-stone-900;
-}
+/* ---------- Shared building blocks ----------
+ * Declared in the components layer so Tailwind utilities (e.g. `w-full`,
+ * `pl-9`) can extend them. Size modifiers come last so they win over the
+ * base button padding without needing ad-hoc overrides.
+ */
+@layer components {
+  .card {
+    @apply rounded-2xl border border-stone-200/80 bg-white shadow-xs transition-colors dark:border-stone-800 dark:bg-stone-900;
+  }
 
-.input {
-  @apply w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 transition outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100 dark:border-stone-800 dark:bg-stone-950 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:border-amber-500 dark:focus:ring-amber-950;
-}
+  .input {
+    @apply w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 transition outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-stone-800 dark:bg-stone-950 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:border-amber-500 dark:focus:ring-amber-950;
+  }
 
-.btn,
-.btn-primary,
-.btn-secondary,
-.btn-ghost {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-50;
-}
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-ghost,
+  .btn-danger {
+    @apply inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-semibold transition cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-amber-200 disabled:cursor-not-allowed disabled:opacity-50 dark:focus-visible:ring-amber-900;
+  }
 
-.btn-primary {
-  @apply bg-amber-400 text-stone-950 shadow-sm shadow-amber-500/20 hover:bg-amber-300 dark:bg-amber-400 dark:text-stone-950 dark:hover:bg-amber-300;
-}
+  /* Main call to action. Use at most once per region. */
+  .btn-primary {
+    @apply bg-amber-400 text-stone-950 shadow-sm shadow-amber-500/20 hover:bg-amber-300 dark:bg-amber-400 dark:text-stone-950 dark:hover:bg-amber-300;
+  }
 
-.btn-secondary {
-  @apply border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 hover:border-stone-300 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800 dark:hover:border-stone-700;
-}
+  /* Neutral supporting action with a visible boundary. */
+  .btn-secondary {
+    @apply border border-stone-200 bg-white text-stone-700 shadow-xs hover:bg-stone-50 hover:border-stone-300 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800 dark:hover:border-stone-700;
+  }
 
-.btn-ghost {
-  @apply text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100;
+  /* Low-emphasis action: dismissals, "view all" links, tertiary controls. */
+  .btn-ghost {
+    @apply text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100;
+  }
+
+  /* Destructive or account-ending action. */
+  .btn-danger {
+    @apply border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:border-rose-300 focus-visible:ring-rose-200 dark:border-rose-900/70 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-950/70 dark:focus-visible:ring-rose-900;
+  }
+
+  /* Size modifiers — combine with any variant above. */
+  .btn-sm {
+    @apply gap-1.5 rounded-xl px-3 py-2 text-xs;
+  }
+
+  .btn-xs {
+    @apply gap-1 rounded-lg px-2.5 py-1.5 text-xs;
+  }
+
+  /* Square icon-only button; pair with a variant and an aria-label. */
+  .btn-icon {
+    @apply size-9 p-0;
+  }
 }
 
 @keyframes fade-up {

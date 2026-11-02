@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
   ArrowLeft,
+  ArrowRight,
   Building2,
   CheckCircle2,
-  ChevronDown,
   Clock,
   DollarSign,
   Edit2,
@@ -20,12 +20,11 @@ import {
   Play,
   Plus,
   RefreshCw,
-  Search,
   ShieldAlert,
+  Settings,
   ShieldCheck,
   Sliders,
   Sparkles,
-  User,
   Users,
   Workflow,
 } from "lucide-react";
@@ -43,6 +42,7 @@ import { SMTPSettingsModal } from "@/components/admin/SMTPSettingsModal";
 import { CursorDataTable } from "@/components/common/CursorDataTable";
 import { ExecutivePipelineOverview } from "@/components/dashboard/ExecutivePipelineOverview";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { ActionMenu, type ActionMenuSection } from "@/components/ui/overlay";
 import {
   Badge,
   OpenLink,
@@ -101,10 +101,6 @@ export function AdminDashboard() {
     "invoices"
   );
 
-  // Quick Create Dropdown state
-  const [isCreateDropdownOpen, setIsCreateDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
   // Simulator state
   const [runningScenario, setRunningScenario] = useState<string | null>(null);
   const [lastSimulation, setLastSimulation] =
@@ -154,20 +150,6 @@ export function AdminDashboard() {
     text: string;
     type: "success" | "error";
   } | null>(null);
-
-  // Close dropdown on click outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsCreateDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const showToast = (text: string, type: "success" | "error" = "success") => {
     setToast({ text, type });
@@ -320,6 +302,12 @@ export function AdminDashboard() {
     },
   ];
 
+  const navBadgeClasses: Record<"amber" | "emerald" | "red", string> = {
+    amber: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
+    emerald: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
+    red: "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300",
+  };
+
   const filteredNavItems = navItems.filter((item) => {
     if (!activeOrg?.feature_flags) return true;
     if (item.id === "overview") return activeOrg.feature_flags.page_overview !== false;
@@ -334,6 +322,148 @@ export function AdminDashboard() {
       setActiveTab(filteredNavItems[0].id);
     }
   }, [filteredNavItems, activeTab]);
+
+  // Sub-module entitlements managed from the platform console. Missing flags
+  // default to enabled so existing tenants keep their current experience.
+  const isFeatureEnabled = (key: string) => activeOrg?.feature_flags?.[key] !== false;
+  const isPageEnabled = (tab: AdminTab) => filteredNavItems.some((n) => n.id === tab);
+  const isSuperadmin = Boolean(currentUser?.is_superuser || currentRole === "Superadmin");
+  const showPublicSite = activeOrg?.feature_flags?.page_landing === true;
+
+  const crmTabs = [
+    ...(isFeatureEnabled("sub_crm_deals") ? [{ id: "deals" as const, label: "Deals & opportunities" }] : []),
+    ...(isFeatureEnabled("sub_crm_contacts") ? [{ id: "contacts" as const, label: "Contacts & inquiries" }] : []),
+  ];
+  const projectTabs = [
+    { id: "projects" as const, label: "Job sites" },
+    ...(isFeatureEnabled("sub_projects_tasks") ? [{ id: "tasks" as const, label: "Tasks & milestones" }] : []),
+    ...(isFeatureEnabled("sub_projects_materials") ? [{ id: "materials" as const, label: "Material orders" }] : []),
+  ];
+  const invoiceTabs = [
+    ...(isFeatureEnabled("sub_automation_invoices") ? [{ id: "invoices" as const, label: "Supplier invoices" }] : []),
+    ...(isFeatureEnabled("sub_automation_emails") ? [{ id: "emails" as const, label: "Email activity" }] : []),
+  ];
+  const activeCrmSubTab = crmTabs.some((t) => t.id === crmSubTab) ? crmSubTab : crmTabs[0]?.id;
+  const activeProjectSubTab = projectTabs.some((t) => t.id === projectSubTab) ? projectSubTab : "projects";
+  const activeInvoiceSubTab = invoiceTabs.some((t) => t.id === invoiceSubTab) ? invoiceSubTab : invoiceTabs[0]?.id;
+
+  const createMenuSections: ActionMenuSection[] = [
+    {
+      label: "Sales",
+      items: isPageEnabled("crm")
+        ? [
+            ...(isFeatureEnabled("sub_crm_contacts")
+              ? [
+                  {
+                    id: "contact",
+                    label: "New contact",
+                    description: "Inquiry, referral, or partner",
+                    icon: Users,
+                    onSelect: () => setIsContactOpen(true),
+                  },
+                ]
+              : []),
+            ...(isFeatureEnabled("sub_crm_deals")
+              ? [
+                  {
+                    id: "deal",
+                    label: "New deal",
+                    description: "Qualified custom home opportunity",
+                    icon: DollarSign,
+                    onSelect: () => {
+                      setEditingDeal(null);
+                      setIsDealOpen(true);
+                    },
+                  },
+                ]
+              : []),
+          ]
+        : [],
+    },
+    {
+      label: "Builds",
+      items: isPageEnabled("projects")
+        ? [
+            {
+              id: "project",
+              label: "New project",
+              description: "Sets up 4-phase build checklists",
+              icon: Layers,
+              onSelect: () => setIsProjectOpen(true),
+            },
+          ]
+        : [],
+    },
+    {
+      label: "Invoices",
+      items:
+        isPageEnabled("automation") && isFeatureEnabled("sub_automation_invoices")
+          ? [
+              {
+                id: "invoice",
+                label: "Ingest invoice",
+                description: "Supplier PDF invoice or receipt",
+                icon: Workflow,
+                onSelect: () => setIsInvoiceOpen(true),
+              },
+            ]
+          : [],
+    },
+  ];
+  const hasCreateActions = createMenuSections.some((section) => section.items.length > 0);
+
+  const settingsMenuSections: ActionMenuSection[] = [
+    {
+      label: "Workspace",
+      items: [
+        {
+          id: "org",
+          label: "Organization settings",
+          description: "Domain, thresholds, sign-in, and team",
+          icon: Sliders,
+          onSelect: () => setIsTenantSettingsOpen(true),
+        },
+        {
+          id: "smtp",
+          label: "Email delivery",
+          description: "SMTP credentials and test sends",
+          icon: Mail,
+          onSelect: () => setIsSmtpSettingsOpen(true),
+        },
+      ],
+    },
+    {
+      label: "Platform",
+      items: isSuperadmin
+        ? [
+            {
+              id: "platform",
+              label: "Platform console",
+              description: "Clients, sign-in, and feature entitlements",
+              icon: ShieldCheck,
+              onSelect: () => setIsSuperAdminOpen(true),
+            },
+          ]
+        : [],
+    },
+    {
+      // The desktop sidebar already exposes the public site link.
+      className: "lg:hidden",
+      items: showPublicSite
+        ? [
+            {
+              id: "public",
+              label: "View public site",
+              description: "Open your client-facing landing page",
+              icon: ArrowLeft,
+              onSelect: () => {
+                window.location.href = "/";
+              },
+            },
+          ]
+        : [],
+    },
+  ];
 
   const pageMeta: Record<AdminTab, { title: string; subtitle: string }> = {
     overview: {
@@ -428,7 +558,7 @@ export function AdminDashboard() {
             <span className="px-3 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">
               Operations
             </span>
-            <nav className="mt-2 space-y-1">
+            <nav aria-label="Workspace sections" className="mt-2 space-y-1">
               {filteredNavItems.map((item) => {
                 const Icon = item.icon;
                 const active = activeTab === item.id;
@@ -437,6 +567,7 @@ export function AdminDashboard() {
                     key={item.id}
                     type="button"
                     onClick={() => setActiveTab(item.id)}
+                    aria-current={active ? "page" : undefined}
                     className={`group flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition cursor-pointer ${
                       active
                         ? "bg-amber-50 text-amber-700 shadow-xs dark:bg-amber-950/60 dark:text-amber-300"
@@ -462,11 +593,7 @@ export function AdminDashboard() {
                     {item.badgeCount !== undefined && item.badgeCount > 0 && (
                       <span
                         className={`ml-2 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                          item.badgeTone === "amber"
-                            ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-                            : item.badgeTone === "red"
-                            ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
-                            : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                          navBadgeClasses[item.badgeTone ?? "emerald"]
                         }`}
                       >
                         {item.badgeCount}
@@ -500,25 +627,30 @@ export function AdminDashboard() {
           </div>
         </div>
 
-        {/* Sidebar Footer Controls: Theme Toggle & Public Site */}
-        <div className="border-t border-stone-200/80 dark:border-stone-800/80 p-4 space-y-3">
-          {/* Theme Selector */}
+        {/* Sidebar footer: appearance and secondary destinations */}
+        <div className="space-y-3 border-t border-stone-200/80 p-4 dark:border-stone-800/80">
           <div>
-            <div className="mb-1.5 flex items-center justify-between text-[11px] font-semibold text-stone-500 dark:text-stone-400">
-              <span>Theme</span>
+            <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">
+              Theme
             </div>
             <ThemeToggle className="w-full justify-between" />
           </div>
 
-          {/* Return to Public Website */}
-          {activeOrg?.feature_flags?.page_landing === true && (
-            <Link
-              href="/"
-              className="flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-700 transition hover:bg-stone-50 hover:text-stone-900 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span>Return to Public Site</span>
-            </Link>
+          {(isSuperadmin || showPublicSite) && (
+            <div className="grid gap-2">
+              {isSuperadmin && (
+                <button type="button" onClick={() => setIsSuperAdminOpen(true)} className="btn-secondary btn-sm w-full">
+                  <ShieldCheck className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  Platform console
+                </button>
+              )}
+              {showPublicSite && (
+                <Link href="/" className="btn-ghost btn-sm w-full">
+                  <ArrowLeft className="h-4 w-4" />
+                  View public site
+                </Link>
+              )}
+            </div>
           )}
         </div>
       </aside>
@@ -530,7 +662,11 @@ export function AdminDashboard() {
         aria-label="Mobile Navigation"
         className="fixed bottom-0 left-0 right-0 z-40 lg:hidden border-t border-stone-200/90 bg-white/95 backdrop-blur-md dark:border-stone-800/90 dark:bg-stone-900/95 shadow-xl transition-colors duration-200"
       >
-        <div className="grid grid-cols-4 h-16 max-w-lg mx-auto px-2">
+        <div
+          className={`mx-auto grid h-16 max-w-lg px-2 ${
+            ["grid-cols-1", "grid-cols-2", "grid-cols-3", "grid-cols-4"][Math.max(0, filteredNavItems.length - 1)]
+          }`}
+        >
           {filteredNavItems.map((item) => {
             const Icon = item.icon;
             const active = activeTab === item.id;
@@ -539,6 +675,7 @@ export function AdminDashboard() {
                 key={item.id}
                 type="button"
                 onClick={() => setActiveTab(item.id)}
+                aria-current={active ? "page" : undefined}
                 className={`flex flex-col items-center justify-center gap-1 py-1 transition cursor-pointer relative ${
                   active
                     ? "text-amber-600 dark:text-amber-400 font-semibold"
@@ -548,12 +685,16 @@ export function AdminDashboard() {
                 <div className="relative">
                   <Icon className={`h-5 w-5 ${active ? "scale-110" : ""} transition-transform`} />
                   {item.badgeCount !== undefined && item.badgeCount > 0 && (
-                    <span className="absolute -top-1 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white shadow-xs">
+                    <span
+                      className={`absolute -top-1.5 -right-2.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold ${
+                        navBadgeClasses[item.badgeTone ?? "emerald"]
+                      }`}
+                    >
                       {item.badgeCount}
                     </span>
                   )}
                 </div>
-                <span className="text-[10px] tracking-tight">{item.shortLabel}</span>
+                <span className="text-[11px] tracking-tight">{item.shortLabel}</span>
               </button>
             );
           })}
@@ -573,18 +714,18 @@ export function AdminDashboard() {
               <div className="flex min-w-0 items-center gap-2.5 lg:hidden">
                 <BeamLineMark className="size-8" title="BeamLine" />
                 <div className="min-w-0">
-                  <h1 className="max-w-32 truncate text-sm font-bold leading-tight text-stone-900 sm:max-w-xs dark:text-white">
+                  <p className="max-w-36 truncate text-sm font-semibold leading-tight text-stone-900 sm:max-w-xs dark:text-white">
                     {pageMeta[activeTab].title}
-                  </h1>
-                  <span className="text-[10px] text-stone-500 dark:text-stone-400">
-                    BeamLine
+                  </p>
+                  <span className="block max-w-36 truncate text-[11px] text-stone-500 sm:max-w-xs dark:text-stone-400">
+                    {activeOrg?.name || "BeamLine"}
                   </span>
                 </div>
               </div>
 
               {/* Desktop View Title & Subtitle with Luxury Department Badge */}
               <div className="hidden lg:flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-50 to-amber-100/70 border border-amber-200/70 text-amber-700 shadow-xs dark:from-amber-950/60 dark:to-amber-900/40 dark:border-amber-800/60 dark:text-amber-300 shrink-0">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-200/70 bg-amber-50 text-amber-700 dark:border-amber-800/60 dark:bg-amber-950/60 dark:text-amber-300">
                   {React.createElement(
                     navItems.find((n) => n.id === activeTab)?.icon || Building2,
                     { className: "h-5 w-5" }
@@ -592,20 +733,14 @@ export function AdminDashboard() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-bold text-stone-900 dark:text-white tracking-tight">
+                    <h1 className="text-lg font-semibold tracking-tight text-stone-900 dark:text-white">
                       {pageMeta[activeTab].title}
-                    </h2>
-                    {activeTab === "crm" && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        $14.1M Pipeline
-                      </span>
+                    </h1>
+                    {activeTab === "crm" && kpis && (
+                      <Badge tone="green">{formatCompactCurrency(kpis.total_pipeline_value)} pipeline</Badge>
                     )}
                     {activeTab === "crm" && kevinReviewCount > 0 && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/80 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                        {kevinReviewCount} Awaiting Kevin
-                      </span>
+                      <Badge tone="amber">{kevinReviewCount} awaiting review</Badge>
                     )}
                   </div>
                   <p className="text-xs text-stone-500 dark:text-stone-400">
@@ -615,236 +750,49 @@ export function AdminDashboard() {
               </div>
             </div>
 
-            {/* Right: Improved Action Buttons & Controls Placement */}
-            <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-              {/* Desktop Theme Toggle Shortcut */}
-              <div className="hidden lg:flex items-center">
-                <ThemeToggle variant="compact" />
-              </div>
+            {/* Right: one consistent action cluster on every page and breakpoint */}
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+              {/* The desktop sidebar carries the full theme control. */}
+              <ThemeToggle variant="compact" className="size-9 lg:hidden" />
 
-              {/* Mobile Theme Toggle & Public Site Shortcut */}
-              <div className="flex items-center gap-1.5 lg:hidden">
-                <ThemeToggle variant="compact" />
-                {activeOrg?.feature_flags?.page_landing === true && (
-                  <Link
-                    href="/"
-                    className="rounded-xl border border-stone-200 bg-white p-2 text-stone-600 hover:text-stone-900 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-300 cursor-pointer"
-                    title="Return to Public Site"
-                    aria-label="Return to Public Site"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Link>
-                )}
-              </div>
+              <ActionMenu
+                ariaLabel="Workspace settings"
+                triggerClassName="btn-secondary btn-sm h-9 w-9 px-0 sm:w-auto sm:px-3"
+                triggerContent={
+                  <>
+                    <Settings className="h-4 w-4" />
+                    <span className="hidden sm:inline">Settings</span>
+                  </>
+                }
+                sections={settingsMenuSections}
+              />
 
-              {/* Context-Aware Primary Action Button (Desktop & Tablet) */}
-              {activeTab === "crm" && (
-                <button
-                  type="button"
-                  onClick={() => setIsDealOpen(true)}
-                  className="btn-primary py-2 px-3 text-xs hidden sm:inline-flex"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>New Deal</span>
-                </button>
+              {hasCreateActions && (
+                <ActionMenu
+                  ariaLabel="Create new record"
+                  triggerClassName="btn-primary btn-sm h-9 w-9 px-0 sm:w-auto sm:px-3"
+                  triggerContent={
+                    <>
+                      <Plus className="h-4 w-4" />
+                      <span className="hidden sm:inline">Create</span>
+                    </>
+                  }
+                  sections={createMenuSections}
+                />
               )}
 
-              {activeTab === "projects" && (
-                <button
-                  type="button"
-                  onClick={() => setIsProjectOpen(true)}
-                  className="btn-primary py-2 px-3 text-xs hidden sm:inline-flex"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>New Project</span>
-                </button>
-              )}
-
-              {activeTab === "automation" && (
-                <button
-                  type="button"
-                  onClick={() => setIsInvoiceOpen(true)}
-                  className="btn-primary py-2 px-3 text-xs hidden sm:inline-flex"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Ingest Bill</span>
-                </button>
-              )}
-
-              {/* Platform Superadmin Control Plane Button (Available to Superadmin or dev preview) */}
-              {(currentUser?.is_superuser || currentRole === "Superadmin" || !currentUser) && (
-                <button
-                  type="button"
-                  onClick={() => setIsSuperAdminOpen(true)}
-                  className="hidden items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 shadow-xs transition hover:border-amber-300 hover:bg-amber-100 sm:inline-flex dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
-                  title="Platform Superadmin: Global Client Management, Google OAuth & Feature Matrix"
-                >
-                  <ShieldCheck className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                  <span className="hidden sm:inline">Superadmin</span>
-                </button>
-              )}
-
-              {/* Client Organization Settings Modal Trigger */}
-              <button
-                type="button"
-                onClick={() => setIsTenantSettingsOpen(true)}
-                className="hidden items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-xs transition hover:border-stone-300 hover:bg-stone-50 md:inline-flex dark:border-stone-800 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800"
-                title="Client Organization Settings: Subdomain, Custom Domain, Review Thresholds, Client Google OAuth & Team Invites"
-              >
-                <Sliders className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                <span className="hidden sm:inline">Org Settings</span>
-              </button>
-
-              {/* Auth / Profile Pill Button */}
               <button
                 type="button"
                 onClick={() => setIsAuthModalOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-700 shadow-xs transition hover:bg-stone-50 hover:border-stone-300 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800 cursor-pointer"
-                title={currentUser ? `Signed in as ${currentUser.username} (${currentRole})` : "Sign In to BeamLine"}
+                className="btn-secondary btn-sm h-9 gap-2 pl-1.5 pr-1.5 md:pr-3"
+                title={`Signed in as ${currentUser.username} (${currentRole})`}
+                aria-label={`Account: ${currentUser.username}`}
               >
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-600/10 text-[10px] font-bold text-amber-600 dark:bg-amber-400/20 dark:text-amber-300">
-                  {currentUser ? currentUser.username.charAt(0).toUpperCase() : <User className="h-3 w-3" />}
-                </div>
-                <span className="hidden md:inline font-semibold">
-                  {currentUser ? currentUser.username : "Sign In"}
+                <span className="flex size-6 items-center justify-center rounded-lg bg-amber-100 text-[11px] font-bold text-amber-800 dark:bg-amber-400/20 dark:text-amber-300">
+                  {currentUser.username.charAt(0).toUpperCase()}
                 </span>
-                <span className="hidden lg:inline rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-                  {currentRole}
-                </span>
+                <span className="hidden max-w-28 truncate md:inline">{currentUser.username}</span>
               </button>
-
-              {/* SMTP Settings Quick Modal Trigger */}
-              <button
-                type="button"
-                onClick={() => setIsSmtpSettingsOpen(true)}
-                className="hidden items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-xs transition hover:border-stone-300 hover:bg-stone-50 xl:inline-flex dark:border-stone-800 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800"
-                title="Configure Gmail SMTP credentials & live email triggers"
-              >
-                <Mail className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                <span className="hidden sm:inline">SMTP Settings</span>
-              </button>
-
-              {/* Universal "+ Add Record" Dropdown (All Screens) */}
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => setIsCreateDropdownOpen((prev) => !prev)}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-xs transition hover:bg-stone-50 hover:border-stone-300 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800 cursor-pointer"
-                  aria-expanded={isCreateDropdownOpen}
-                  aria-label="Create new record"
-                >
-                  <Plus className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                  <span className="hidden sm:inline">Add Record</span>
-                  <ChevronDown className="h-3.5 w-3.5 text-stone-400" />
-                </button>
-
-                {isCreateDropdownOpen && (
-                  <div className="animate-fade-up absolute right-0 mt-2 w-56 max-w-[calc(100vw-32px)] rounded-2xl border border-stone-200/90 bg-white/95 p-1.5 shadow-xl backdrop-blur-md dark:border-stone-800/90 dark:bg-stone-900/95 dark:shadow-black/60 z-50">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsCreateDropdownOpen(false);
-                        setIsContactOpen(true);
-                      }}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-stone-700 hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-800 cursor-pointer"
-                    >
-                      <Users className="h-4 w-4 text-amber-500" />
-                      <div>
-                        <div className="font-semibold">New Client Enquiry</div>
-                        <div className="text-[10px] text-stone-400">Referral or prospective client</div>
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsCreateDropdownOpen(false);
-                        setIsDealOpen(true);
-                      }}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-stone-700 hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-800 cursor-pointer"
-                    >
-                      <DollarSign className="h-4 w-4 text-emerald-500" />
-                      <div>
-                        <div className="font-semibold">New Deal / Opportunity</div>
-                        <div className="text-[10px] text-stone-400">Qualified $3M+ home build</div>
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsCreateDropdownOpen(false);
-                        setIsProjectOpen(true);
-                      }}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-stone-700 hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-800 cursor-pointer"
-                    >
-                      <Layers className="h-4 w-4 text-amber-500" />
-                      <div>
-                        <div className="font-semibold">New Construction Project</div>
-                        <div className="text-[10px] text-stone-400">Initializes 4-phase build checklists</div>
-                      </div>
-                    </button>
-                    <div className="my-1 border-t border-stone-100 dark:border-stone-800" />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsCreateDropdownOpen(false);
-                        setIsInvoiceOpen(true);
-                      }}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-stone-700 hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-800 cursor-pointer"
-                    >
-                      <Workflow className="h-4 w-4 text-amber-500" />
-                      <div>
-                        <div className="font-semibold">Ingest Supplier Bill</div>
-                        <div className="text-[10px] text-stone-400">PDF invoice or receipt</div>
-                      </div>
-                    </button>
-                    <div className="my-1 border-t border-stone-100 md:hidden dark:border-stone-800" />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsCreateDropdownOpen(false);
-                        setIsTenantSettingsOpen(true);
-                      }}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-stone-700 hover:bg-stone-100 md:hidden dark:text-stone-200 dark:hover:bg-stone-800"
-                    >
-                      <Sliders className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                      <div>
-                        <div className="font-semibold">Organization Settings</div>
-                        <div className="text-[10px] text-stone-400">Domain, branding, OAuth, and team</div>
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsCreateDropdownOpen(false);
-                        setIsSmtpSettingsOpen(true);
-                      }}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-stone-700 hover:bg-stone-100 xl:hidden dark:text-stone-200 dark:hover:bg-stone-800"
-                    >
-                      <Mail className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                      <div>
-                        <div className="font-semibold">SMTP Settings</div>
-                        <div className="text-[10px] text-stone-400">Email delivery configuration</div>
-                      </div>
-                    </button>
-                    {(currentUser?.is_superuser || currentRole === "Superadmin") && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsCreateDropdownOpen(false);
-                          setIsSuperAdminOpen(true);
-                        }}
-                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-stone-700 hover:bg-stone-100 sm:hidden dark:text-stone-200 dark:hover:bg-stone-800"
-                      >
-                        <ShieldCheck className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                        <div>
-                          <div className="font-semibold">Superadmin Console</div>
-                          <div className="text-[10px] text-stone-400">Client and platform controls</div>
-                        </div>
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         </header>
@@ -852,25 +800,22 @@ export function AdminDashboard() {
         {/* Content Body - Full Width Responsive Layout (Padding bottom pb-28 on mobile for bottom navbar) */}
         <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 2xl:px-10 py-6 sm:py-8 space-y-8 pb-28 lg:pb-8">
           {activeOrg && !activeOrg.is_active && !currentUser?.is_superuser ? (
-            <div className="flex flex-col items-center justify-center p-12 text-center min-h-[50vh] rounded-2xl border border-red-200 bg-red-50/50 dark:border-red-900/40 dark:bg-red-950/20">
-              <div className="h-14 w-14 rounded-2xl bg-red-100 flex items-center justify-center text-red-600 dark:bg-red-950/80 dark:text-red-400 mb-4 shadow-lg shadow-red-500/10">
+            <div className="flex min-h-[50vh] flex-col items-center justify-center rounded-2xl border border-rose-200 bg-rose-50/50 p-8 text-center dark:border-rose-900/40 dark:bg-rose-950/20 sm:p-12">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-950/80 dark:text-rose-400">
                 <ShieldAlert className="h-7 w-7" />
               </div>
-              <h2 className="text-xl font-bold text-stone-900 dark:text-white">
-                Client Organization Suspended
+              <h2 className="text-xl font-semibold text-stone-900 dark:text-white">
+                Workspace suspended
               </h2>
               <p className="mt-2 text-sm text-stone-600 dark:text-stone-400 max-w-md">
                 Workspace <strong>{activeOrg.name}</strong> ({activeOrg.subdomain_host}) has been deactivated by the platform administrator.
               </p>
-              <div className="mt-6 flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsAuthModalOpen(true)}
-                  className="btn-secondary text-xs"
-                >
-                  Switch Account / Superadmin
-                </button>
-              </div>
+              <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+                Contact your BeamLine administrator to restore access.
+              </p>
+              <button type="button" onClick={() => setIsAuthModalOpen(true)} className="btn-secondary mt-6">
+                Switch account
+              </button>
             </div>
           ) : (
             <>
@@ -956,7 +901,7 @@ export function AdminDashboard() {
 
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {kevinReviewCount > 0 && (
-                      <div className="rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-white dark:bg-stone-900 p-4 flex items-center justify-between">
+                      <div className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-white p-4 dark:border-amber-900/50 dark:bg-stone-900 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">
                             Client Deals Awaiting Review
@@ -974,15 +919,16 @@ export function AdminDashboard() {
                             setActiveTab("crm");
                             setCrmSubTab("deals");
                           }}
-                          className="btn-secondary text-xs py-1.5 px-3"
+                          className="btn-secondary btn-sm"
                         >
-                          Review Deals
+                          Review deals
+                          <ArrowRight className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     )}
 
                     {flaggedCostsCount > 0 && (
-                      <div className="rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-white dark:bg-stone-900 p-4 flex items-center justify-between">
+                      <div className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-white p-4 dark:border-amber-900/50 dark:bg-stone-900 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <span className="text-xs font-semibold text-rose-800 dark:text-rose-300">
                             Supplier Bills Needing Clarification
@@ -1000,9 +946,10 @@ export function AdminDashboard() {
                             setActiveTab("automation");
                             setInvoiceSubTab("invoices");
                           }}
-                          className="btn-secondary text-xs py-1.5 px-3"
+                          className="btn-secondary btn-sm"
                         >
-                          Review Bills
+                          Review bills
+                          <ArrowRight className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     )}
@@ -1022,16 +969,18 @@ export function AdminDashboard() {
                         setActiveTab("crm");
                         setCrmSubTab("deals");
                       }}
-                      className="btn-ghost text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700"
+                      className="btn-ghost btn-sm"
                     >
-                      View All Deals →
+                      View all deals
+                      <ArrowRight className="h-3.5 w-3.5" />
                     </button>
                   }
                 />
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   {(summary?.stages_breakdown || []).map((st) => (
-                    <div
+                    <button
+                      type="button"
                       key={st.stage}
                       onClick={() => {
                         setSelectedPipelineStage(st.stage);
@@ -1039,7 +988,8 @@ export function AdminDashboard() {
                         setActiveTab("crm");
                         setCrmSubTab("deals");
                       }}
-                      className="rounded-2xl border border-stone-200/80 dark:border-stone-800 bg-stone-50/50 dark:bg-stone-950/40 p-4 flex flex-col justify-between hover:border-amber-400/50 hover:bg-stone-100/50 dark:hover:bg-stone-900/50 transition cursor-pointer"
+                      aria-label={`View ${st.stage} deals`}
+                      className="flex cursor-pointer flex-col justify-between rounded-2xl border border-stone-200/80 bg-stone-50/50 p-4 text-left transition outline-none hover:border-amber-400/60 hover:bg-stone-100/50 focus-visible:ring-4 focus-visible:ring-amber-200 dark:border-stone-800 dark:bg-stone-950/40 dark:hover:bg-stone-900/50 dark:focus-visible:ring-amber-900"
                     >
                       <div>
                         <div className="flex items-center justify-between text-xs font-semibold text-amber-700 dark:text-amber-300">
@@ -1063,7 +1013,7 @@ export function AdminDashboard() {
                           {formatCompactCurrency(st.weighted_value || "0")}
                         </span>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -1080,9 +1030,10 @@ export function AdminDashboard() {
                         setActiveTab("projects");
                         setProjectSubTab("projects");
                       }}
-                      className="btn-ghost text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700"
+                      className="btn-ghost btn-sm"
                     >
-                      View Job Sites →
+                      View job sites
+                      <ArrowRight className="h-3.5 w-3.5" />
                     </button>
                   }
                 />
@@ -1117,6 +1068,7 @@ export function AdminDashboard() {
           {activeTab === "crm" && (
             <div className="space-y-6">
               {/* Executive Sales Pipeline Visual Overview & Funnel */}
+              {isFeatureEnabled("sub_crm_deals") && (
               <ExecutivePipelineOverview
                 summary={summary}
                 onFilterStage={(stage) => {
@@ -1128,10 +1080,6 @@ export function AdminDashboard() {
                   setSelectedReviewFilter("true");
                   setSelectedPipelineStage("");
                   setCrmSubTab("deals");
-                }}
-                onNewDealClick={() => {
-                  setEditingDeal(null);
-                  setIsDealOpen(true);
                 }}
                 onReviewDeal={async (dealSummary) => {
                   try {
@@ -1150,50 +1098,38 @@ export function AdminDashboard() {
                   }
                 }}
               />
+              )}
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-2">
-                <div>
-                  <h2 className="text-xl font-bold text-stone-900 dark:text-white">
-                    Sales Pipeline &amp; Client Inquiries
-                  </h2>
-                  <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
-                    Track high-touch referrals from initial qualification through design &amp; construction agreements
-                  </p>
-                </div>
+              <SectionIntro
+                title="Sales pipeline & client inquiries"
+                description="Track referrals from first qualification through design and construction agreements."
+                action={
+                  crmTabs.length > 1 ? (
+                    <Tabs
+                      size="sm"
+                      ariaLabel="Sales views"
+                      tabs={crmTabs}
+                      value={activeCrmSubTab ?? "deals"}
+                      onChange={(id) => {
+                        setCrmSubTab(id);
+                        if (id === "deals") {
+                          setSelectedPipelineStage("");
+                          setSelectedReviewFilter("");
+                        }
+                      }}
+                    />
+                  ) : undefined
+                }
+              />
 
-                {/* Sub-tab switcher */}
-                <div className="inline-flex rounded-xl bg-stone-100 dark:bg-stone-900 p-1 border border-stone-200/80 dark:border-stone-800 self-start sm:self-auto shadow-2xs">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCrmSubTab("deals");
-                      setSelectedPipelineStage("");
-                      setSelectedReviewFilter("");
-                    }}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
-                      crmSubTab === "deals"
-                        ? "bg-white text-stone-900 shadow-xs border border-stone-200/60 dark:border-transparent dark:bg-stone-800 dark:text-white"
-                        : "text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200"
-                    }`}
-                  >
-                    Deals &amp; Opportunities
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCrmSubTab("contacts")}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
-                      crmSubTab === "contacts"
-                        ? "bg-white text-stone-900 shadow-xs border border-stone-200/60 dark:border-transparent dark:bg-stone-800 dark:text-white"
-                        : "text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200"
-                    }`}
-                  >
-                    Contacts &amp; Inquiries
-                  </button>
+              {crmTabs.length === 0 && (
+                <div className="card px-6 py-12 text-center text-sm text-stone-500 dark:text-stone-400">
+                  Sales modules are not enabled for this workspace.
                 </div>
-              </div>
+              )}
 
               {/* Sub-tab: Deals */}
-              {crmSubTab === "deals" && (
+              {activeCrmSubTab === "deals" && (
                 <CursorDataTable<Opportunity>
                   title="Deals & Opportunities"
                   endpoint="/opportunities/"
@@ -1206,7 +1142,7 @@ export function AdminDashboard() {
                     setEditingDeal(null);
                     setIsDealOpen(true);
                   }}
-                  addButtonLabel="New Deal"
+                  addButtonLabel="New deal"
                   searchPlaceholder="Search deals, sales owners, clients..."
                   filters={[
                     {
@@ -1319,7 +1255,7 @@ export function AdminDashboard() {
                     {
                       key: "actions",
                       header: "Actions",
-                      className: "w-44 text-right",
+                      className: "w-36 text-right",
                       render: (row) => (
                         <div className="flex items-center justify-end gap-1.5">
                           <button
@@ -1328,24 +1264,15 @@ export function AdminDashboard() {
                               setEditingDeal(row);
                               setIsDealOpen(true);
                             }}
-                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer transition ${
-                              row.requires_kevin_review
-                                ? "bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/80 shadow-2xs"
-                                : "bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-200/80 dark:border-stone-700"
-                            }`}
-                            title={row.requires_kevin_review ? "Review & Approve Deal" : "Edit Deal"}
+                            className={`${row.requires_kevin_review ? "btn-primary" : "btn-secondary"} btn-xs`}
+                            aria-label={`${row.requires_kevin_review ? "Review" : "Edit"} ${row.name}`}
                           >
                             {row.requires_kevin_review ? (
-                              <>
-                                <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                                <span>Review</span>
-                              </>
+                              <CheckCircle2 className="h-3.5 w-3.5" />
                             ) : (
-                              <>
-                                <Edit2 className="w-3.5 h-3.5 text-stone-500 dark:text-stone-400" />
-                                <span>Edit</span>
-                              </>
+                              <Edit2 className="h-3.5 w-3.5" />
                             )}
+                            {row.requires_kevin_review ? "Review" : "Edit"}
                           </button>
                           <OpenLink href={row.notion_url} label="Open in Notion" />
                         </div>
@@ -1356,13 +1283,13 @@ export function AdminDashboard() {
               )}
 
               {/* Sub-tab: Contacts */}
-              {crmSubTab === "contacts" && (
+              {activeCrmSubTab === "contacts" && (
                 <CursorDataTable<Contact>
                   title="Contacts & Client Inquiries"
                   endpoint="/contacts/"
                   refreshTrigger={refreshCounter}
                   onAddClick={() => setIsContactOpen(true)}
-                  addButtonLabel="New Contact / Enquiry"
+                  addButtonLabel="New contact"
                   searchPlaceholder="Search contacts by name, email, referral..."
                   filters={[
                     {
@@ -1447,58 +1374,27 @@ export function AdminDashboard() {
           {/* ======================================================== */}
           {activeTab === "projects" && (
             <div className="space-y-6">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-stone-900 dark:text-white">
-                    Active Construction Projects &amp; Job Sites
-                  </h2>
-                  <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
-                    Standardized 4-phase checklists: Pre-Construction, Active Construction, Closeout, and Warranty
-                  </p>
-                </div>
-
-                {/* Sub-tab switcher */}
-                <div className="inline-flex rounded-xl bg-stone-100 dark:bg-stone-900 p-1 border border-transparent dark:border-stone-800 self-start sm:self-auto overflow-x-auto max-w-full">
-                  <button
-                    type="button"
-                    onClick={() => setProjectSubTab("projects")}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
-                      projectSubTab === "projects"
-                        ? "bg-white text-stone-900 shadow-xs dark:bg-stone-800 dark:text-white"
-                        : "text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200"
-                    }`}
-                  >
-                    Job Sites (Projects)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setProjectSubTab("tasks")}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
-                      projectSubTab === "tasks"
-                        ? "bg-white text-stone-900 shadow-xs dark:bg-stone-800 dark:text-white"
-                        : "text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200"
-                    }`}
-                  >
-                    Tasks &amp; Milestones
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setProjectSubTab("materials")}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
-                      projectSubTab === "materials"
-                        ? "bg-white text-stone-900 shadow-xs dark:bg-stone-800 dark:text-white"
-                        : "text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200"
-                    }`}
-                  >
-                    Material Orders
-                  </button>
-                </div>
-              </div>
+              <SectionIntro
+                title="Construction projects & job sites"
+                description="Standard 4-phase checklists: pre-construction, construction, closeout, and warranty."
+                action={
+                  projectTabs.length > 1 ? (
+                    <Tabs
+                      size="sm"
+                      ariaLabel="Build views"
+                      tabs={projectTabs}
+                      value={activeProjectSubTab}
+                      onChange={setProjectSubTab}
+                    />
+                  ) : undefined
+                }
+              />
 
               {/* Sub-tab: Projects */}
-              {projectSubTab === "projects" && (
+              {activeProjectSubTab === "projects" && (
                 <div className="space-y-6">
                   {/* 4-Phase Lifecycle Strip */}
+                  {isFeatureEnabled("sub_projects_board") && (
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     {[
                       {
@@ -1529,13 +1425,14 @@ export function AdminDashboard() {
                       </div>
                     ))}
                   </div>
+                  )}
 
                   <CursorDataTable<ConstructionProject>
-                    title="Construction Projects (Reusable 4-Phase Template)"
+                    title="Construction projects"
                     endpoint="/projects/"
                     refreshTrigger={refreshCounter}
                     onAddClick={() => setIsProjectOpen(true)}
-                    addButtonLabel="New Project"
+                    addButtonLabel="New project"
                     searchPlaceholder="Search by code (PRJ-101), name, PM..."
                     filters={[
                       {
@@ -1635,7 +1532,7 @@ export function AdminDashboard() {
               )}
 
               {/* Sub-tab: Tasks */}
-              {projectSubTab === "tasks" && (
+              {activeProjectSubTab === "tasks" && (
                 <CursorDataTable<ProjectTask>
                   title="Tasks & Milestones"
                   endpoint="/tasks/"
@@ -1696,7 +1593,7 @@ export function AdminDashboard() {
               )}
 
               {/* Sub-tab: Materials */}
-              {projectSubTab === "materials" && (
+              {activeProjectSubTab === "materials" && (
                 <CursorDataTable<MaterialOrder>
                   title="Material Orders & Site Procurement"
                   endpoint="/material-orders/"
@@ -1763,47 +1660,33 @@ export function AdminDashboard() {
           {/* ======================================================== */}
           {activeTab === "automation" && (
             <div className="space-y-6">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-stone-900 dark:text-white">
-                    Subcontractor Invoices &amp; Margin Protection
-                  </h2>
-                  <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
-                    Automated email invoice parsing, duplicate rejection, and real-time cost tracking
-                  </p>
-                </div>
+              <SectionIntro
+                title="Supplier invoices & margin protection"
+                description="Automated email invoice parsing, duplicate rejection, and real-time cost tracking."
+                action={
+                  invoiceTabs.length > 1 ? (
+                    <Tabs
+                      size="sm"
+                      ariaLabel="Invoice views"
+                      tabs={invoiceTabs}
+                      value={activeInvoiceSubTab ?? "invoices"}
+                      onChange={setInvoiceSubTab}
+                    />
+                  ) : undefined
+                }
+              />
 
-                {/* Sub-tab switcher */}
-                <div className="inline-flex rounded-xl bg-stone-100 dark:bg-stone-900 p-1 border border-transparent dark:border-stone-800 self-start sm:self-auto">
-                  <button
-                    type="button"
-                    onClick={() => setInvoiceSubTab("invoices")}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
-                      invoiceSubTab === "invoices"
-                        ? "bg-white text-stone-900 shadow-xs dark:bg-stone-800 dark:text-white"
-                        : "text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200"
-                    }`}
-                  >
-                    Subcontractor Invoices
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setInvoiceSubTab("emails")}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
-                      invoiceSubTab === "emails"
-                        ? "bg-white text-stone-900 shadow-xs dark:bg-stone-800 dark:text-white"
-                        : "text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200"
-                    }`}
-                  >
-                    Email Activity Logs
-                  </button>
+              {invoiceTabs.length === 0 && (
+                <div className="card px-6 py-12 text-center text-sm text-stone-500 dark:text-stone-400">
+                  Invoice modules are not enabled for this workspace.
                 </div>
-              </div>
+              )}
 
               {/* Sub-tab: Invoices */}
-              {invoiceSubTab === "invoices" && (
+              {activeInvoiceSubTab === "invoices" && (
                 <div className="space-y-6">
                   {/* Simulator Test Bench Card */}
+                  {(isFeatureEnabled("sub_automation_simulator") || lastSimulation) && (
                   <div className="card p-6 border-amber-100 bg-gradient-to-br from-amber-50/40 via-white to-white dark:border-amber-950 dark:from-amber-950/20 dark:via-stone-900 dark:to-stone-900 space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div>
@@ -1814,22 +1697,15 @@ export function AdminDashboard() {
                           </h3>
                         </div>
                         <p className="text-xs text-stone-600 dark:text-stone-400 mt-1">
-                          Click any test scenario to simulate an incoming subcontractor email with an invoice attachment
+                          Run a scenario to simulate an incoming subcontractor email with an invoice attachment.
                         </p>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => setIsInvoiceOpen(true)}
-                        className="btn-primary py-2 text-xs shrink-0 self-start sm:self-auto"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        <span>Send Custom Vendor Invoice</span>
-                      </button>
                     </div>
 
                     {/* One-Click Scenario Buttons */}
-                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-6">
+                    {isFeatureEnabled("sub_automation_simulator") && (
+                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
                       {[
                         {
                           key: "1_unpaid_invoice",
@@ -1867,16 +1743,22 @@ export function AdminDashboard() {
                           type="button"
                           disabled={runningScenario !== null}
                           onClick={() => handleRunScenario(sc.key)}
-                          className="rounded-2xl border border-stone-200/90 dark:border-stone-800 bg-white dark:bg-stone-900 p-3.5 text-left transition hover:border-amber-400 dark:hover:border-amber-500 hover:shadow-xs cursor-pointer disabled:opacity-50"
+                          aria-busy={runningScenario === sc.key}
+                          className="rounded-2xl border border-stone-200/90 bg-white p-3.5 text-left transition outline-none hover:border-amber-400 hover:shadow-xs focus-visible:ring-4 focus-visible:ring-amber-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 dark:border-stone-800 dark:bg-stone-900 dark:hover:border-amber-500 dark:focus-visible:ring-amber-900"
                         >
-                          <div className="flex items-center justify-between text-xs font-bold text-stone-900 dark:text-white">
+                          <div className="flex items-center justify-between gap-2 text-xs font-bold text-stone-900 dark:text-white">
                             <span>{sc.title}</span>
-                            <Play className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                            {runningScenario === sc.key ? (
+                              <RefreshCw className="h-3 w-3 shrink-0 animate-spin text-amber-600 dark:text-amber-400" />
+                            ) : (
+                              <Play className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
+                            )}
                           </div>
                           <p className="mt-1 text-[11px] text-stone-500 dark:text-stone-400">{sc.desc}</p>
                         </button>
                       ))}
                     </div>
+                    )}
 
                     {/* Execution Trace Result */}
                     {lastSimulation && (
@@ -1934,7 +1816,7 @@ export function AdminDashboard() {
                               href={lastSimulation.cost_record.supporting_document_url}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 font-semibold text-white shadow-xs transition-colors"
+                              className="btn-secondary btn-xs"
                             >
                               <FileText className="h-3.5 w-3.5" />
                               View Rendered PDF ({lastSimulation.cost_record.document_reference}.pdf)
@@ -1948,13 +1830,14 @@ export function AdminDashboard() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   <CursorDataTable<ProjectCost>
-                    title="Project Costs & Invoices (Notion + n8n Synced)"
+                    title="Project costs & invoices"
                     endpoint="/costs/"
                     refreshTrigger={refreshCounter}
                     onAddClick={() => setIsInvoiceOpen(true)}
-                    addButtonLabel="Ingest Custom Vendor Invoice"
+                    addButtonLabel="Ingest invoice"
                     searchPlaceholder="Search supplier, invoice ref, project..."
                     filters={[
                       {
@@ -2070,10 +1953,11 @@ export function AdminDashboard() {
                                 href={row.supporting_document_url}
                                 target="_blank"
                                 rel="noreferrer"
-                                title="View Rendered PDF Invoice"
-                                className="inline-flex items-center gap-1 rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 px-2 py-1 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-stone-50 dark:hover:bg-stone-700 shadow-2xs transition-colors"
+                                title="View rendered PDF invoice"
+                                aria-label={`View PDF for ${row.document_reference}`}
+                                className="btn-secondary btn-xs"
                               >
-                                <FileText className="h-3 w-3" />
+                                <FileText className="h-3.5 w-3.5" />
                                 PDF
                               </a>
                             ) : null}
@@ -2087,10 +1971,10 @@ export function AdminDashboard() {
               )}
 
               {/* Sub-tab: Emails */}
-              {invoiceSubTab === "emails" && (
+              {activeInvoiceSubTab === "emails" && (
                 <div className="space-y-6">
                   {/* Part 3 Assessment Live Email Automation Trigger Bar */}
-                  <div className="rounded-3xl border border-stone-200/90 dark:border-stone-800 bg-white/80 dark:bg-stone-900/80 p-5 shadow-xs space-y-4">
+                  <div className="card space-y-4 p-6">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div>
                         <div className="flex items-center gap-2">
@@ -2108,10 +1992,10 @@ export function AdminDashboard() {
                       <button
                         type="button"
                         onClick={() => setIsSmtpSettingsOpen(true)}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/60 px-3.5 py-2 text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900 transition cursor-pointer self-start sm:self-auto"
+                        className="btn-secondary btn-sm self-start sm:self-auto"
                       >
-                        <Mail className="h-3.5 w-3.5" />
-                        <span>Configure SMTP Settings</span>
+                        <Settings className="h-3.5 w-3.5" />
+                        Email settings
                       </button>
                     </div>
 

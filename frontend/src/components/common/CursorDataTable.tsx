@@ -129,7 +129,7 @@ export function CursorDataTable<T extends { id: string }>({
         {title && (
           <h3 className="text-base font-semibold text-stone-900 dark:text-stone-100 lg:mr-2">{title}</h3>
         )}
-        <div className="relative flex-1 lg:max-w-sm">
+        <div className="relative min-w-0 flex-1 lg:max-w-sm">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
           <input
             type="text"
@@ -185,15 +185,15 @@ export function CursorDataTable<T extends { id: string }>({
             onClick={fetchRows}
             title="Refresh"
             aria-label="Refresh list"
-            className="rounded-xl border border-stone-200 dark:border-stone-800 p-2 text-stone-500 transition hover:bg-stone-50 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-200 cursor-pointer"
+            className="btn-secondary btn-sm btn-icon"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
 
           {onAddClick && (
-            <button type="button" onClick={onAddClick} className="btn-primary py-2 text-xs sm:text-sm">
+            <button type="button" onClick={onAddClick} className="btn-primary btn-sm">
               <Plus className="h-4 w-4" />
-              <span>{addButtonLabel}</span>
+              {addButtonLabel}
             </button>
           )}
         </div>
@@ -254,7 +254,13 @@ export function CursorDataTable<T extends { id: string }>({
       {/* Mobile cards */}
       <div className="divide-y divide-stone-100 dark:divide-stone-800 md:hidden">
         {loading ? (
-          <div className="p-6 text-center text-sm text-stone-500 dark:text-stone-400">Loading...</div>
+          Array.from({ length: 3 }).map((_, idx) => (
+            <div key={idx} className="space-y-2.5 p-4" aria-hidden="true">
+              <div className="h-4 w-2/3 animate-pulse rounded bg-stone-100 dark:bg-stone-800" />
+              <div className="h-3 w-1/2 animate-pulse rounded bg-stone-100 dark:bg-stone-800" />
+              <div className="h-3 w-3/4 animate-pulse rounded bg-stone-100 dark:bg-stone-800" />
+            </div>
+          ))
         ) : rows.length === 0 ? (
           <EmptyState
             message={hasActiveFilters ? "No results match your search." : emptyMessage}
@@ -303,7 +309,7 @@ export function CursorDataTable<T extends { id: string }>({
             type="button"
             disabled={!hasPrev || loading}
             onClick={() => setCursor(prevCursor)}
-            className="btn-secondary px-3 py-1.5 text-xs"
+            className="btn-secondary btn-sm"
           >
             <ChevronLeft className="h-4 w-4" />
             <span>Previous</span>
@@ -312,7 +318,7 @@ export function CursorDataTable<T extends { id: string }>({
             type="button"
             disabled={!hasNext || loading}
             onClick={() => setCursor(nextCursor)}
-            className="btn-secondary px-3 py-1.5 text-xs"
+            className="btn-secondary btn-sm"
           >
             <span>Next</span>
             <ChevronRight className="h-4 w-4" />

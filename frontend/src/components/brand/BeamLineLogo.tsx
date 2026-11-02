@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 
 type MarkTone = "dark" | "amber";
 
@@ -42,6 +43,8 @@ export function BeamLineLogo({
   subtitle,
   subtitleClassName = "text-stone-500 dark:text-stone-400",
   badge,
+  href,
+  className = "",
 }: {
   markClassName?: string;
   tone?: MarkTone;
@@ -50,9 +53,11 @@ export function BeamLineLogo({
   subtitle?: ReactNode;
   subtitleClassName?: string;
   badge?: ReactNode;
+  href?: string | null;
+  className?: string;
 }) {
-  return (
-    <span className="flex min-w-0 items-center gap-3">
+  const content = (
+    <span className={`flex min-w-0 items-center gap-3 ${className}`}>
       <BeamLineMark className={markClassName} tone={tone} />
       <span className="min-w-0">
         <span className="flex items-center gap-1.5">
@@ -61,8 +66,26 @@ export function BeamLineLogo({
           </span>
           {badge}
         </span>
-        {subtitle && <span className={`block truncate text-[0.68rem] leading-snug ${subtitleClassName}`}>{subtitle}</span>}
+        {subtitle && (
+          <span className={`block truncate text-[0.68rem] leading-snug ${subtitleClassName}`}>
+            {subtitle}
+          </span>
+        )}
       </span>
     </span>
   );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="group inline-flex min-w-0 items-center transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded-lg"
+        aria-label={typeof subtitle === "string" ? `BeamLine — ${subtitle}` : "BeamLine home"}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 }

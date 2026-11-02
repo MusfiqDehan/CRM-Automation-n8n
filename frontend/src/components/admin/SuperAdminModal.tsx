@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { BeamLineMark } from "@/components/brand/BeamLineLogo";
 import { Badge, Field, StatCard } from "@/components/ui/primitives";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import {
   InlineAlert,
   Modal,
@@ -594,13 +595,12 @@ export function SuperAdminControlPlane({
               label="Google OAuth Client Secret"
               hint={platformSettings?.has_google_secret ? "A secret is stored securely. Leave blank to preserve it." : undefined}
             >
-              <input
-                type="password"
+              <PasswordInput
                 autoComplete="new-password"
                 placeholder={platformSettings?.has_google_secret ? "••••••••••••" : "Enter Google client secret"}
                 value={googleClientSecret}
                 onChange={(e) => setGoogleClientSecret(e.target.value)}
-                className="input font-mono"
+                className="font-mono"
               />
             </Field>
 

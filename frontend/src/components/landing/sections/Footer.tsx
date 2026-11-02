@@ -12,7 +12,7 @@ export function Footer() {
     <footer className="bg-stone-950 text-stone-400">
       <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 md:grid-cols-[1.4fr_2fr] lg:px-8">
         <div className="max-w-sm">
-          <BeamLineLogo tone="amber" markClassName="size-11" wordmarkClassName="text-xl text-white" accentClassName="text-amber-400" />
+          <BeamLineLogo href="/" tone="amber" markClassName="size-11" wordmarkClassName="text-xl text-white" accentClassName="text-amber-400" />
           <p className="mt-5 text-sm leading-6">
             The multi-tenant construction operating system for builders who want to sell smarter, build calmer, and grow on purpose.
           </p>

@@ -16,6 +16,8 @@ import {
   UserPlus,
 } from "lucide-react";
 import { BeamLineLogo, BeamLineMark } from "@/components/brand/BeamLineLogo";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { Modal, ModalBody, ModalHeader } from "@/components/ui/overlay";
 import { apiClient } from "@/lib/api-client";
 import type { AuthTokens, AuthUser, OAuthPublicConfig, Organization } from "@/lib/types";
@@ -423,17 +425,14 @@ export function AuthModal({
                     <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                       Password
                     </label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
-                      <input
-                        type="password"
-                        required
-                        placeholder="••••••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="input py-2 pl-9 pr-3"
-                      />
-                    </div>
+                    <PasswordInput
+                      required
+                      placeholder="••••••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      leftIcon={<Lock className="h-4 w-4" />}
+                      className="py-2"
+                    />
                   </div>
 
                   <button
@@ -458,17 +457,17 @@ export function AuthModal({
                     >
                       <div className="flex items-center justify-between w-full">
                         <span className="text-xs font-bold text-stone-900 dark:text-stone-100 group-hover:text-amber-600 dark:group-hover:text-amber-400">
-                          Client Admin (Kevin)
+                          Kevin (Client Admin)
                         </span>
                         <span className="rounded bg-stone-200/70 px-1 py-0.5 text-[10px] font-mono text-stone-600 dark:bg-stone-800 dark:text-stone-400">
-                          Owner
+                          Client Admin
                         </span>
                       </div>
                       <div className="mt-1 text-[11px] font-mono text-stone-500 dark:text-stone-400">
                         <code>kevin</code> / <code>kevinpass2026</code>
                       </div>
                       <div className="mt-0.5 text-[10px] text-stone-400 dark:text-stone-500">
-                        Kevin&apos;s Custom Homes workspace
+                        Admin of Kevin&apos;s Custom Homes workspace
                       </div>
                     </button>
 
@@ -482,14 +481,14 @@ export function AuthModal({
                           Platform Superadmin
                         </span>
                         <span className="rounded bg-amber-100 px-1 py-0.5 text-[10px] font-mono text-amber-800 dark:bg-amber-900 dark:text-amber-300">
-                          Superuser
+                          Platform Owner
                         </span>
                       </div>
                       <div className="mt-1 text-[11px] font-mono text-amber-700 dark:text-amber-300">
                         <code>admin</code> / <code>adminpass2026</code>
                       </div>
                       <div className="mt-0.5 text-[10px] text-amber-600/80 dark:text-amber-400/80">
-                        Govern all tenants, OAuth &amp; flags
+                        Owner of BeamLine &amp; all client tenants
                       </div>
                     </button>
                   </div>
@@ -553,18 +552,15 @@ export function AuthModal({
                   <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                     Password (min. 8 characters)
                   </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
-                    <input
-                      type="password"
-                      required
-                      minLength={8}
-                      placeholder="••••••••••••"
-                      value={regPassword}
-                      onChange={(e) => setRegPassword(e.target.value)}
-                      className="input py-2 pl-9 pr-3"
-                    />
-                  </div>
+                  <PasswordInput
+                    required
+                    minLength={8}
+                    placeholder="••••••••••••"
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                    leftIcon={<Lock className="h-4 w-4" />}
+                    className="py-2"
+                  />
                 </div>
 
                 <button
@@ -770,6 +766,15 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
       <header className="border-b border-stone-200/80 bg-white/90 backdrop-blur-md dark:border-stone-800/80 dark:bg-stone-900/90">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6 lg:px-8">
           <BeamLineLogo
+            href={
+              activeTenant?.feature_flags.page_landing === true
+                ? activeTenant.custom_domain
+                  ? `https://${activeTenant.custom_domain}`
+                  : activeTenant.slug
+                  ? `/?tenant=${activeTenant.slug}`
+                  : "/"
+                : "/"
+            }
             markClassName="size-10"
             wordmarkClassName="text-base text-stone-900 dark:text-white"
             badge={
@@ -780,6 +785,7 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
           />
 
           <div className="flex items-center gap-3">
+            <ThemeToggle variant="compact" />
             {activeTenant?.feature_flags.page_landing === true && (
               <Link
                 href={
@@ -945,17 +951,14 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
                     <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                       Password
                     </label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
-                      <input
-                        type="password"
-                        required
-                        placeholder="••••••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="input py-2 pl-9 pr-3"
-                      />
-                    </div>
+                    <PasswordInput
+                      required
+                      placeholder="••••••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      leftIcon={<Lock className="h-4 w-4" />}
+                      className="py-2"
+                    />
                   </div>
 
                   <button
@@ -980,17 +983,17 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
                     >
                       <div className="flex items-center justify-between w-full">
                         <span className="text-xs font-bold text-stone-900 dark:text-stone-100 group-hover:text-amber-600 dark:group-hover:text-amber-400">
-                          Client Admin (Kevin)
+                          Kevin (Client Admin)
                         </span>
                         <span className="rounded bg-stone-200/70 px-1 py-0.5 text-[10px] font-mono text-stone-600 dark:bg-stone-800 dark:text-stone-400">
-                          Owner
+                          Client Admin
                         </span>
                       </div>
                       <div className="mt-1 text-[11px] font-mono text-stone-600 dark:text-stone-400">
                         <code>kevin</code> / <code>kevinpass2026</code>
                       </div>
                       <div className="mt-0.5 text-[10px] text-stone-400 dark:text-stone-500">
-                        Kevin&apos;s Custom Homes workspace
+                        Admin of Kevin&apos;s Custom Homes workspace
                       </div>
                     </button>
 
@@ -1004,14 +1007,14 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
                           Platform Superadmin
                         </span>
                         <span className="rounded bg-amber-100 px-1 py-0.5 text-[10px] font-mono text-amber-800 dark:bg-amber-900 dark:text-amber-300">
-                          Superuser
+                          Platform Owner
                         </span>
                       </div>
                       <div className="mt-1 text-[11px] font-mono text-amber-700 dark:text-amber-300">
                         <code>admin</code> / <code>adminpass2026</code>
                       </div>
                       <div className="mt-0.5 text-[10px] text-amber-600/80 dark:text-amber-400/80">
-                        Govern all tenants, OAuth &amp; flags
+                        Owner of BeamLine &amp; all client tenants
                       </div>
                     </button>
                   </div>
@@ -1075,18 +1078,15 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
                   <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                     Password (min. 8 characters)
                   </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
-                    <input
-                      type="password"
-                      required
-                      minLength={8}
-                      placeholder="••••••••••••"
-                      value={regPassword}
-                      onChange={(e) => setRegPassword(e.target.value)}
-                      className="input py-2 pl-9 pr-3"
-                    />
-                  </div>
+                  <PasswordInput
+                    required
+                    minLength={8}
+                    placeholder="••••••••••••"
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                    leftIcon={<Lock className="h-4 w-4" />}
+                    className="py-2"
+                  />
                 </div>
 
                 <button

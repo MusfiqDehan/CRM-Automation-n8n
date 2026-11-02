@@ -97,11 +97,17 @@ function ClientBrand({ tenant, inverse = false }: { tenant: ClientTenant; invers
 }
 
 export function ClientLandingPage({ tenant }: { tenant: ClientTenant }) {
+  const tenantHomeUrl = tenant.custom_domain
+    ? `https://${tenant.custom_domain}`
+    : tenant.slug
+    ? `/?tenant=${tenant.slug}`
+    : "/";
+
   return (
     <div className="min-h-screen overflow-x-clip bg-stone-50 text-stone-950 selection:bg-amber-300 dark:bg-stone-950 dark:text-stone-50">
       <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-5">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 rounded-2xl border border-stone-200/80 bg-white/90 px-3 py-2.5 shadow-lg shadow-stone-950/5 backdrop-blur-xl sm:px-4 dark:border-white/10 dark:bg-stone-950/85">
-          <Link href="/" aria-label={`${tenant.name} home`} className="min-w-0 rounded-xl">
+          <Link href={tenantHomeUrl} aria-label={`${tenant.name} home`} className="min-w-0 rounded-xl">
             <ClientBrand tenant={tenant} />
           </Link>
           <div className="flex shrink-0 items-center gap-2">
@@ -266,14 +272,16 @@ export function ClientLandingPage({ tenant }: { tenant: ClientTenant }) {
 
       <footer className="border-t border-stone-200 bg-white py-8 dark:border-stone-800 dark:bg-stone-950">
         <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-          <ClientBrand tenant={tenant} />
+          <Link href={tenantHomeUrl} aria-label={`${tenant.name} home`} className="rounded-xl inline-flex w-fit">
+            <ClientBrand tenant={tenant} />
+          </Link>
           <div className="flex flex-col gap-2 text-sm text-stone-500 sm:items-end dark:text-stone-400">
             <span className="flex items-center gap-2">
               <Building2 className="size-4 text-amber-600 dark:text-amber-400" aria-hidden="true" />
               Built with care. Managed with clarity.
             </span>
             <span className="flex items-center gap-2">
-              Powered by <BeamLineLogo markClassName="size-5" wordmarkClassName="text-xs text-stone-700 dark:text-stone-200" />
+              Powered by <BeamLineLogo href="/" markClassName="size-5" wordmarkClassName="text-xs text-stone-700 dark:text-stone-200" />
             </span>
           </div>
         </div>

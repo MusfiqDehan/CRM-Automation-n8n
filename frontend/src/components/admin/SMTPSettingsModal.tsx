@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Clock, Loader2, Mail, Save, Send } from "lucide-react";
 import { Badge, Field } from "@/components/ui/primitives";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import {
   IconTile,
   InlineAlert,
@@ -230,13 +231,12 @@ export function SMTPSettingsModal({
                 label="App password"
                 hint={hasPassword ? "A password is stored. Leave blank to keep it." : "16-character Google app password."}
               >
-                <input
-                  type="password"
+                <PasswordInput
                   autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={hasPassword ? "••••••••••••••••" : "Enter app password"}
-                  className="input font-mono"
+                  className="font-mono"
                 />
               </Field>
             </div>

@@ -116,6 +116,7 @@ export function ClientLandingGate() {
       <main className="flex min-h-screen items-center justify-center bg-stone-950 px-6 text-center text-stone-50">
         <div className="flex flex-col items-center gap-5">
           <BeamLineLogo
+            href="/"
             tone="amber"
             markClassName="size-14"
             wordmarkClassName="text-xl text-white"

@@ -264,6 +264,11 @@ export function AdminDashboard() {
 
   const isSuperadmin = Boolean(currentUser?.is_superuser || currentRole === "Superadmin");
   const showPublicSite = activeOrg?.feature_flags?.page_landing === true;
+  const tenantHomeUrl = activeOrg?.custom_domain
+    ? `https://${activeOrg.custom_domain}`
+    : activeOrg?.slug
+    ? `/?tenant=${activeOrg.slug}`
+    : "/";
 
   const navItems: Array<{
     id: AdminTab;
@@ -463,12 +468,7 @@ export function AdminDashboard() {
               description: "Open your client-facing landing page",
               icon: ArrowLeft,
               onSelect: () => {
-                const target = activeOrg?.custom_domain
-                  ? `https://${activeOrg.custom_domain}`
-                  : activeOrg?.slug
-                  ? `/?tenant=${activeOrg.slug}`
-                  : "/";
-                window.location.href = target;
+                window.location.href = tenantHomeUrl;
               },
             },
           ]
@@ -603,10 +603,11 @@ export function AdminDashboard() {
             title={activeOrg?.custom_domain || activeOrg?.subdomain_host || "kevin.beamline.musfiqdehan.com"}
           >
             <BeamLineLogo
+              href={tenantHomeUrl}
               wordmarkClassName="text-sm text-stone-900 dark:text-white"
               badge={
                 <span className="rounded-md bg-amber-50 dark:bg-amber-400/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300">
-                  {currentRole}
+                  {isSuperadmin ? "Platform Owner" : currentRole === "Owner" ? "Client Admin" : currentRole}
                 </span>
               }
               subtitle={
@@ -614,7 +615,7 @@ export function AdminDashboard() {
                   ? `${activeOrg.name} (${activeOrg.slug})`
                   : isSuperadmin
                   ? "Platform Control Plane"
-                  : "beamline.musfiqdehan.com"
+                  : "kevin.beamline.musfiqdehan.com"
               }
               subtitleClassName="max-w-[170px] font-mono text-stone-500 dark:text-stone-400"
             />
@@ -713,13 +714,7 @@ export function AdminDashboard() {
               )}
               {showPublicSite && (
                 <Link
-                  href={
-                    activeOrg?.custom_domain
-                      ? `https://${activeOrg.custom_domain}`
-                      : activeOrg?.slug
-                      ? `/?tenant=${activeOrg.slug}`
-                      : "/"
-                  }
+                  href={tenantHomeUrl}
                   className="btn-ghost btn-sm w-full"
                 >
                   <ArrowLeft className="h-4 w-4" />
@@ -787,7 +782,11 @@ export function AdminDashboard() {
             {/* Left: Mobile Brand / Desktop Active Title */}
             <div className="flex min-w-0 flex-1 items-center gap-3">
               {/* Mobile View Title & Brand */}
-              <div className="flex min-w-0 items-center gap-2.5 lg:hidden">
+              <Link
+                href={tenantHomeUrl}
+                aria-label={`${activeOrg?.name || "Workspace"} home`}
+                className="flex min-w-0 items-center gap-2.5 lg:hidden group transition-opacity hover:opacity-85"
+              >
                 <BeamLineMark className="size-8" title="BeamLine" />
                 <div className="min-w-0">
                   <p className="max-w-36 truncate text-sm font-semibold leading-tight text-stone-900 sm:max-w-xs dark:text-white">
@@ -797,7 +796,7 @@ export function AdminDashboard() {
                     {activeOrg?.name || "BeamLine"}
                   </span>
                 </div>
-              </div>
+              </Link>
 
               {/* Desktop View Title & Subtitle with Luxury Department Badge */}
               <div className="hidden lg:flex items-center gap-3">
@@ -828,8 +827,7 @@ export function AdminDashboard() {
 
             {/* Right: one consistent action cluster on every page and breakpoint */}
             <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-              {/* The desktop sidebar carries the full theme control. */}
-              <ThemeToggle variant="compact" className="size-9 lg:hidden" />
+              <ThemeToggle variant="compact" className="size-9" />
 
               <ActionMenu
                 ariaLabel="Workspace settings"

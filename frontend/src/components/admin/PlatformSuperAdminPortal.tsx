@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { BeamLineLogo, BeamLineMark } from "@/components/brand/BeamLineLogo";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import {
   InlineAlert,
   Modal,
@@ -530,13 +531,14 @@ export function PlatformSuperAdminPortal({
           {/* Top Brand Header */}
           <div className="flex items-center gap-3 border-b border-stone-200/80 px-5 py-4 dark:border-stone-800/80">
             <BeamLineLogo
+              href="/"
               wordmarkClassName="text-sm text-stone-900 dark:text-white"
               badge={
                 <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950/80 dark:text-amber-300">
-                  Superadmin
+                  Platform Owner
                 </span>
               }
-              subtitle="Platform Control Plane"
+              subtitle="Platform Control Plane • SaaS Owner"
               subtitleClassName="font-mono text-stone-500 dark:text-stone-400"
             />
           </div>
@@ -687,6 +689,8 @@ export function PlatformSuperAdminPortal({
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
+              <ThemeToggle variant="compact" />
+
               <button
                 type="button"
                 onClick={loadAllData}
@@ -1488,8 +1492,7 @@ export function PlatformSuperAdminPortal({
                         : undefined
                     }
                   >
-                    <input
-                      type="password"
+                    <PasswordInput
                       autoComplete="new-password"
                       placeholder={
                         platformSettings?.has_google_secret
@@ -1498,7 +1501,7 @@ export function PlatformSuperAdminPortal({
                       }
                       value={googleClientSecret}
                       onChange={(e) => setGoogleClientSecret(e.target.value)}
-                      className="input font-mono"
+                      className="font-mono"
                     />
                   </Field>
 

@@ -133,6 +133,7 @@ export function Sidebar({
         <div className="flex flex-col">
           <div className="px-5 py-4 border-b border-stone-800/80 flex items-center justify-between">
             <BeamLineLogo
+              href="/"
               tone="amber"
               markClassName="size-10"
               wordmarkClassName="text-sm text-white"

@@ -5,6 +5,7 @@ import { Globe, KeyRound, Loader2, Save, Send, Sliders, Users } from "lucide-rea
 import { apiClient } from "@/lib/api-client";
 import { BeamLineMark } from "@/components/brand/BeamLineLogo";
 import { Badge, DropdownSelect, Field } from "@/components/ui/primitives";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import {
   InlineAlert,
   Modal,
@@ -338,13 +339,12 @@ export function TenantSettingsModal({
                   label="Google OAuth client secret"
                   hint={org?.has_google_secret ? "A secret is stored. Leave blank to keep it." : undefined}
                 >
-                  <input
-                    type="password"
+                  <PasswordInput
                     autoComplete="new-password"
                     placeholder={org?.has_google_secret ? "••••••••••••" : "Enter Google client secret"}
                     value={googleClientSecret}
                     onChange={(e) => setGoogleClientSecret(e.target.value)}
-                    className="input font-mono"
+                    className="font-mono"
                   />
                 </Field>
               </div>

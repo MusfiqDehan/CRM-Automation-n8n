@@ -10,7 +10,7 @@ const urbanist = Urbanist({
 });
 
 export const metadata: Metadata = {
-  title: "Beamline — Multi-Tenant Construction CRM & Autonomous Operations OS",
+  title: "BeamLine — Multi-Tenant Construction CRM & Autonomous Operations OS",
   description:
     "White-labeled CRM, 4-phase project execution, autonomous invoice deduplication, and executive triage for high-value custom home builders.",
 };

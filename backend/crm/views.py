@@ -1304,6 +1304,11 @@ class LoginAPIView(APIView):
             membership = OrganizationMember.objects.filter(organization=tenant, user=user, is_active=True).first()
             if membership:
                 role = membership.role
+        else:
+            membership = OrganizationMember.objects.filter(user=user, is_active=True).select_related("organization").first()
+            if membership:
+                tenant = membership.organization
+                role = membership.role
 
         tokens = JWTService.generate_token_pair(user, tenant, role=role)
         return api_response(
@@ -1573,6 +1578,10 @@ class MeAPIView(APIView):
             m = memberships.filter(organization=tenant).first()
             if m:
                 active_role = m.role
+        elif memberships.exists():
+            m = memberships.first()
+            tenant = m.organization
+            active_role = m.role
 
         org_list = [
             {

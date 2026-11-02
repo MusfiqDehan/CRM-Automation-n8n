@@ -2,8 +2,8 @@ import { expect, test, type Page } from "@playwright/test";
 
 test.describe("Beamline — Commercial Multi-Tenant CRM & OS E2E Verification", () => {
   const ensureAuthenticated = async (page: Page, role: "kevin" | "admin" = "kevin") => {
-    const btnName = role === "admin" ? "Platform Superadmin" : "Kevin (Client Owner)";
-    const quickLoginBtn = page.getByRole("button", { name: btnName });
+    const btnName = role === "admin" ? /Platform Superadmin/i : /(Client Admin|Kevin)/i;
+    const quickLoginBtn = page.getByRole("button", { name: btnName }).first();
     await quickLoginBtn.waitFor({ state: "visible", timeout: 4000 }).catch(() => {});
     if (await quickLoginBtn.isVisible()) {
       await quickLoginBtn.click();
@@ -53,7 +53,7 @@ test.describe("Beamline — Commercial Multi-Tenant CRM & OS E2E Verification", 
     // Switch back to Sign In
     const signInTabBtn = page.getByRole("button", { name: "Sign In" }).first();
     await signInTabBtn.click();
-    await expect(page.getByRole("button", { name: "Kevin (Client Owner)" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /(Client Admin|Kevin)/i }).first()).toBeVisible();
   });
 
   test("authenticates into Admin Sales Dashboard & Pipeline, checks visual KPIs and funnel", async ({

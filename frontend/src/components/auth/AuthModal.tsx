@@ -445,25 +445,52 @@ export function AuthModal({
                   </button>
                 </form>
 
-                {/* Quick Dev Presets */}
+                {/* Testing & Demo Credentials Cards */}
                 <div className="mt-5 border-t border-stone-100 pt-3 dark:border-stone-800">
                   <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-stone-400">
-                    Quick Dev Presets:
+                    Test Credentials (Click to Sign In):
                   </p>
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <button
                       type="button"
                       onClick={() => handleQuickLogin("kevin", "kevinpass2026")}
-                      className="flex-1 rounded-lg border border-stone-200 bg-stone-50 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300 cursor-pointer"
+                      className="group flex flex-col items-start rounded-xl border border-stone-200 bg-stone-50/70 p-2.5 text-left transition hover:border-stone-300 hover:bg-stone-100 dark:border-stone-800 dark:bg-stone-900/60 dark:hover:border-stone-700 cursor-pointer"
                     >
-                      Kevin (Client Owner)
+                      <div className="flex items-center justify-between w-full">
+                        <span className="text-xs font-bold text-stone-900 dark:text-stone-100 group-hover:text-amber-600 dark:group-hover:text-amber-400">
+                          Client Admin (Kevin)
+                        </span>
+                        <span className="rounded bg-stone-200/70 px-1 py-0.5 text-[10px] font-mono text-stone-600 dark:bg-stone-800 dark:text-stone-400">
+                          Owner
+                        </span>
+                      </div>
+                      <div className="mt-1 text-[11px] font-mono text-stone-500 dark:text-stone-400">
+                        <code>kevin</code> / <code>kevinpass2026</code>
+                      </div>
+                      <div className="mt-0.5 text-[10px] text-stone-400 dark:text-stone-500">
+                        Kevin&apos;s Custom Homes workspace
+                      </div>
                     </button>
+
                     <button
                       type="button"
                       onClick={() => handleQuickLogin("admin", "adminpass2026")}
-                      className="flex-1 rounded-lg border border-amber-200 bg-amber-50 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300 cursor-pointer"
+                      className="group flex flex-col items-start rounded-xl border border-amber-200/80 bg-amber-50/50 p-2.5 text-left transition hover:border-amber-300 hover:bg-amber-100/60 dark:border-amber-900/50 dark:bg-amber-950/30 dark:hover:border-amber-800 cursor-pointer"
                     >
-                      Platform Superadmin
+                      <div className="flex items-center justify-between w-full">
+                        <span className="text-xs font-bold text-amber-900 dark:text-amber-200 group-hover:text-amber-700 dark:group-hover:text-amber-300">
+                          Platform Superadmin
+                        </span>
+                        <span className="rounded bg-amber-100 px-1 py-0.5 text-[10px] font-mono text-amber-800 dark:bg-amber-900 dark:text-amber-300">
+                          Superuser
+                        </span>
+                      </div>
+                      <div className="mt-1 text-[11px] font-mono text-amber-700 dark:text-amber-300">
+                        <code>admin</code> / <code>adminpass2026</code>
+                      </div>
+                      <div className="mt-0.5 text-[10px] text-amber-600/80 dark:text-amber-400/80">
+                        Govern all tenants, OAuth &amp; flags
+                      </div>
                     </button>
                   </div>
                 </div>
@@ -940,25 +967,52 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
                   </button>
                 </form>
 
-                {/* Quick Presets */}
+                {/* Testing & Demo Credentials Cards */}
                 <div className="mt-6 border-t border-stone-100 pt-4 dark:border-stone-800">
                   <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-stone-400">
-                    Quick Dev Presets:
+                    Test Credentials (Click to Sign In):
                   </p>
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <button
                       type="button"
                       onClick={() => handleQuickLogin("kevin", "kevinpass2026")}
-                      className="flex-1 rounded-lg border border-stone-200 bg-stone-50 py-2 text-xs font-medium text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300 cursor-pointer text-center"
+                      className="group flex flex-col items-start rounded-xl border border-stone-200 bg-stone-50/70 p-3 text-left transition hover:border-stone-300 hover:bg-stone-100 dark:border-stone-800 dark:bg-stone-900/60 dark:hover:border-stone-700 cursor-pointer"
                     >
-                      Kevin (Client Owner)
+                      <div className="flex items-center justify-between w-full">
+                        <span className="text-xs font-bold text-stone-900 dark:text-stone-100 group-hover:text-amber-600 dark:group-hover:text-amber-400">
+                          Client Admin (Kevin)
+                        </span>
+                        <span className="rounded bg-stone-200/70 px-1 py-0.5 text-[10px] font-mono text-stone-600 dark:bg-stone-800 dark:text-stone-400">
+                          Owner
+                        </span>
+                      </div>
+                      <div className="mt-1 text-[11px] font-mono text-stone-600 dark:text-stone-400">
+                        <code>kevin</code> / <code>kevinpass2026</code>
+                      </div>
+                      <div className="mt-0.5 text-[10px] text-stone-400 dark:text-stone-500">
+                        Kevin&apos;s Custom Homes workspace
+                      </div>
                     </button>
+
                     <button
                       type="button"
                       onClick={() => handleQuickLogin("admin", "adminpass2026")}
-                      className="flex-1 rounded-lg border border-amber-200 bg-amber-50 py-2 text-xs font-medium text-amber-700 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300 cursor-pointer text-center"
+                      className="group flex flex-col items-start rounded-xl border border-amber-200/80 bg-amber-50/50 p-3 text-left transition hover:border-amber-300 hover:bg-amber-100/60 dark:border-amber-900/50 dark:bg-amber-950/30 dark:hover:border-amber-800 cursor-pointer"
                     >
-                      Platform Superadmin
+                      <div className="flex items-center justify-between w-full">
+                        <span className="text-xs font-bold text-amber-900 dark:text-amber-200 group-hover:text-amber-700 dark:group-hover:text-amber-300">
+                          Platform Superadmin
+                        </span>
+                        <span className="rounded bg-amber-100 px-1 py-0.5 text-[10px] font-mono text-amber-800 dark:bg-amber-900 dark:text-amber-300">
+                          Superuser
+                        </span>
+                      </div>
+                      <div className="mt-1 text-[11px] font-mono text-amber-700 dark:text-amber-300">
+                        <code>admin</code> / <code>adminpass2026</code>
+                      </div>
+                      <div className="mt-0.5 text-[10px] text-amber-600/80 dark:text-amber-400/80">
+                        Govern all tenants, OAuth &amp; flags
+                      </div>
                     </button>
                   </div>
                 </div>

@@ -357,7 +357,7 @@ export function AdminDashboard() {
   // 1. Initial Authentication Check Loading State
   if (!authChecked) {
     return (
-      <div className="min-h-screen bg-[#f7f7f5] dark:bg-[#0b0f19] flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex flex-col items-center justify-center p-6 text-center">
         <BeamLineMark className="size-12 animate-pulse mb-4" title="BeamLine" />
         <p className="text-sm font-semibold text-stone-700 dark:text-stone-300">
           Verifying Beamline Credentials &amp; Workspace...
@@ -381,7 +381,7 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f7f5] text-stone-900 transition-colors duration-200 dark:bg-[#0b0f19] dark:text-stone-100 flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-stone-50 text-stone-900 transition-colors duration-200 dark:bg-stone-950 dark:text-stone-100 flex flex-col lg:flex-row">
       {/* Toast Notification */}
       {toast && (
         <div
@@ -404,7 +404,7 @@ export function AdminDashboard() {
       {/* ------------------------------------------------------------ */}
       {/* DESKTOP SIDEBAR (FIXED LEFT NAVIGATION, VISIBLE ON LG+)      */}
       {/* ------------------------------------------------------------ */}
-      <aside className="hidden lg:flex fixed top-0 bottom-0 left-0 z-40 w-72 flex-col justify-between border-r border-stone-200/90 bg-white dark:border-stone-800/90 dark:bg-[#0f1523] transition-colors duration-200">
+      <aside className="hidden lg:flex fixed top-0 bottom-0 left-0 z-40 w-72 flex-col justify-between border-r border-stone-200/90 bg-white dark:border-stone-800/90 dark:bg-stone-900 transition-colors duration-200">
         <div className="flex flex-col">
           {/* Top Brand Header */}
           <div
@@ -528,7 +528,7 @@ export function AdminDashboard() {
       {/* ------------------------------------------------------------ */}
       <nav
         aria-label="Mobile Navigation"
-        className="fixed bottom-0 left-0 right-0 z-40 lg:hidden border-t border-stone-200/90 bg-white/95 backdrop-blur-md dark:border-stone-800/90 dark:bg-[#0f1523]/95 shadow-xl transition-colors duration-200"
+        className="fixed bottom-0 left-0 right-0 z-40 lg:hidden border-t border-stone-200/90 bg-white/95 backdrop-blur-md dark:border-stone-800/90 dark:bg-stone-900/95 shadow-xl transition-colors duration-200"
       >
         <div className="grid grid-cols-4 h-16 max-w-lg mx-auto px-2">
           {filteredNavItems.map((item) => {
@@ -565,15 +565,15 @@ export function AdminDashboard() {
       {/* ------------------------------------------------------------ */}
       <div className="flex-1 flex flex-col min-w-0 lg:pl-72">
         {/* Top Header Bar - Full Width Responsive Workspace Alignment */}
-        <header className="sticky top-0 z-30 border-b border-stone-200/90 bg-white/95 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.03)] dark:border-stone-800/90 dark:bg-[#0f1523]/95 transition-colors duration-200">
-          <div className="flex w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 2xl:px-10 py-3.5">
+        <header className="sticky top-0 z-30 border-b border-stone-200/90 bg-white/95 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.03)] dark:border-stone-800/90 dark:bg-stone-900/95 transition-colors duration-200">
+          <div className="flex w-full items-center justify-between gap-2 px-3 py-3 sm:gap-4 sm:px-6 sm:py-3.5 lg:px-8 2xl:px-10">
             {/* Left: Mobile Brand / Desktop Active Title */}
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
               {/* Mobile View Title & Brand */}
-              <div className="flex items-center gap-2.5 lg:hidden">
+              <div className="flex min-w-0 items-center gap-2.5 lg:hidden">
                 <BeamLineMark className="size-8" title="BeamLine" />
-                <div>
-                  <h1 className="text-sm font-bold text-stone-900 dark:text-white leading-tight">
+                <div className="min-w-0">
+                  <h1 className="max-w-32 truncate text-sm font-bold leading-tight text-stone-900 sm:max-w-xs dark:text-white">
                     {pageMeta[activeTab].title}
                   </h1>
                   <span className="text-[10px] text-stone-500 dark:text-stone-400">
@@ -616,7 +616,7 @@ export function AdminDashboard() {
             </div>
 
             {/* Right: Improved Action Buttons & Controls Placement */}
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex shrink-0 items-center gap-1 sm:gap-2">
               {/* Desktop Theme Toggle Shortcut */}
               <div className="hidden lg:flex items-center">
                 <ThemeToggle variant="compact" />
@@ -676,7 +676,7 @@ export function AdminDashboard() {
                 <button
                   type="button"
                   onClick={() => setIsSuperAdminOpen(true)}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 shadow-xs transition hover:bg-amber-100 hover:border-amber-300 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300 cursor-pointer"
+                  className="hidden items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 shadow-xs transition hover:border-amber-300 hover:bg-amber-100 sm:inline-flex dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
                   title="Platform Superadmin: Global Client Management, Google OAuth & Feature Matrix"
                 >
                   <ShieldCheck className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
@@ -688,7 +688,7 @@ export function AdminDashboard() {
               <button
                 type="button"
                 onClick={() => setIsTenantSettingsOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-xs transition hover:bg-stone-50 hover:border-stone-300 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800 cursor-pointer"
+                className="hidden items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-xs transition hover:border-stone-300 hover:bg-stone-50 md:inline-flex dark:border-stone-800 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800"
                 title="Client Organization Settings: Subdomain, Custom Domain, Review Thresholds, Client Google OAuth & Team Invites"
               >
                 <Sliders className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
@@ -717,7 +717,7 @@ export function AdminDashboard() {
               <button
                 type="button"
                 onClick={() => setIsSmtpSettingsOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-xs transition hover:bg-stone-50 hover:border-stone-300 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800 cursor-pointer"
+                className="hidden items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-xs transition hover:border-stone-300 hover:bg-stone-50 xl:inline-flex dark:border-stone-800 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800"
                 title="Configure Gmail SMTP credentials & live email triggers"
               >
                 <Mail className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
@@ -739,7 +739,7 @@ export function AdminDashboard() {
                 </button>
 
                 {isCreateDropdownOpen && (
-                  <div className="animate-fade-up absolute right-0 mt-2 w-56 max-w-[calc(100vw-32px)] rounded-2xl border border-stone-200/90 bg-white/95 p-1.5 shadow-xl backdrop-blur-md dark:border-stone-800/90 dark:bg-[#0f1523]/95 dark:shadow-black/60 z-50">
+                  <div className="animate-fade-up absolute right-0 mt-2 w-56 max-w-[calc(100vw-32px)] rounded-2xl border border-stone-200/90 bg-white/95 p-1.5 shadow-xl backdrop-blur-md dark:border-stone-800/90 dark:bg-stone-900/95 dark:shadow-black/60 z-50">
                     <button
                       type="button"
                       onClick={() => {
@@ -797,6 +797,51 @@ export function AdminDashboard() {
                         <div className="text-[10px] text-stone-400">PDF invoice or receipt</div>
                       </div>
                     </button>
+                    <div className="my-1 border-t border-stone-100 md:hidden dark:border-stone-800" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCreateDropdownOpen(false);
+                        setIsTenantSettingsOpen(true);
+                      }}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-stone-700 hover:bg-stone-100 md:hidden dark:text-stone-200 dark:hover:bg-stone-800"
+                    >
+                      <Sliders className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <div>
+                        <div className="font-semibold">Organization Settings</div>
+                        <div className="text-[10px] text-stone-400">Domain, branding, OAuth, and team</div>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCreateDropdownOpen(false);
+                        setIsSmtpSettingsOpen(true);
+                      }}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-stone-700 hover:bg-stone-100 xl:hidden dark:text-stone-200 dark:hover:bg-stone-800"
+                    >
+                      <Mail className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <div>
+                        <div className="font-semibold">SMTP Settings</div>
+                        <div className="text-[10px] text-stone-400">Email delivery configuration</div>
+                      </div>
+                    </button>
+                    {(currentUser?.is_superuser || currentRole === "Superadmin") && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCreateDropdownOpen(false);
+                          setIsSuperAdminOpen(true);
+                        }}
+                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-stone-700 hover:bg-stone-100 sm:hidden dark:text-stone-200 dark:hover:bg-stone-800"
+                      >
+                        <ShieldCheck className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                        <div>
+                          <div className="font-semibold">Superadmin Console</div>
+                          <div className="text-[10px] text-stone-400">Client and platform controls</div>
+                        </div>
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

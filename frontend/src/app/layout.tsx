@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Urbanist } from "next/font/google";
+import Script from "next/script";
 import { ThemeProvider } from "@/components/theme/ThemeContext";
 import "./globals.css";
 
@@ -22,7 +23,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={urbanist.variable} suppressHydrationWarning>
-      <body className={`${urbanist.className} min-h-screen bg-[#f7f7f5] text-stone-900 transition-colors duration-200 dark:bg-[#0b0f19] dark:text-stone-100 antialiased`}>
+      <body className={`${urbanist.className} min-h-screen bg-stone-50 text-stone-900 transition-colors duration-200 dark:bg-stone-950 dark:text-stone-100 antialiased`}>
+        <Script id="theme-bootstrap" strategy="beforeInteractive">{`
+          try {
+            const saved = localStorage.getItem("beamline_theme") || localStorage.getItem("kevin_theme") || "system";
+            const dark = saved === "dark" || (saved === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+            document.documentElement.classList.toggle("dark", dark);
+          } catch {}
+        `}</Script>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

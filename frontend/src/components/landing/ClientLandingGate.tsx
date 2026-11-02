@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import { BeamLineLogo } from "@/components/brand/BeamLineLogo";
 import { apiClient } from "@/lib/api-client";
 import type { OAuthPublicConfig } from "@/lib/types";
+import { ClientLandingPage } from "./ClientLandingPage";
 import { LandingPage } from "./LandingPage";
 
 export function ClientLandingGate() {
   const router = useRouter();
-  const [canShowLanding, setCanShowLanding] = useState(false);
+  const [config, setConfig] = useState<OAuthPublicConfig | null>(null);
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
@@ -28,13 +29,13 @@ export function ClientLandingGate() {
           return;
         }
 
-        setCanShowLanding(true);
+        setConfig(config);
         setIsChecking(false);
       })
       .catch(() => {
         if (!isActive) return;
         // Keep the platform marketing site available if tenant discovery is unavailable.
-        setCanShowLanding(true);
+        setConfig(null);
         setIsChecking(false);
       });
 
@@ -43,7 +44,7 @@ export function ClientLandingGate() {
     };
   }, [router]);
 
-  if (isChecking || !canShowLanding) {
+  if (isChecking) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-stone-950 px-6 text-center text-stone-50">
         <div className="flex flex-col items-center gap-5">
@@ -59,6 +60,10 @@ export function ClientLandingGate() {
         </div>
       </main>
     );
+  }
+
+  if (config?.tenant) {
+    return <ClientLandingPage tenant={config.tenant} />;
   }
 
   return <LandingPage />;

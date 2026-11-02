@@ -243,10 +243,10 @@ export function DropdownSelect<T = string>({
           disabled
             ? "cursor-not-allowed opacity-50 bg-stone-100 dark:bg-stone-900 border-stone-200 dark:border-stone-800 text-stone-400"
             : error
-            ? "border-rose-400 dark:border-rose-600 bg-white dark:bg-[#0f1523] text-stone-900 dark:text-stone-100 focus:ring-4 focus:ring-rose-500/15"
+            ? "border-rose-400 dark:border-rose-600 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:ring-4 focus:ring-rose-500/15"
             : isOpen
-            ? "border-amber-500 bg-white dark:bg-[#0f1523] text-stone-900 dark:text-white shadow-xs ring-4 ring-amber-500/10 dark:ring-amber-500/20"
-            : "border-stone-200/90 dark:border-stone-800 bg-white dark:bg-[#0f1523] text-stone-800 dark:text-stone-200 shadow-2xs hover:border-stone-300 dark:hover:border-stone-700 hover:bg-stone-50/80 dark:hover:bg-stone-800/60 focus:border-amber-500 dark:focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 dark:focus:ring-amber-500/20"
+            ? "border-amber-500 bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-xs ring-4 ring-amber-500/10 dark:ring-amber-500/20"
+            : "border-stone-200/90 dark:border-stone-800 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-200 shadow-2xs hover:border-stone-300 dark:hover:border-stone-700 hover:bg-stone-50/80 dark:hover:bg-stone-800/60 focus:border-amber-500 dark:focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 dark:focus:ring-amber-500/20"
         } ${buttonClassName}`}
       >
         <span className="flex items-center gap-2 min-w-0 truncate text-left">
@@ -290,7 +290,7 @@ export function DropdownSelect<T = string>({
             isUp ? "bottom-full mb-1.5" : "top-full mt-1.5"
           } ${
             align === "right" ? "right-0" : "left-0"
-          } border-stone-200/90 dark:border-stone-800/90 bg-white/95 dark:bg-[#0f1523]/95 shadow-stone-900/10 dark:shadow-black/60 ${menuClassName}`}
+          } border-stone-200/90 dark:border-stone-800/90 bg-white/95 dark:bg-stone-900/95 shadow-stone-900/10 dark:shadow-black/60 ${menuClassName}`}
         >
           <div className="max-h-60 overflow-y-auto space-y-0.5 overscroll-contain pr-0.5">
             {options.length === 0 ? (

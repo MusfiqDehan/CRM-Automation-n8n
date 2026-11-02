@@ -378,7 +378,7 @@ export function AuthModal({
                     type="button"
                     disabled={submitting}
                     onClick={() => handleMockGoogleLogin("kevin@kevinbuild.com")}
-                    className="flex w-full items-center justify-center gap-3 rounded-xl border border-stone-300 bg-white py-2.5 px-4 text-sm font-semibold text-stone-700 shadow-xs hover:bg-stone-50 transition active:scale-[0.99] dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-750 cursor-pointer"
+                    className="flex w-full items-center justify-center gap-3 rounded-xl border border-stone-300 bg-white py-2.5 px-4 text-sm font-semibold text-stone-700 shadow-xs hover:bg-stone-50 transition active:scale-[0.99] dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700 cursor-pointer"
                   >
                     <svg className="h-4 w-4" viewBox="0 0 24 24">
                       <path
@@ -750,9 +750,9 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f7f5] text-stone-900 transition-colors duration-200 dark:bg-[#0b0f19] dark:text-stone-100 flex flex-col justify-between">
+    <div className="min-h-screen bg-stone-50 text-stone-900 transition-colors duration-200 dark:bg-stone-950 dark:text-stone-100 flex flex-col justify-between">
       {/* Top Navigation Bar */}
-      <header className="border-b border-stone-200/80 bg-white/90 backdrop-blur-md dark:border-stone-800/80 dark:bg-[#0f1523]/90">
+      <header className="border-b border-stone-200/80 bg-white/90 backdrop-blur-md dark:border-stone-800/80 dark:bg-stone-900/90">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6 lg:px-8">
           <BeamLineLogo
             markClassName="size-10"
@@ -867,7 +867,7 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
                     type="button"
                     disabled={submitting}
                     onClick={() => handleMockGoogleLogin("kevin@kevinbuild.com")}
-                    className="flex w-full items-center justify-center gap-3 rounded-xl border border-stone-300 bg-white py-2.5 px-4 text-sm font-semibold text-stone-700 shadow-xs hover:bg-stone-50 transition active:scale-[0.99] dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-750 cursor-pointer"
+                    className="flex w-full items-center justify-center gap-3 rounded-xl border border-stone-300 bg-white py-2.5 px-4 text-sm font-semibold text-stone-700 shadow-xs hover:bg-stone-50 transition active:scale-[0.99] dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700 cursor-pointer"
                   >
                     <svg className="h-4 w-4" viewBox="0 0 24 24">
                       <path

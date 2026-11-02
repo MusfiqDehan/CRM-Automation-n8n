@@ -180,7 +180,7 @@ export function TenantSettingsModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-xs">
       <div className="relative w-full max-w-2xl rounded-2xl border border-stone-200 bg-white shadow-2xl dark:border-stone-800 dark:bg-stone-900 flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-stone-200 px-6 py-4 dark:border-stone-800">
+        <div className="flex items-center justify-between gap-3 border-b border-stone-200 px-4 py-4 sm:px-6 dark:border-stone-800">
           <div className="flex items-center gap-3">
             <BeamLineMark className="size-10" title="BeamLine" />
             <div>
@@ -222,11 +222,11 @@ export function TenantSettingsModal({
         )}
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-stone-200 px-6 dark:border-stone-800">
+        <div className="flex overflow-x-auto border-b border-stone-200 px-2 sm:px-6 dark:border-stone-800">
           <button
             type="button"
             onClick={() => setActiveTab("domains")}
-            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-semibold transition ${
+            className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 text-xs font-semibold transition ${
               activeTab === "domains"
                 ? "border-amber-600 text-amber-600 dark:border-amber-400 dark:text-amber-400"
                 : "border-transparent text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200"
@@ -238,7 +238,7 @@ export function TenantSettingsModal({
           <button
             type="button"
             onClick={() => setActiveTab("thresholds")}
-            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-semibold transition ${
+            className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 text-xs font-semibold transition ${
               activeTab === "thresholds"
                 ? "border-amber-600 text-amber-600 dark:border-amber-400 dark:text-amber-400"
                 : "border-transparent text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200"
@@ -250,7 +250,7 @@ export function TenantSettingsModal({
           <button
             type="button"
             onClick={() => setActiveTab("google_oauth")}
-            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-semibold transition ${
+            className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 text-xs font-semibold transition ${
               activeTab === "google_oauth"
                 ? "border-amber-600 text-amber-600 dark:border-amber-400 dark:text-amber-400"
                 : "border-transparent text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200"
@@ -262,7 +262,7 @@ export function TenantSettingsModal({
           <button
             type="button"
             onClick={() => setActiveTab("team")}
-            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-semibold transition ${
+            className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 text-xs font-semibold transition ${
               activeTab === "team"
                 ? "border-amber-600 text-amber-600 dark:border-amber-400 dark:text-amber-400"
                 : "border-transparent text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200"
@@ -274,7 +274,7 @@ export function TenantSettingsModal({
         </div>
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {loading ? (
             <div className="flex h-40 items-center justify-center text-xs text-stone-400">
               Loading organization settings...
@@ -575,8 +575,8 @@ export function TenantSettingsModal({
                 <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300">
                   Active Team Members ({members.length})
                 </h4>
-                <div className="overflow-hidden rounded-xl border border-stone-200 dark:border-stone-800">
-                  <table className="w-full text-left text-xs">
+                <div className="overflow-x-auto rounded-xl border border-stone-200 dark:border-stone-800">
+                  <table className="min-w-xl w-full text-left text-xs">
                     <thead className="bg-stone-50 text-stone-600 dark:bg-stone-800/60 dark:text-stone-400">
                       <tr>
                         <th className="py-2.5 px-3 font-semibold">User</th>

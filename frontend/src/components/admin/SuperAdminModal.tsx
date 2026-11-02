@@ -239,7 +239,7 @@ export function SuperAdminModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-xs">
       <div className="relative w-full max-w-4xl rounded-2xl border border-amber-200 bg-white shadow-2xl dark:border-amber-900/60 dark:bg-stone-900 flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-stone-200 px-6 py-4 dark:border-stone-800">
+        <div className="flex items-center justify-between gap-3 border-b border-stone-200 px-4 py-4 sm:px-6 dark:border-stone-800">
           <div className="flex items-center gap-3">
             <BeamLineMark className="size-10" />
             <div>
@@ -278,11 +278,11 @@ export function SuperAdminModal({
         )}
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-stone-200 px-6 dark:border-stone-800">
+        <div className="flex overflow-x-auto border-b border-stone-200 px-2 sm:px-6 dark:border-stone-800">
           <button
             type="button"
             onClick={() => setActiveTab("organizations")}
-            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-semibold transition ${
+            className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 text-xs font-semibold transition ${
               activeTab === "organizations"
                 ? "border-amber-600 text-amber-600 dark:border-amber-400 dark:text-amber-400"
                 : "border-transparent text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200"
@@ -294,7 +294,7 @@ export function SuperAdminModal({
           <button
             type="button"
             onClick={() => setActiveTab("platform_settings")}
-            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-semibold transition ${
+            className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 text-xs font-semibold transition ${
               activeTab === "platform_settings"
                 ? "border-amber-600 text-amber-600 dark:border-amber-400 dark:text-amber-400"
                 : "border-transparent text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200"
@@ -306,7 +306,7 @@ export function SuperAdminModal({
           <button
             type="button"
             onClick={() => setActiveTab("invite_client")}
-            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-semibold transition ${
+            className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 text-xs font-semibold transition ${
               activeTab === "invite_client"
                 ? "border-amber-600 text-amber-600 dark:border-amber-400 dark:text-amber-400"
                 : "border-transparent text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200"
@@ -318,14 +318,14 @@ export function SuperAdminModal({
         </div>
 
         {/* Body Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {loading ? (
             <div className="flex h-40 items-center justify-center text-xs text-stone-400">
               Loading superadmin state...
             </div>
           ) : activeTab === "organizations" ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-stone-500 dark:text-stone-400">
                   Manage all tenant organizations, suspend/activate client accounts,
                   and configure granular feature entitlements per client.
@@ -340,8 +340,8 @@ export function SuperAdminModal({
               </div>
 
               {/* Clients Table */}
-              <div className="overflow-hidden rounded-xl border border-stone-200 dark:border-stone-800">
-                <table className="w-full text-left text-xs">
+              <div className="overflow-x-auto rounded-xl border border-stone-200 dark:border-stone-800">
+                <table className="min-w-3xl w-full text-left text-xs">
                   <thead className="bg-stone-50 text-stone-600 dark:bg-stone-800/60 dark:text-stone-400">
                     <tr>
                       <th className="py-2.5 px-3 font-semibold">Client Name & Slug</th>
@@ -417,7 +417,7 @@ export function SuperAdminModal({
 
               {/* Granular Feature Entitlements Drawer */}
               {selectedOrgForFeatures && (
-                <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50/40 p-5 dark:border-amber-900/60 dark:bg-amber-950/20">
+                <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50/40 p-3 sm:p-5 dark:border-amber-900/60 dark:bg-amber-950/20">
                   <div className="flex items-center justify-between pb-3 border-b border-amber-100 dark:border-amber-900/40">
                     <div>
                       <h3 className="text-sm font-bold text-stone-900 dark:text-white">

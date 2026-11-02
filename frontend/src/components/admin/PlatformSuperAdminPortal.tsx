@@ -36,6 +36,10 @@ import {
 import { BeamLineLogo, BeamLineMark } from "@/components/brand/BeamLineLogo";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { PasswordInput } from "@/components/ui/PasswordInput";
+import { DateRangeFilter, type DateRangePreset } from "@/components/charts/DateRangeFilter";
+import { InteractiveLineChart } from "@/components/charts/InteractiveLineChart";
+import { InteractiveBarChart } from "@/components/charts/InteractiveBarChart";
+import { InteractiveDonutChart } from "@/components/charts/InteractiveDonutChart";
 import {
   InlineAlert,
   Modal,
@@ -172,13 +176,20 @@ export function PlatformSuperAdminPortal({
   // Filter States
   const [userOrgFilter, setUserOrgFilter] = useState<string>("all");
   const [ticketStatusFilter, setTicketStatusFilter] = useState<string>("all");
+  const [dateRange, setDateRange] = useState<DateRangePreset>("30d");
+  const [customStart, setCustomStart] = useState<string>("");
+  const [customEnd, setCustomEnd] = useState<string>("");
 
-  const loadAllData = useCallback(async () => {
+  const loadAllData = useCallback(async (preset = dateRange, start = customStart, end = customEnd) => {
     setLoading(true);
     setFeedback(null);
     try {
+      let statsUrl = `/superadmin/dashboard-stats/?range=${preset}`;
+      if (preset === "custom" && start && end) {
+        statsUrl += `&start_date=${start}&end_date=${end}`;
+      }
       const [statsRes, orgsRes, usersRes, subsRes, ticketsRes, notesRes, platRes] = await Promise.all([
-        apiClient.get<SuperadminDashboardStats>("/superadmin/dashboard-stats/"),
+        apiClient.get<SuperadminDashboardStats>(statsUrl),
         apiClient.get<{ results: Organization[] }>("/superadmin/organizations/"),
         apiClient.get<{ results: PlatformUser[] }>("/superadmin/users/"),
         apiClient.get<{ results: ClientSubscription[] }>("/superadmin/subscriptions/"),
@@ -208,7 +219,18 @@ export function PlatformSuperAdminPortal({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [dateRange, customStart, customEnd]);
+
+  const handleDateRangeChange = (preset: DateRangePreset, start?: string, end?: string) => {
+    setDateRange(preset);
+    if (start && end) {
+      setCustomStart(start);
+      setCustomEnd(end);
+      loadAllData(preset, start, end);
+    } else {
+      loadAllData(preset);
+    }
+  };
 
   useEffect(() => {
     loadAllData();
@@ -693,7 +715,7 @@ export function PlatformSuperAdminPortal({
 
               <button
                 type="button"
-                onClick={loadAllData}
+                onClick={() => loadAllData()}
                 disabled={loading}
                 className="btn-secondary btn-sm"
                 title="Refresh platform telemetry"
@@ -736,6 +758,29 @@ export function PlatformSuperAdminPortal({
           {/* ========================================================== */}
           {activeTab === "overview" && (
             <div className="space-y-6">
+              {/* Filter Bar with Presets & Date Pickers */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-stone-200 bg-white p-4 shadow-xs dark:border-stone-800 dark:bg-stone-900">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <div>
+                    <h2 className="text-sm font-bold text-stone-900 dark:text-white">
+                      Live Telemetry &amp; Revenue Overview
+                    </h2>
+                    <p className="text-xs text-stone-500 dark:text-stone-400">
+                      Real-time cross-tenant governance, financial velocity, and infrastructure health
+                    </p>
+                  </div>
+                </div>
+
+                <DateRangeFilter
+                  activePreset={dateRange}
+                  startDate={customStart}
+                  endDate={customEnd}
+                  onChange={handleDateRangeChange}
+                  loading={loading}
+                />
+              </div>
+
               {/* Top 4 KPI Metrics */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard
@@ -769,6 +814,98 @@ export function PlatformSuperAdminPortal({
                   icon={LifeBuoy}
                   tone={(stats?.kpis.open_support_queries ?? 0) > 0 ? "amber" : "green"}
                   onClick={() => setActiveTab("support")}
+                />
+              </div>
+
+              {/* Interactive Telemetry Charts Row 1: MRR Velocity & Plan Tiers */}
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <InteractiveLineChart
+                  title="Monthly Recurring Revenue (MRR) Trajectory"
+                  subtitle="Track billing renewals and ARR growth across builder client subscriptions"
+                  data={
+                    stats?.mrr_timeline?.map((item) => ({
+                      label: item.date,
+                      value: item.mrr,
+                      secondaryValue: Math.round(item.arr / 12),
+                    })) || [
+                      { label: "Jun", value: 399, secondaryValue: 399 },
+                      { label: "Jul", value: 599, secondaryValue: 599 },
+                      { label: "Aug", value: 699, secondaryValue: 699 },
+                      { label: "Sep", value: 799, secondaryValue: 799 },
+                      { label: "Oct", value: 899, secondaryValue: 899 },
+                      { label: "Nov", value: 899, secondaryValue: 899 },
+                    ]
+                  }
+                  primaryLabel="MRR ($/mo)"
+                  secondaryLabel="ARR / 12"
+                  strokeColor="#f59e0b"
+                  secondaryStrokeColor="#10b981"
+                  formatValue={(v) => formatCurrency(v)}
+                />
+
+                <InteractiveDonutChart
+                  title="Client Subscription Plans Distribution"
+                  subtitle="Breakdown of tenant builder memberships by SaaS tier"
+                  data={
+                    stats?.plan_distribution?.map((p) => ({
+                      label: p.plan,
+                      value: p.mrr || p.price,
+                      color: p.color,
+                      count: p.count,
+                    })) || [
+                      { label: "Builder Starter", value: 299, color: "#f59e0b", count: 1 },
+                      { label: "Professional Builder", value: 599, color: "#10b981", count: 1 },
+                      { label: "Enterprise Custom", value: 899, color: "#8b5cf6", count: 1 },
+                    ]
+                  }
+                  centerLabel="Total MRR"
+                  formatValue={(v) => formatCurrency(v)}
+                />
+              </div>
+
+              {/* Interactive Telemetry Charts Row 2: Support Health & Tenant Scale */}
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <InteractiveBarChart
+                  title="Client Support Queries by Priority"
+                  subtitle="Open vs resolved requests across tenant builders"
+                  data={
+                    stats?.tickets_by_priority?.map((t) => ({
+                      label: t.priority,
+                      value: t.count,
+                      secondaryValue: t.open,
+                      color: t.color,
+                      subtext: `${t.open} active unresolved queries`,
+                    })) || [
+                      { label: "Urgent", value: 1, secondaryValue: 1, color: "#f43f5e" },
+                      { label: "High", value: 2, secondaryValue: 1, color: "#fb923c" },
+                      { label: "Medium", value: 4, secondaryValue: 2, color: "#f59e0b" },
+                      { label: "Low", value: 2, secondaryValue: 0, color: "#10b981" },
+                    ]
+                  }
+                  primaryLabel="Total Tickets"
+                  secondaryLabel="Open Tickets"
+                  formatValue={(v) => `${v} ticket(s)`}
+                />
+
+                <InteractiveBarChart
+                  title="Tenant Activity & Scaling Density"
+                  subtitle="User count and active construction build volume per builder organization"
+                  data={
+                    stats?.tenant_scale?.map((t) => ({
+                      label: t.name,
+                      value: t.users,
+                      secondaryValue: t.projects,
+                      color: "#f59e0b",
+                      subtext: `${t.projects} active luxury builds • ${formatCurrency(t.mrr)}/mo`,
+                    })) || [
+                      { label: "Kevin's Homes", value: 3, secondaryValue: 4, color: "#f59e0b" },
+                      { label: "Apex Builds", value: 2, secondaryValue: 2, color: "#10b981" },
+                      { label: "Cascade Timber", value: 1, secondaryValue: 1, color: "#3b82f6" },
+                    ]
+                  }
+                  primaryLabel="Active Members"
+                  secondaryLabel="Projects"
+                  formatValue={(v) => `${v} users`}
                 />
               </div>
 

@@ -241,6 +241,25 @@ export interface DashboardSummary {
     sales_owner?: string;
     created_at?: string;
   }>;
+  costs_breakdown?: Array<{
+    status: string;
+    amount: number;
+    count: number;
+    color: string;
+  }>;
+  time_series?: Array<{
+    date: string;
+    full_date: string;
+    pipeline_value: number;
+    weighted_value: number;
+    invoiced_amount: number;
+    paid_amount: number;
+  }>;
+  filter_meta?: {
+    range: string;
+    start_date: string | null;
+    end_date: string;
+  };
   notion_workspace: NotionWorkspaceConfig;
 }
 
@@ -426,6 +445,38 @@ export interface SuperadminDashboardStats {
     base_domain: string;
     google_oauth_enabled: boolean;
     has_google_secret: boolean;
+  };
+  mrr_timeline?: Array<{
+    date: string;
+    mrr: number;
+    arr: number;
+    active_tenants: number;
+  }>;
+  plan_distribution?: Array<{
+    plan: string;
+    price: number;
+    count: number;
+    mrr: number;
+    percentage: number;
+    color: string;
+  }>;
+  tickets_by_priority?: Array<{
+    priority: string;
+    count: number;
+    open: number;
+    color: string;
+  }>;
+  tenant_scale?: Array<{
+    name: string;
+    slug: string;
+    users: number;
+    projects: number;
+    mrr: number;
+  }>;
+  filter_meta?: {
+    range: string;
+    start_date: string | null;
+    end_date: string;
   };
   recent_activity: Array<{
     id: string;

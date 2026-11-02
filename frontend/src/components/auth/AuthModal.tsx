@@ -9,16 +9,15 @@ import {
   Building2,
   CheckCircle2,
   Globe,
-  KeyRound,
   Lock,
   LogOut,
   Mail,
   ShieldCheck,
-  Sparkles,
   User,
   UserPlus,
   X,
 } from "lucide-react";
+import { BeamLineMark } from "@/components/brand/BeamLineLogo";
 import { apiClient } from "@/lib/api-client";
 import type { AuthTokens, AuthUser, OAuthPublicConfig, Organization } from "@/lib/types";
 
@@ -241,12 +240,10 @@ export function AuthModal({
 
         {/* Modal Header */}
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-600/30">
-            <Building2 className="h-6 w-6" />
-          </div>
+          <BeamLineMark className="size-11" />
           <div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              {currentUser ? "Authentication & Profile" : "Sign In to Beamline"}
+              {currentUser ? "Authentication & Profile" : "Sign In to BeamLine"}
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {activeTenant?.name

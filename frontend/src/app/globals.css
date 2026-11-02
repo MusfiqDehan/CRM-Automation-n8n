@@ -69,3 +69,114 @@ body {
 .animate-fade-up {
   animation: fade-up 0.35s ease-out both;
 }
+
+/* ---------- Landing page motion system ---------- */
+[data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0);
+  transition:
+    opacity 0.9s cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+[data-reveal="left"] { transform: translate3d(-32px, 0, 0); }
+[data-reveal="right"] { transform: translate3d(32px, 0, 0); }
+[data-reveal="scale"] { transform: scale(0.94); }
+[data-reveal][data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+.bp-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: bp-draw 1.8s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  animation-delay: var(--d, 0s);
+}
+@keyframes bp-draw { to { stroke-dashoffset: 0; } }
+
+.bp-fade {
+  opacity: 0;
+  animation: bp-fade 1s ease-out forwards;
+  animation-delay: var(--d, 0s);
+}
+@keyframes bp-fade { to { opacity: 1; } }
+
+.animate-blueprint-pan { animation: blueprint-pan 24s linear infinite; }
+@keyframes blueprint-pan {
+  from { background-position: 0 0, 0 0, 0 0, 0 0; }
+  to { background-position: 96px 96px, 96px 96px, 24px 24px, 24px 24px; }
+}
+
+.animate-float { animation: float 6s ease-in-out infinite; animation-delay: var(--d, 0s); }
+@keyframes float {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -12px, 0); }
+}
+
+.animate-sway { animation: sway 5s ease-in-out infinite; transform-box: fill-box; transform-origin: top center; }
+@keyframes sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+.animate-marquee { animation: marquee 38s linear infinite; }
+.group:hover .animate-marquee { animation-play-state: paused; }
+@keyframes marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+.animate-word-in { animation: word-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes word-in {
+  from { opacity: 0; transform: translate3d(0, 0.6em, 0); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+
+.animate-panel-in { animation: panel-in 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes panel-in {
+  from { opacity: 0; transform: translate3d(0, 16px, 0) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+.animate-progress { animation: progress linear forwards; animation-duration: var(--duration, 6s); }
+@keyframes progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+.animate-ping-slow { animation: ping-slow 2.2s cubic-bezier(0, 0, 0.2, 1) infinite; }
+@keyframes ping-slow {
+  75%, 100% { transform: scale(2.2); opacity: 0; }
+}
+
+.animate-shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 4s linear infinite;
+}
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+.caution-tape {
+  background-image: repeating-linear-gradient(-45deg, var(--color-amber-400) 0 18px, var(--color-stone-950) 18px 36px);
+}
+
+.spotlight-card {
+  background-image: radial-gradient(
+    420px circle at var(--spot-x, 50%) var(--spot-y, 50%),
+    rgb(251 191 36 / 0.14),
+    transparent 45%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  [data-reveal] { opacity: 1; transform: none; transition: none; }
+  .bp-draw { stroke-dashoffset: 0; animation: none; }
+  .bp-fade { opacity: 1; animation: none; }
+  .animate-blueprint-pan,
+  .animate-float,
+  .animate-sway,
+  .animate-marquee,
+  .animate-word-in,
+  .animate-panel-in,
+  .animate-ping-slow,
+  .animate-shimmer { animation: none !important; }
+  .animate-progress { animation: none; transform: scaleX(1); }
+}

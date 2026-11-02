@@ -1,0 +1,10 @@
+{
+  "description": "Bootstraps imported Figma Make projects with verified deployment and preview setup, helping developers prepare initial imports for reliable publishing.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

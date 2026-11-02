@@ -14,15 +14,9 @@ import {
   ExternalLink,
   FileSpreadsheet,
   FileText,
-  Filter,
-  Globe,
-  KeyRound,
   Layers,
   LayoutDashboard,
-  Lock,
-  LogOut,
   Mail,
-  Moon,
   Play,
   Plus,
   RefreshCw,
@@ -31,12 +25,11 @@ import {
   ShieldCheck,
   Sliders,
   Sparkles,
-  Sun,
   User,
   Users,
   Workflow,
-  X,
 } from "lucide-react";
+import { BeamLineLogo, BeamLineMark } from "@/components/brand/BeamLineLogo";
 import { AuthModal, AuthGate } from "@/components/auth/AuthModal";
 import { SuperAdminModal } from "@/components/admin/SuperAdminModal";
 import { TenantSettingsModal } from "@/components/admin/TenantSettingsModal";
@@ -416,23 +409,20 @@ export function AdminDashboard() {
       <aside className="hidden lg:flex fixed top-0 bottom-0 left-0 z-40 w-72 flex-col justify-between border-r border-slate-200/90 bg-white dark:border-slate-800/90 dark:bg-[#0f1523] transition-colors duration-200">
         <div className="flex flex-col">
           {/* Top Brand Header */}
-          <div className="flex items-center gap-3 border-b border-slate-200/80 dark:border-slate-800/80 px-5 py-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-white shadow-sm shadow-indigo-600/30 shrink-0">
-              <Building2 className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">
-                  Beamline
-                </span>
-                <span className="rounded-md bg-indigo-50 dark:bg-indigo-950/70 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:text-indigo-300">
+          <div
+            className="flex items-center gap-3 border-b border-slate-200/80 dark:border-slate-800/80 px-5 py-4"
+            title={activeOrg?.custom_domain || activeOrg?.subdomain_host || "kevin.beamline.musfiqdehan.com"}
+          >
+            <BeamLineLogo
+              wordmarkClassName="text-sm text-slate-900 dark:text-white"
+              badge={
+                <span className="rounded-md bg-amber-50 dark:bg-amber-400/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300">
                   {currentRole}
                 </span>
-              </div>
-              <p className="text-[11px] font-mono text-indigo-600 dark:text-indigo-400 truncate max-w-[170px]" title={activeOrg?.custom_domain || activeOrg?.subdomain_host || "kevin.beamline.musfiqdehan.com"}>
-                {activeOrg?.custom_domain || activeOrg?.subdomain_host || "kevin.beamline.musfiqdehan.com"}
-              </p>
-            </div>
+              }
+              subtitle={activeOrg?.custom_domain || activeOrg?.subdomain_host || "kevin.beamline.musfiqdehan.com"}
+              subtitleClassName="max-w-[170px] font-mono text-slate-500 dark:text-slate-400"
+            />
           </div>
 
           {/* Navigation Links */}
@@ -581,15 +571,13 @@ export function AdminDashboard() {
             <div className="flex items-center gap-3 min-w-0">
               {/* Mobile View Title & Brand */}
               <div className="flex items-center gap-2.5 lg:hidden">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-xs shrink-0">
-                  <Building2 className="h-4 w-4" />
-                </div>
+                <BeamLineMark className="size-8" title="BeamLine" />
                 <div>
                   <h1 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
                     {pageMeta[activeTab].title}
                   </h1>
                   <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                    Beamline
+                    BeamLine
                   </span>
                 </div>
               </div>
@@ -710,7 +698,7 @@ export function AdminDashboard() {
                 type="button"
                 onClick={() => setIsAuthModalOpen(true)}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow-xs transition hover:bg-slate-50 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
-                title={currentUser ? `Signed in as ${currentUser.username} (${currentRole})` : "Sign In to Beamline"}
+                title={currentUser ? `Signed in as ${currentUser.username} (${currentRole})` : "Sign In to BeamLine"}
               >
                 <div className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600/10 text-[10px] font-bold text-indigo-600 dark:bg-indigo-400/20 dark:text-indigo-300">
                   {currentUser ? currentUser.username.charAt(0).toUpperCase() : <User className="h-3 w-3" />}

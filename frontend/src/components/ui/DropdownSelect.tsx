@@ -241,26 +241,26 @@ export function DropdownSelect<T = string>({
           fullWidth ? "w-full" : ""
         } ${sizeStyles.button} ${
           disabled
-            ? "cursor-not-allowed opacity-50 bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-400"
+            ? "cursor-not-allowed opacity-50 bg-stone-100 dark:bg-stone-900 border-stone-200 dark:border-stone-800 text-stone-400"
             : error
-            ? "border-rose-400 dark:border-rose-600 bg-white dark:bg-[#0f1523] text-slate-900 dark:text-slate-100 focus:ring-4 focus:ring-rose-500/15"
+            ? "border-rose-400 dark:border-rose-600 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:ring-4 focus:ring-rose-500/15"
             : isOpen
-            ? "border-indigo-500 bg-white dark:bg-[#0f1523] text-slate-900 dark:text-white shadow-xs ring-4 ring-indigo-500/10 dark:ring-indigo-500/20"
-            : "border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#0f1523] text-slate-800 dark:text-slate-200 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50/80 dark:hover:bg-slate-800/60 focus:border-indigo-500 dark:focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-500/20"
+            ? "border-amber-500 bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-xs ring-4 ring-amber-500/10 dark:ring-amber-500/20"
+            : "border-stone-200/90 dark:border-stone-800 bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-200 shadow-2xs hover:border-stone-300 dark:hover:border-stone-700 hover:bg-stone-50/80 dark:hover:bg-stone-800/60 focus:border-amber-500 dark:focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 dark:focus:ring-amber-500/20"
         } ${buttonClassName}`}
       >
         <span className="flex items-center gap-2 min-w-0 truncate text-left">
           {prefix && (
-            <span className="text-slate-500 dark:text-slate-400 font-normal shrink-0">
+            <span className="text-stone-500 dark:text-stone-400 font-normal shrink-0">
               {prefix}
             </span>
           )}
           {selectedOption?.icon && (
-            <selectedOption.icon className={`${sizeStyles.icon} text-slate-500 dark:text-slate-400 shrink-0`} />
+            <selectedOption.icon className={`${sizeStyles.icon} text-stone-500 dark:text-stone-400 shrink-0`} />
           )}
           <span className="truncate">
             {selectedOption ? selectedOption.label : (
-              <span className="text-slate-400 dark:text-slate-500 font-normal">
+              <span className="text-stone-400 dark:text-stone-500 font-normal">
                 {placeholder}
               </span>
             )}
@@ -271,8 +271,8 @@ export function DropdownSelect<T = string>({
         </span>
 
         <ChevronDown
-          className={`${sizeStyles.icon} text-slate-400 dark:text-slate-500 transition-transform duration-200 shrink-0 ml-1.5 ${
-            isOpen ? "rotate-180 text-indigo-600 dark:text-indigo-400" : ""
+          className={`${sizeStyles.icon} text-stone-400 dark:text-stone-500 transition-transform duration-200 shrink-0 ml-1.5 ${
+            isOpen ? "rotate-180 text-amber-600 dark:text-amber-400" : ""
           }`}
         />
       </button>
@@ -290,11 +290,11 @@ export function DropdownSelect<T = string>({
             isUp ? "bottom-full mb-1.5" : "top-full mt-1.5"
           } ${
             align === "right" ? "right-0" : "left-0"
-          } border-slate-200/90 dark:border-slate-800/90 bg-white/95 dark:bg-[#0f1523]/95 shadow-slate-900/10 dark:shadow-black/60 ${menuClassName}`}
+          } border-stone-200/90 dark:border-stone-800/90 bg-white/95 dark:bg-stone-900/95 shadow-stone-900/10 dark:shadow-black/60 ${menuClassName}`}
         >
           <div className="max-h-60 overflow-y-auto space-y-0.5 overscroll-contain pr-0.5">
             {options.length === 0 ? (
-              <div className="py-3 px-4 text-center text-xs text-slate-400 dark:text-slate-500">
+              <div className="py-3 px-4 text-center text-xs text-stone-400 dark:text-stone-500">
                 No options available
               </div>
             ) : (
@@ -319,10 +319,10 @@ export function DropdownSelect<T = string>({
                       option.disabled
                         ? "opacity-40 cursor-not-allowed pointer-events-none"
                         : isSelected
-                        ? "bg-indigo-50 text-indigo-700 font-semibold dark:bg-indigo-950/70 dark:text-indigo-300"
+                        ? "bg-amber-50 text-amber-700 font-semibold dark:bg-amber-950/70 dark:text-amber-300"
                         : isHighlighted
-                        ? "bg-slate-100 text-slate-900 dark:bg-slate-800/80 dark:text-white"
-                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white"
+                        ? "bg-stone-100 text-stone-900 dark:bg-stone-800/80 dark:text-white"
+                        : "text-stone-700 dark:text-stone-300 hover:bg-stone-100/70 dark:hover:bg-stone-800/60 hover:text-stone-900 dark:hover:text-white"
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0 pr-2">
@@ -330,15 +330,15 @@ export function DropdownSelect<T = string>({
                         <Icon
                           className={`${sizeStyles.icon} shrink-0 transition ${
                             isSelected
-                              ? "text-indigo-600 dark:text-indigo-400"
-                              : "text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300"
+                              ? "text-amber-600 dark:text-amber-400"
+                              : "text-stone-400 group-hover:text-stone-600 dark:text-stone-500 dark:group-hover:text-stone-300"
                           }`}
                         />
                       )}
                       <div className="min-w-0">
                         <div className="truncate">{option.label}</div>
                         {option.description && (
-                          <div className="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5 font-normal">
+                          <div className="text-[11px] text-stone-400 dark:text-stone-500 truncate mt-0.5 font-normal">
                             {option.description}
                           </div>
                         )}
@@ -350,7 +350,7 @@ export function DropdownSelect<T = string>({
                         <span className="shrink-0">{option.badge}</span>
                       )}
                       {isSelected && (
-                        <Check className={`${sizeStyles.icon} text-indigo-600 dark:text-indigo-400 shrink-0`} />
+                        <Check className={`${sizeStyles.icon} text-amber-600 dark:text-amber-400 shrink-0`} />
                       )}
                     </div>
                   </button>

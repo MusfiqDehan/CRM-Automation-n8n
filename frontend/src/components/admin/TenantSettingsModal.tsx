@@ -1,25 +1,22 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import {
-  AlertCircle,
-  Building2,
-  CheckCircle2,
-  DollarSign,
-  Globe,
-  KeyRound,
-  Mail,
-  Plus,
-  Save,
-  Send,
-  Shield,
-  Sliders,
-  UserPlus,
-  Users,
-  X,
-} from "lucide-react";
+import { Globe, KeyRound, Loader2, Save, Send, Sliders, Users } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
-import type { Invitation, Organization, OrganizationMember } from "@/lib/types";
+import { BeamLineMark } from "@/components/brand/BeamLineLogo";
+import { Badge, DropdownSelect, Field } from "@/components/ui/primitives";
+import {
+  InlineAlert,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalTabs,
+  Switch,
+} from "@/components/ui/overlay";
+import type { Organization, OrganizationMember } from "@/lib/types";
+
+type SettingsTab = "domains" | "thresholds" | "google_oauth" | "team";
 
 interface TenantSettingsModalProps {
   isOpen: boolean;
@@ -32,9 +29,7 @@ export function TenantSettingsModal({
   onClose,
   onSettingsUpdated,
 }: TenantSettingsModalProps) {
-  const [activeTab, setActiveTab] = useState<
-    "domains" | "thresholds" | "google_oauth" | "team"
-  >("domains");
+  const [activeTab, setActiveTab] = useState<SettingsTab>("domains");
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -176,446 +171,295 @@ export function TenantSettingsModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
-      <div className="relative w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900 flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-600/30">
-              <Building2 className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                Client Organization Settings
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {org?.name} • Subdomain:{" "}
-                <span className="font-mono text-indigo-600 dark:text-indigo-400">
-                  {org?.subdomain_host}
-                </span>
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+  // Superadmin entitlements decide which settings this client may manage.
+  const flags = org?.feature_flags ?? {};
+  const canUseCustomDomain = flags.sub_custom_domain !== false;
+  const canUseCustomOAuth = flags.sub_custom_google_oauth !== false;
+  const canInviteTeam = flags.sub_team_invitations !== false;
 
-        {/* Feedback Alert */}
+  const tabs: Array<{ id: SettingsTab; label: string; icon: React.ElementType; count?: number }> = [
+    { id: "domains", label: canUseCustomDomain ? "Domain & branding" : "Organization", icon: Globe },
+    { id: "thresholds", label: "Review thresholds", icon: Sliders },
+    ...(canUseCustomOAuth ? [{ id: "google_oauth" as const, label: "Google sign-in", icon: KeyRound }] : []),
+    ...(canInviteTeam ? [{ id: "team" as const, label: "Team", icon: Users, count: members.length }] : []),
+  ];
+  const currentTab: SettingsTab = tabs.some((t) => t.id === activeTab) ? activeTab : "domains";
+  const isSettingsForm = currentTab !== "team";
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} size="lg">
+      <ModalHeader
+        title="Organization settings"
+        icon={<BeamLineMark className="size-10" title="BeamLine" />}
+        onClose={onClose}
+        subtitle={
+          org ? (
+            <span className="flex flex-wrap items-center gap-x-1.5">
+              <span>{org.name}</span>
+              <span aria-hidden="true">·</span>
+              <span className="font-mono">{org.subdomain_host}</span>
+            </span>
+          ) : (
+            "Workspace configuration"
+          )
+        }
+      />
+
+      <ModalTabs<SettingsTab>
+        ariaLabel="Organization settings sections"
+        value={currentTab}
+        onChange={(tab) => {
+          setActiveTab(tab);
+          setFeedback(null);
+        }}
+        tabs={tabs}
+      />
+
+      <ModalBody className="space-y-5">
         {feedback && (
-          <div
-            className={`mx-6 mt-4 flex items-center gap-2 rounded-xl p-3 text-xs ${
-              feedback.type === "success"
-                ? "border border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300"
-                : "border border-red-200 bg-red-50 text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
-            }`}
-          >
-            {feedback.type === "success" ? (
-              <CheckCircle2 className="h-4 w-4 shrink-0" />
-            ) : (
-              <AlertCircle className="h-4 w-4 shrink-0" />
-            )}
-            <span>{feedback.message}</span>
-          </div>
+          <InlineAlert tone={feedback.type} onDismiss={() => setFeedback(null)}>
+            {feedback.message}
+          </InlineAlert>
         )}
 
-        {/* Tab Navigation */}
-        <div className="flex border-b border-slate-200 px-6 dark:border-slate-800">
-          <button
-            type="button"
-            onClick={() => setActiveTab("domains")}
-            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-semibold transition ${
-              activeTab === "domains"
-                ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
-            }`}
-          >
-            <Globe className="h-4 w-4" />
-            Domains & Branding
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("thresholds")}
-            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-semibold transition ${
-              activeTab === "thresholds"
-                ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
-            }`}
-          >
-            <Sliders className="h-4 w-4" />
-            Review Thresholds
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("google_oauth")}
-            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-semibold transition ${
-              activeTab === "google_oauth"
-                ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
-            }`}
-          >
-            <KeyRound className="h-4 w-4" />
-            Google OAuth
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("team")}
-            className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-semibold transition ${
-              activeTab === "team"
-                ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
-            }`}
-          >
-            <Users className="h-4 w-4" />
-            Team & Invites
-          </button>
-        </div>
+        {loading ? (
+          <div className="flex h-40 items-center justify-center gap-2 text-sm text-stone-500 dark:text-stone-400">
+            <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+            Loading organization settings...
+          </div>
+        ) : currentTab === "domains" ? (
+          <form id="tenant-settings-form" onSubmit={handleSaveSettings} className="space-y-4">
+            <Field label="Organization name" required>
+              <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="input" />
+            </Field>
 
-        {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {loading ? (
-            <div className="flex h-40 items-center justify-center text-xs text-slate-400">
-              Loading organization settings...
-            </div>
-          ) : activeTab === "domains" ? (
-            <form onSubmit={handleSaveSettings} className="space-y-4">
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Organization Name
-                </label>
+            <Field label="Platform subdomain" hint="Every workspace has its own isolated subdomain.">
+              <div className="input cursor-default bg-stone-50 font-mono text-stone-600 dark:bg-stone-900 dark:text-stone-300">
+                https://{org?.subdomain_host}
+              </div>
+            </Field>
+
+            {canUseCustomDomain && (
+              <div className="space-y-3">
+                <Field label="Custom domain">
+                  <input
+                    type="text"
+                    placeholder="e.g. portal.yourbuilder.com"
+                    value={customDomain}
+                    onChange={(e) => setCustomDomain(e.target.value)}
+                    className="input font-mono"
+                  />
+                </Field>
+                <InlineAlert tone="info" title="DNS setup">
+                  Create a CNAME record pointing{" "}
+                  <span className="font-mono font-semibold">{customDomain || "yourdomain.com"}</span> to{" "}
+                  <span className="font-mono font-semibold">cname.beamline.musfiqdehan.com</span>. SSL is provisioned
+                  automatically once DNS resolves.
+                </InlineAlert>
+              </div>
+            )}
+          </form>
+        ) : currentTab === "thresholds" ? (
+          <form id="tenant-settings-form" onSubmit={handleSaveSettings} className="space-y-4">
+            <p className="text-sm text-stone-500 dark:text-stone-400">
+              Items above these amounts are escalated to the executive review queue automatically.
+            </p>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Deal review threshold" required hint="Deals at or above this value need executive review.">
                 <input
-                  type="text"
+                  type="number"
+                  step="0.01"
                   required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  value={dealThreshold}
+                  onChange={(e) => setDealThreshold(e.target.value)}
+                  className="input"
                 />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Assigned Platform Subdomain
-                </label>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 font-mono text-xs text-indigo-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-indigo-400">
-                  https://{org?.subdomain_host}
-                </div>
-                <p className="mt-1 text-[11px] text-slate-500">
-                  Every subscriber automatically has their own isolated subdomain.
-                </p>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Custom Domain Attachment
-                </label>
+              </Field>
+              <Field label="Invoice review threshold" required hint="Supplier invoices at or above this value are flagged.">
                 <input
-                  type="text"
-                  placeholder="e.g. kevinbuild.com or portal.kevinconstruction.com"
-                  value={customDomain}
-                  onChange={(e) => setCustomDomain(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm font-mono focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  type="number"
+                  step="0.01"
+                  required
+                  value={invoiceThreshold}
+                  onChange={(e) => setInvoiceThreshold(e.target.value)}
+                  className="input"
                 />
-                <div className="mt-2 rounded-xl border border-amber-200/60 bg-amber-50/50 p-3 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
-                  <p className="font-semibold">DNS Configuration Instruction:</p>
-                  <p className="mt-0.5 text-[11px]">
-                    Create a CNAME record at your DNS registrar pointing{" "}
-                    <span className="font-mono font-bold">
-                      {customDomain || "yourdomain.com"}
-                    </span>{" "}
-                    to{" "}
-                    <span className="font-mono font-bold">
-                      cname.beamline.musfiqdehan.com
-                    </span>
-                    . Traefik automatically provisions a Let&apos;s Encrypt SSL
-                    certificate.
-                  </p>
-                </div>
-              </div>
+              </Field>
+            </div>
 
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="btn-primary py-2 px-4 text-xs"
+            <Field label="Executive notification email" hint="Escalations and clarification notices are sent here.">
+              <input
+                type="email"
+                placeholder="founder@yourbuilder.com"
+                value={execEmail}
+                onChange={(e) => setExecEmail(e.target.value)}
+                className="input"
+              />
+            </Field>
+
+            <Field label="Default currency">
+              <DropdownSelect
+                value={currency}
+                onChange={(val) => setCurrency(String(val))}
+                ariaLabel="Default currency"
+                options={[
+                  { value: "USD", label: "USD ($)" },
+                  { value: "CAD", label: "CAD ($)" },
+                  { value: "EUR", label: "EUR (€)" },
+                  { value: "GBP", label: "GBP (£)" },
+                ]}
+              />
+            </Field>
+          </form>
+        ) : currentTab === "google_oauth" ? (
+          <form id="tenant-settings-form" onSubmit={handleSaveSettings} className="space-y-4">
+            <div className="rounded-2xl border border-stone-200/80 bg-stone-50/60 p-4 dark:border-stone-800 dark:bg-stone-950/40">
+              <Switch
+                label="Use your own Google OAuth app"
+                description="People signing in on your domain see your company name on Google's consent screen."
+                checked={useCustomGoogleOAuth}
+                onChange={setUseCustomGoogleOAuth}
+              />
+            </div>
+
+            {useCustomGoogleOAuth ? (
+              <div className="space-y-4">
+                <Field label="Google OAuth client ID">
+                  <input
+                    type="text"
+                    placeholder="e.g. 123456789-abc.apps.googleusercontent.com"
+                    value={googleClientId}
+                    onChange={(e) => setGoogleClientId(e.target.value)}
+                    className="input font-mono"
+                  />
+                </Field>
+                <Field
+                  label="Google OAuth client secret"
+                  hint={org?.has_google_secret ? "A secret is stored. Leave blank to keep it." : undefined}
                 >
-                  <Save className="h-4 w-4" />
-                  {saving ? "Saving..." : "Save Domain Settings"}
-                </button>
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder={org?.has_google_secret ? "••••••••••••" : "Enter Google client secret"}
+                    value={googleClientSecret}
+                    onChange={(e) => setGoogleClientSecret(e.target.value)}
+                    className="input font-mono"
+                  />
+                </Field>
               </div>
-            </form>
-          ) : activeTab === "thresholds" ? (
-            <form onSubmit={handleSaveSettings} className="space-y-4">
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Configure threshold rules that automatically escalate items into the
-                Executive Triage review queue.
+            ) : (
+              <p className="text-sm text-stone-500 dark:text-stone-400">
+                Your workspace currently uses the BeamLine platform sign-in.
               </p>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    High-Value Deal Review Threshold ($)
-                  </label>
+            )}
+          </form>
+        ) : (
+          <div className="space-y-6">
+            <form
+              id="team-invite-form"
+              onSubmit={handleSendInvite}
+              className="rounded-2xl border border-stone-200/80 bg-stone-50/60 p-4 dark:border-stone-800 dark:bg-stone-950/40"
+            >
+              <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100">Invite a team member</h3>
+              <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
+                They receive an email link to join this workspace with the selected role.
+              </p>
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <Field label="Email" required>
                   <input
-                    type="number"
-                    step="0.01"
+                    type="email"
                     required
-                    value={dealThreshold}
-                    onChange={(e) => setDealThreshold(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    placeholder="colleague@build.com"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    className="input"
                   />
-                  <p className="mt-1 text-[11px] text-slate-400">
-                    Deals with estimated value ≥ this amount trigger executive review.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    Vendor Invoice Review Threshold ($)
-                  </label>
+                </Field>
+                <Field label="Full name">
                   <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={invoiceThreshold}
-                    onChange={(e) => setInvoiceThreshold(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    type="text"
+                    placeholder="Marcus Vance"
+                    value={inviteName}
+                    onChange={(e) => setInviteName(e.target.value)}
+                    className="input"
                   />
-                  <p className="mt-1 text-[11px] text-slate-400">
-                    Subcontractor invoices ≥ this amount trigger executive review.
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Executive Notification Recipient Email
-                </label>
-                <input
-                  type="email"
-                  placeholder="kevin@kevinbuild.com"
-                  value={execEmail}
-                  onChange={(e) => setExecEmail(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                />
-                <p className="mt-1 text-[11px] text-slate-400">
-                  High-value exceptions and clarification notices will be routed to
-                  this address.
-                </p>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Default Currency
-                </label>
-                <select
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                >
-                  <option value="USD">USD ($)</option>
-                  <option value="CAD">CAD ($)</option>
-                  <option value="EUR">EUR (€)</option>
-                  <option value="GBP">GBP (£)</option>
-                </select>
-              </div>
-
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="btn-primary py-2 px-4 text-xs"
-                >
-                  <Save className="h-4 w-4" />
-                  {saving ? "Saving..." : "Save Thresholds"}
-                </button>
+                </Field>
+                <Field label="Role">
+                  <DropdownSelect
+                    value={inviteRole}
+                    onChange={(val) => setInviteRole(String(val))}
+                    ariaLabel="Role"
+                    options={[
+                      { value: "Admin", label: "Admin" },
+                      { value: "PM", label: "Project manager" },
+                      { value: "Sales", label: "Sales representative" },
+                      { value: "Field", label: "Site superintendent" },
+                      { value: "Accountant", label: "Bookkeeper / accountant" },
+                      { value: "Client", label: "Client (read-only)" },
+                    ]}
+                  />
+                </Field>
               </div>
             </form>
-          ) : activeTab === "google_oauth" ? (
-            <form onSubmit={handleSaveSettings} className="space-y-4">
-              <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/50">
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                    Client Custom Google OAuth
-                  </h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    When enabled, users logging into your custom domain see your
-                    company&apos;s brand on Google&apos;s sign-in screen.
-                  </p>
+
+            <div>
+              <h3 className="mb-2 text-sm font-semibold text-stone-900 dark:text-stone-100">
+                Team members ({members.length})
+              </h3>
+              {members.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-stone-200 px-4 py-8 text-center text-sm text-stone-500 dark:border-stone-800 dark:text-stone-400">
+                  No team members yet. Invitations you send will appear here once accepted.
                 </div>
-                <label className="relative inline-flex cursor-pointer items-center">
-                  <input
-                    type="checkbox"
-                    checked={useCustomGoogleOAuth}
-                    onChange={(e) => setUseCustomGoogleOAuth(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="h-6 w-11 rounded-full bg-slate-200 peer-focus:outline-hidden peer-checked:bg-indigo-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all dark:bg-slate-700" />
-                </label>
-              </div>
-
-              {useCustomGoogleOAuth && (
-                <div className="space-y-3 pt-2">
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      Google OAuth Client ID
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 123456789-abc.apps.googleusercontent.com"
-                      value={googleClientId}
-                      onChange={(e) => setGoogleClientId(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm font-mono focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      Google OAuth Client Secret
-                    </label>
-                    <input
-                      type="password"
-                      placeholder={
-                        org?.has_google_secret
-                          ? "•••••••••••• (Leave blank to keep existing secret)"
-                          : "Enter Google Client Secret"
-                      }
-                      value={googleClientSecret}
-                      onChange={(e) => setGoogleClientSecret(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm font-mono focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="btn-primary py-2 px-4 text-xs"
-                >
-                  <Save className="h-4 w-4" />
-                  {saving ? "Saving..." : "Save OAuth Credentials"}
-                </button>
-              </div>
-            </form>
-          ) : (
-            /* Team & Invites Tab */
-            <div className="space-y-6">
-              {/* Send Invitation Form */}
-              <form
-                onSubmit={handleSendInvite}
-                className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/40"
-              >
-                <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                  Invite Team Member
-                </h4>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  <div>
-                    <label className="mb-1 block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      placeholder="colleague@build.com"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      className="w-full rounded-lg border border-slate-200 bg-white py-1.5 px-2.5 text-xs focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-                      Full Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Marcus Vance"
-                      value={inviteName}
-                      onChange={(e) => setInviteName(e.target.value)}
-                      className="w-full rounded-lg border border-slate-200 bg-white py-1.5 px-2.5 text-xs focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-                      Role
-                    </label>
-                    <select
-                      value={inviteRole}
-                      onChange={(e) => setInviteRole(e.target.value)}
-                      className="w-full rounded-lg border border-slate-200 bg-white py-1.5 px-2.5 text-xs focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                    >
-                      <option value="Admin">Admin</option>
-                      <option value="PM">Project Manager</option>
-                      <option value="Sales">Sales Representative</option>
-                      <option value="Field">Site Superintendent</option>
-                      <option value="Accountant">Bookkeeper / Accountant</option>
-                      <option value="Client">Client (Read-Only)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="mt-3 flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={inviting}
-                    className="btn-primary py-1.5 px-3 text-xs"
-                  >
-                    <Send className="h-3.5 w-3.5" />
-                    {inviting ? "Sending..." : "Dispatch Invitation"}
-                  </button>
-                </div>
-              </form>
-
-              {/* Members List */}
-              <div>
-                <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                  Active Team Members ({members.length})
-                </h4>
-                <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 text-slate-600 dark:bg-slate-800/60 dark:text-slate-400">
+              ) : (
+                <div className="overflow-x-auto rounded-2xl border border-stone-200/80 dark:border-stone-800">
+                  <table className="w-full min-w-xl text-left text-sm">
+                    <thead className="bg-stone-50 text-xs text-stone-500 dark:bg-stone-950/50 dark:text-stone-400">
                       <tr>
-                        <th className="py-2.5 px-3 font-semibold">User</th>
-                        <th className="py-2.5 px-3 font-semibold">Email</th>
-                        <th className="py-2.5 px-3 font-semibold">Role</th>
-                        <th className="py-2.5 px-3 font-semibold">Status</th>
+                        <th className="px-4 py-3 font-medium">User</th>
+                        <th className="px-4 py-3 font-medium">Email</th>
+                        <th className="px-4 py-3 font-medium">Role</th>
+                        <th className="px-4 py-3 font-medium">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
                       {members.map((m) => (
-                        <tr key={m.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                          <td className="py-2.5 px-3 font-medium text-slate-900 dark:text-white">
-                            {m.username}
+                        <tr key={m.id} className="transition-colors hover:bg-stone-50/70 dark:hover:bg-stone-800/40">
+                          <td className="px-4 py-3 font-medium text-stone-900 dark:text-stone-100">{m.username}</td>
+                          <td className="px-4 py-3 text-stone-500 dark:text-stone-400">{m.email}</td>
+                          <td className="px-4 py-3">
+                            <Badge tone="amber">{m.role}</Badge>
                           </td>
-                          <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400">
-                            {m.email}
-                          </td>
-                          <td className="py-2.5 px-3">
-                            <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-                              {m.role}
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-3">
-                            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-                              Active
-                            </span>
+                          <td className="px-4 py-3">
+                            <Badge tone="green">Active</Badge>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-              </div>
+              )}
             </div>
-          )}
-        </div>
-      </div>
-    </div>
+          </div>
+        )}
+      </ModalBody>
+
+      <ModalFooter hint={isSettingsForm ? "Saving applies changes from every settings tab." : undefined}>
+        <button type="button" onClick={onClose} className="btn-secondary">
+          Close
+        </button>
+        {isSettingsForm ? (
+          <button type="submit" form="tenant-settings-form" disabled={saving || loading} className="btn-primary">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {saving ? "Saving..." : "Save changes"}
+          </button>
+        ) : (
+          <button type="submit" form="team-invite-form" disabled={inviting || loading} className="btn-primary">
+            {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {inviting ? "Sending..." : "Send invitation"}
+          </button>
+        )}
+      </ModalFooter>
+    </Modal>
   );
 }

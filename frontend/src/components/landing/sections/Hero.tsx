@@ -62,12 +62,17 @@ export function Hero() {
 
       <div className="mx-auto grid max-w-7xl items-center gap-16 px-4 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:px-8">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-300/10 px-3.5 py-1.5 text-xs font-bold text-amber-200">
+          <div
+            className="intro-rise inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-300/10 px-3.5 py-1.5 text-xs font-bold text-amber-200"
+            style={{ "--intro-delay": "320ms" } as CSSProperties}
+          >
             <Sparkles className="size-3.5" aria-hidden="true" />
             The multi-tenant operating system for builders
           </div>
 
-          <h1 className="mt-7 text-balance text-[2.6rem] font-black leading-[0.98] tracking-tight sm:text-6xl lg:text-7xl">
+          <h1
+            style={{ "--intro-delay": "420ms" } as CSSProperties}
+            className="intro-rise mt-7 text-balance text-[2.6rem] font-black leading-[0.98] tracking-tight sm:text-6xl lg:text-7xl">
             Every builder deserves a{" "}
             <span className="relative inline-block whitespace-nowrap">
               <span
@@ -80,12 +85,18 @@ export function Hero() {
             </span>
           </h1>
 
-          <p className="mt-7 max-w-xl text-pretty text-lg leading-8 text-stone-300">
+          <p
+            className="intro-rise mt-7 max-w-xl text-pretty text-lg leading-8 text-stone-300"
+            style={{ "--intro-delay": "540ms" } as CSSProperties}
+          >
             BeamLine unites your CRM, project delivery, and invoice automation in a private, branded workspace — so your team builds more and chases less.
           </p>
 
           {/* Interactive subdomain preview */}
-          <div className="mt-9 max-w-xl rounded-2xl border border-white/10 bg-white/[0.04] p-2 backdrop-blur-sm">
+          <div
+            className="intro-rise mt-9 max-w-xl rounded-2xl border border-white/10 bg-white/[0.04] p-2 backdrop-blur-sm"
+            style={{ "--intro-delay": "640ms" } as CSSProperties}
+          >
             <label htmlFor="company-name" className="sr-only">
               Company name
             </label>
@@ -114,7 +125,10 @@ export function Hero() {
             </p>
           </div>
 
-          <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm font-medium text-stone-300">
+          <ul
+            className="intro-rise mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm font-medium text-stone-300"
+            style={{ "--intro-delay": "740ms" } as CSSProperties}
+          >
             {["Ready to use on day one", "Isolated tenant data", "Your own branded domain"].map((item) => (
               <li key={item} className="flex items-center gap-2">
                 <CheckCircle2 className="size-4 text-amber-400" aria-hidden="true" />
@@ -124,7 +138,9 @@ export function Hero() {
           </ul>
         </div>
 
-        <HeroBlueprint workspace={workspaceName} />
+        <div className="intro-rise" style={{ "--intro-delay": "520ms" } as CSSProperties}>
+          <HeroBlueprint workspace={workspaceName} />
+        </div>
       </div>
     </section>
   );

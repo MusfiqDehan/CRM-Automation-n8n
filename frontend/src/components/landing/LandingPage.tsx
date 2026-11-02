@@ -11,9 +11,15 @@ import { PlatformExplorer } from "./sections/PlatformExplorer";
 import { Pricing } from "./sections/Pricing";
 import { TenantShowcase } from "./sections/TenantShowcase";
 
-export function LandingPage() {
+export function LandingPage({ introState = "play" }: { introState?: "hold" | "play" }) {
+  const holding = introState === "hold";
   return (
-    <div className="min-h-screen overflow-x-clip bg-stone-50 text-stone-950 selection:bg-amber-300 selection:text-stone-950 dark:bg-stone-950 dark:text-stone-50">
+    <div
+      data-intro-state={introState}
+      // Keep focus out of the page while the opening intro covers it.
+      inert={holding}
+      aria-hidden={holding || undefined}
+      className="min-h-screen overflow-x-clip bg-stone-50 text-stone-950 selection:bg-amber-300 selection:text-stone-950 dark:bg-stone-950 dark:text-stone-50">
       {/* Keep scroll-reveal content visible when JavaScript is unavailable. */}
       <noscript>
         <style>{`[data-reveal]{opacity:1!important;transform:none!important}`}</style>

@@ -15,9 +15,9 @@ export function BeamLineMark({
   tone?: MarkTone;
   title?: string;
 }) {
-  const tile = tone === "dark" ? "fill-stone-950" : "fill-amber-400";
-  const beam = tone === "dark" ? "fill-amber-400" : "fill-stone-950";
-  const cut = tone === "dark" ? "stroke-stone-950" : "stroke-amber-400";
+  const tile = tone === "dark" ? "fill-stone-950 dark:fill-amber-400" : "fill-amber-400";
+  const beam = tone === "dark" ? "fill-amber-400 dark:fill-stone-950" : "fill-stone-950";
+  const cut = tone === "dark" ? "stroke-stone-950 dark:stroke-amber-400" : "stroke-amber-400";
 
   return (
     <svg

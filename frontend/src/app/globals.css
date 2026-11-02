@@ -15,44 +15,73 @@ html {
 }
 
 body {
-  background-color: #f7f7f5;
-  color: #0f172a;
+  background-color: var(--color-stone-50);
+  color: var(--color-stone-950);
   font-family: var(--font-urbanist), "Urbanist", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
 .dark body {
-  background-color: #0b0f19;
-  color: #f1f5f9;
+  background-color: var(--color-stone-950);
+  color: var(--color-stone-100);
 }
 
-/* ---------- Shared building blocks ---------- */
-.card {
-  @apply rounded-2xl border border-slate-200/80 bg-white shadow-xs transition-colors dark:border-slate-800 dark:bg-slate-900;
-}
+/* ---------- Shared building blocks ----------
+ * Declared in the components layer so Tailwind utilities (e.g. `w-full`,
+ * `pl-9`) can extend them. Size modifiers come last so they win over the
+ * base button padding without needing ad-hoc overrides.
+ */
+@layer components {
+  .card {
+    @apply rounded-2xl border border-stone-200/80 bg-white shadow-xs transition-colors dark:border-stone-800 dark:bg-stone-900;
+  }
 
-.input {
-  @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-indigo-500 dark:focus:ring-indigo-950;
-}
+  .input {
+    @apply w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 transition outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-stone-800 dark:bg-stone-950 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:border-amber-500 dark:focus:ring-amber-950;
+  }
 
-.btn,
-.btn-primary,
-.btn-secondary,
-.btn-ghost {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-50;
-}
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-ghost,
+  .btn-danger {
+    @apply inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-semibold transition cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-amber-200 disabled:cursor-not-allowed disabled:opacity-50 dark:focus-visible:ring-amber-900;
+  }
 
-.btn-primary {
-  @apply bg-indigo-600 text-white shadow-sm shadow-indigo-600/20 hover:bg-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500;
-}
+  /* Main call to action. Use at most once per region. */
+  .btn-primary {
+    @apply bg-amber-400 text-stone-950 shadow-sm shadow-amber-500/20 hover:bg-amber-300 dark:bg-amber-400 dark:text-stone-950 dark:hover:bg-amber-300;
+  }
 
-.btn-secondary {
-  @apply border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:border-slate-700;
-}
+  /* Neutral supporting action with a visible boundary. */
+  .btn-secondary {
+    @apply border border-stone-200 bg-white text-stone-700 shadow-xs hover:bg-stone-50 hover:border-stone-300 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800 dark:hover:border-stone-700;
+  }
 
-.btn-ghost {
-  @apply text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100;
+  /* Low-emphasis action: dismissals, "view all" links, tertiary controls. */
+  .btn-ghost {
+    @apply text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100;
+  }
+
+  /* Destructive or account-ending action. */
+  .btn-danger {
+    @apply border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:border-rose-300 focus-visible:ring-rose-200 dark:border-rose-900/70 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-950/70 dark:focus-visible:ring-rose-900;
+  }
+
+  /* Size modifiers — combine with any variant above. */
+  .btn-sm {
+    @apply gap-1.5 rounded-xl px-3 py-2 text-xs;
+  }
+
+  .btn-xs {
+    @apply gap-1 rounded-lg px-2.5 py-1.5 text-xs;
+  }
+
+  /* Square icon-only button; pair with a variant and an aria-label. */
+  .btn-icon {
+    @apply size-9 p-0;
+  }
 }
 
 @keyframes fade-up {
@@ -165,11 +194,129 @@ body {
   );
 }
 
+/* ---------- Platform opening intro ----------
+ * Phases are driven by `data-phase` on the overlay:
+ * assemble → complete → exit. The landing page underneath holds its own
+ * entrance animations (`data-intro-state="hold"`) until the doors open.
+ */
+.intro-draw,
+.intro-draw-fill {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.intro-draw {
+  animation: bp-draw var(--dur, 0.9s) cubic-bezier(0.65, 0, 0.35, 1) var(--d, 0s) forwards;
+}
+.intro-draw-fill {
+  fill-opacity: 0;
+  animation:
+    bp-draw var(--dur, 0.9s) cubic-bezier(0.65, 0, 0.35, 1) var(--d, 0s) forwards,
+    intro-fill 0.45s ease-out var(--fd, 1s) forwards;
+}
+@keyframes intro-fill {
+  to { fill-opacity: 1; stroke-opacity: var(--stroke-end, 1); }
+}
+
+.intro-mark { animation: intro-pop 1.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes intro-pop {
+  0% { opacity: 0; transform: scale(0.82); }
+  14% { opacity: 1; }
+  52% { transform: scale(0.96); }
+  66% { transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.intro-glint {
+  transform: translateX(-60px);
+  animation: intro-glint 0.9s cubic-bezier(0.65, 0, 0.35, 1) 1.45s forwards;
+}
+@keyframes intro-glint { to { transform: translateX(150px); } }
+
+.intro-letter {
+  transform: translate3d(0, 110%, 0);
+  animation: intro-letter 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation-delay: calc(0.45s + var(--i, 0) * 45ms);
+}
+@keyframes intro-letter { to { transform: none; } }
+
+.intro-fade {
+  opacity: 0;
+  animation: intro-fade-in 0.6s ease-out var(--d, 0s) forwards;
+}
+@keyframes intro-fade-in {
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+.intro-glow { animation: intro-breathe 3.2s ease-in-out infinite; }
+@keyframes intro-breathe {
+  0%, 100% { opacity: 0.55; transform: scale(0.94); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
+
+.intro-panel { transition: transform 0.95s cubic-bezier(0.76, 0, 0.24, 1) 0.12s; }
+[data-phase="exit"][data-exit="split"] .intro-panel-top { transform: translate3d(0, -100%, 0); }
+[data-phase="exit"][data-exit="split"] .intro-panel-bottom { transform: translate3d(0, 100%, 0); }
+[data-phase="exit"][data-exit="fade"] {
+  opacity: 0;
+  transition: opacity 0.4s ease-out;
+}
+
+.intro-layer { transition: opacity 0.35s ease-out, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+[data-phase="exit"] .intro-layer { opacity: 0; }
+[data-phase="exit"] .intro-content { transform: scale(0.94); }
+
+.intro-seam {
+  opacity: 0;
+  transform: scaleX(0);
+  transition: transform 0.45s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.3s ease-out;
+}
+[data-phase="complete"] .intro-seam,
+[data-phase="exit"] .intro-seam {
+  opacity: 1;
+  transform: scaleX(1);
+}
+[data-phase="exit"] .intro-seam {
+  opacity: 0;
+  transition-delay: 0s, 0.4s;
+}
+
+/* Landing page entrance, released when the intro doors open. */
+.intro-rise,
+.intro-drop {
+  animation: intro-rise 0.95s cubic-bezier(0.2, 0.8, 0.2, 1) var(--intro-delay, 0ms) both;
+}
+.intro-drop { animation-name: intro-drop; }
+@keyframes intro-rise {
+  from { opacity: 0; transform: translate3d(0, 28px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes intro-drop {
+  from { opacity: 0; transform: translate3d(0, -20px, 0); }
+  to { opacity: 1; transform: none; }
+}
+[data-intro-state="hold"] :is(.intro-rise, .intro-drop, .bp-draw, .bp-fade) {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   [data-reveal] { opacity: 1; transform: none; transition: none; }
   .bp-draw { stroke-dashoffset: 0; animation: none; }
   .bp-fade { opacity: 1; animation: none; }
+  .intro-draw,
+  .intro-draw-fill { stroke-dashoffset: 0; fill-opacity: 1; stroke-opacity: var(--stroke-end, 1); animation: none; }
+  .intro-letter,
+  .intro-fade,
+  .intro-rise,
+  .intro-drop { opacity: 1; transform: none; animation: none; }
+  .intro-mark,
+  .intro-glow,
+  .intro-glint { animation: none; }
+  .intro-glint { opacity: 0; }
+  .intro-panel,
+  .intro-layer,
+  .intro-seam { transition-duration: 0.01s; transition-delay: 0s; }
   .animate-blueprint-pan,
   .animate-float,
   .animate-sway,

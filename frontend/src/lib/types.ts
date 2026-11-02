@@ -275,6 +275,7 @@ export interface SMTPSettings {
 
 export interface FeatureFlags {
   // Top-level Pages
+  page_landing?: boolean;
   page_overview?: boolean;
   page_crm?: boolean;
   page_projects?: boolean;
@@ -407,5 +408,4 @@ export interface OAuthPublicConfig {
     brand_name: string;
   };
 }
-
 

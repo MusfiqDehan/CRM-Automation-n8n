@@ -84,7 +84,7 @@ export function LandingOverview({
       subtitle: "From architect referral to signed $3M+ construction agreement",
       icon: Users,
       badge: "Sales & Client Journey",
-      color: "from-blue-600/20 to-indigo-600/20 border-blue-500/40 text-blue-300",
+      color: "from-amber-600/20 to-amber-600/20 border-amber-500/40 text-amber-300",
       steps: [
         {
           num: "01",
@@ -156,7 +156,7 @@ export function LandingOverview({
       subtitle: "AI email invoice extraction, project matching & margin protection",
       icon: Workflow,
       badge: "Financial Automation",
-      color: "from-purple-600/20 to-pink-600/20 border-purple-500/40 text-purple-300",
+      color: "from-amber-600/20 to-amber-600/20 border-amber-500/40 text-amber-300",
       steps: [
         {
           num: "01",
@@ -227,25 +227,25 @@ export function LandingOverview({
   return (
     <div className="space-y-8 pb-12">
       {/* Hero Welcome Card */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950/40 to-slate-900 border border-slate-800 p-6 sm:p-8 shadow-2xl">
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-stone-900 via-amber-950/40 to-stone-900 border border-stone-800 p-6 sm:p-8 shadow-2xl">
         {/* Subtle decorative glow */}
-        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 -mb-10 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/3 -mb-10 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 max-w-4xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             <span>High-End Residential Operations Hub • $3M+ Builds</span>
           </div>
 
           <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
             The Complete Operating System for{" "}
-            <span className="bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-300 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-amber-300 bg-clip-text text-transparent">
               Luxury Custom Construction
             </span>
           </h1>
 
-          <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-3xl">
+          <p className="text-sm sm:text-base text-stone-300 leading-relaxed max-w-3xl">
             Welcome to Kevin&apos;s Construction OS — designed for high-touch luxury clients,
             superintendents, and executive teams. Replace disconnected spreadsheets with a unified
             system linking <strong>Sales Pipeline</strong>, <strong>4-Phase Project Execution</strong>,
@@ -257,7 +257,7 @@ export function LandingOverview({
             <button
               type="button"
               onClick={() => onNavigate("crm")}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/25 transition cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-500/25 transition cursor-pointer"
             >
               <Users className="w-4 h-4" />
               <span>Explore Sales Pipeline</span>
@@ -267,7 +267,7 @@ export function LandingOverview({
             <button
               type="button"
               onClick={() => onNavigate("projects")}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 transition cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-stone-900 hover:bg-stone-800 text-stone-200 border border-stone-700 transition cursor-pointer"
             >
               <Building2 className="w-4 h-4 text-emerald-400" />
               <span>Inspect Active Builds</span>
@@ -276,7 +276,7 @@ export function LandingOverview({
             <button
               type="button"
               onClick={() => onNavigate("automation")}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 transition cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 transition cursor-pointer"
             >
               <Workflow className="w-4 h-4" />
               <span>Test Invoice Automation</span>
@@ -286,10 +286,10 @@ export function LandingOverview({
               href={hubUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-950/80 hover:bg-slate-900 text-slate-300 border border-slate-800 transition"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-stone-950/80 hover:bg-stone-900 text-stone-300 border border-stone-800 transition"
             >
               <span>Notion OS Hub</span>
-              <ExternalLink className="w-3.5 h-3.5 text-blue-400" />
+              <ExternalLink className="w-3.5 h-3.5 text-amber-400" />
             </a>
           </div>
         </div>
@@ -297,28 +297,28 @@ export function LandingOverview({
 
       {/* Real-time KPI Metric Summaries Strip */}
       <section aria-label="Executive Metrics Strip" className="space-y-2">
-        <div className="flex items-center justify-between text-xs text-slate-400 font-semibold px-1">
+        <div className="flex items-center justify-between text-xs text-stone-400 font-semibold px-1">
           <span>Live Executive Metrics &amp; Operational Pulse</span>
           <span>Updated in Real-Time</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
           {/* KPI 1 */}
-          <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition">
-            <div className="flex items-center justify-between text-xs text-slate-400">
+          <div className="p-4 rounded-xl bg-stone-900/90 border border-stone-800 hover:border-stone-700 transition">
+            <div className="flex items-center justify-between text-xs text-stone-400">
               <span>Active Sales Pipeline</span>
-              <DollarSign className="w-4 h-4 text-blue-400" />
+              <DollarSign className="w-4 h-4 text-amber-400" />
             </div>
             <p className="text-xl sm:text-2xl font-bold text-white mt-1">
               {loading ? "..." : formatCurrency(summary?.kpis.total_pipeline_value)}
             </p>
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-stone-400 mt-1">
               {summary?.kpis.active_opportunities_count ?? 0} qualified $3M+ deals
             </p>
           </div>
 
           {/* KPI 2 */}
-          <div className="p-4 rounded-xl bg-slate-900/90 border border-amber-500/40 hover:border-amber-500/70 transition shadow-sm">
+          <div className="p-4 rounded-xl bg-stone-900/90 border border-amber-500/40 hover:border-amber-500/70 transition shadow-sm">
             <div className="flex items-center justify-between text-xs text-amber-300 font-medium">
               <span>Founder Review Queue</span>
               <AlertTriangle className="w-4 h-4 text-amber-400" />
@@ -327,30 +327,30 @@ export function LandingOverview({
               {loading ? "..." : summary?.kpis.kevin_review_opportunities_count ?? 0}{" "}
               Deals
             </p>
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-stone-400 mt-1">
               Escalated for Kevin sign-off
             </p>
           </div>
 
           {/* KPI 3 */}
-          <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition">
-            <div className="flex items-center justify-between text-xs text-slate-400">
+          <div className="p-4 rounded-xl bg-stone-900/90 border border-stone-800 hover:border-stone-700 transition">
+            <div className="flex items-center justify-between text-xs text-stone-400">
               <span>Active Construction Builds</span>
               <Building2 className="w-4 h-4 text-emerald-400" />
             </div>
             <p className="text-xl sm:text-2xl font-bold text-white mt-1">
               {loading ? "..." : summary?.kpis.active_projects_count ?? 0} Builds
             </p>
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-stone-400 mt-1">
               4-Phase milestone discipline
             </p>
           </div>
 
           {/* KPI 4 */}
-          <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition">
-            <div className="flex items-center justify-between text-xs text-slate-400">
+          <div className="p-4 rounded-xl bg-stone-900/90 border border-stone-800 hover:border-stone-700 transition">
+            <div className="flex items-center justify-between text-xs text-stone-400">
               <span>Contract Budgets Managed</span>
-              <Briefcase className="w-4 h-4 text-indigo-400" />
+              <Briefcase className="w-4 h-4 text-amber-400" />
             </div>
             <p className="text-xl sm:text-2xl font-bold text-white mt-1">
               {loading
@@ -362,21 +362,21 @@ export function LandingOverview({
                     )
                   )}
             </p>
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-stone-400 mt-1">
               Live site budget tracking
             </p>
           </div>
 
           {/* KPI 5 */}
-          <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition">
-            <div className="flex items-center justify-between text-xs text-slate-400">
+          <div className="p-4 rounded-xl bg-stone-900/90 border border-stone-800 hover:border-stone-700 transition">
+            <div className="flex items-center justify-between text-xs text-stone-400">
               <span>AI Invoices Processed</span>
-              <Zap className="w-4 h-4 text-purple-400" />
+              <Zap className="w-4 h-4 text-amber-400" />
             </div>
-            <p className="text-xl sm:text-2xl font-bold text-purple-300 mt-1">
+            <p className="text-xl sm:text-2xl font-bold text-amber-300 mt-1">
               {loading ? "..." : summary?.kpis.total_costs_records ?? 0} Invoices
             </p>
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-stone-400 mt-1">
               {summary?.kpis.email_notifications_count ?? 0} alerts dispatched
             </p>
           </div>
@@ -404,34 +404,34 @@ export function LandingOverview({
           <h2 className="text-base sm:text-xl font-bold text-white">
             Core Platform Benefits &amp; Architectural Highlights
           </h2>
-          <p className="text-xs sm:text-sm text-slate-400">
+          <p className="text-xs sm:text-sm text-stone-400">
             Engineered to eliminate margin erosion, missed leads, and manual data-entry overhead
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Benefit 1 */}
-          <div className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-blue-500/50 transition-all flex flex-col justify-between group">
+          <div className="p-5 rounded-2xl bg-stone-900/70 border border-stone-800 hover:border-amber-500/50 transition-all flex flex-col justify-between group">
             <div className="space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <Users className="w-5 h-5" />
               </div>
-              <h3 className="text-sm font-bold text-white group-hover:text-blue-300 transition-colors">
+              <h3 className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors">
                 High-Touch Sales &amp; VIP Qualification
               </h3>
-              <p className="text-xs text-slate-300 leading-relaxed">
+              <p className="text-xs text-stone-300 leading-relaxed">
                 Centralizes inquiries from high-end architect partners, client referrals, and VIP channels.
                 Standardizes the 5-stage qualification pipeline before committing architectural resources.
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-semibold text-blue-400">
+            <div className="mt-4 pt-3 border-t border-stone-800/80 flex items-center justify-between text-xs font-semibold text-amber-400">
               <span>Zero dropped inquiries</span>
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
 
           {/* Benefit 2 */}
-          <div className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-emerald-500/50 transition-all flex flex-col justify-between group">
+          <div className="p-5 rounded-2xl bg-stone-900/70 border border-stone-800 hover:border-emerald-500/50 transition-all flex flex-col justify-between group">
             <div className="space-y-3">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <Layers className="w-5 h-5" />
@@ -439,39 +439,39 @@ export function LandingOverview({
               <h3 className="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">
                 Milestone-Driven 4-Phase Delivery
               </h3>
-              <p className="text-xs text-slate-300 leading-relaxed">
+              <p className="text-xs text-stone-300 leading-relaxed">
                 Standardized lifecycle from Pre-Construction (soils &amp; permits) to Framing/MEP Construction,
                 Client Closeout, and 11-Month Warranty walkthroughs with reusable site checklists.
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-semibold text-emerald-400">
+            <div className="mt-4 pt-3 border-t border-stone-800/80 flex items-center justify-between text-xs font-semibold text-emerald-400">
               <span>100% Milestone Visibility</span>
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
 
           {/* Benefit 3 */}
-          <div className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-purple-500/50 transition-all flex flex-col justify-between group">
+          <div className="p-5 rounded-2xl bg-stone-900/70 border border-stone-800 hover:border-amber-500/50 transition-all flex flex-col justify-between group">
             <div className="space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <Workflow className="w-5 h-5" />
               </div>
-              <h3 className="text-sm font-bold text-white group-hover:text-purple-300 transition-colors">
+              <h3 className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors">
                 Autonomous AI Cost &amp; Invoicing
               </h3>
-              <p className="text-xs text-slate-300 leading-relaxed">
+              <p className="text-xs text-stone-300 leading-relaxed">
                 Inbound supplier PDF invoices are parsed instantly by n8n + AI, matched to active project
                 cost codes, checked for duplicate submissions, and recorded with zero manual paperwork.
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-semibold text-purple-400">
+            <div className="mt-4 pt-3 border-t border-stone-800/80 flex items-center justify-between text-xs font-semibold text-amber-400">
               <span>Saves 15+ hrs/week</span>
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
 
           {/* Benefit 4 */}
-          <div className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-amber-500/50 transition-all flex flex-col justify-between group">
+          <div className="p-5 rounded-2xl bg-stone-900/70 border border-stone-800 hover:border-amber-500/50 transition-all flex flex-col justify-between group">
             <div className="space-y-3">
               <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <ShieldCheck className="w-5 h-5" />
@@ -479,12 +479,12 @@ export function LandingOverview({
               <h3 className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors">
                 Executive Governance &amp; Review
               </h3>
-              <p className="text-xs text-slate-300 leading-relaxed">
+              <p className="text-xs text-stone-300 leading-relaxed">
                 High-ticket variations, complex architectural requests, and supplier cost discrepancies
                 automatically escalate to Kevin&apos;s Review Queue for founder sign-off before commitment.
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-semibold text-amber-400">
+            <div className="mt-4 pt-3 border-t border-stone-800/80 flex items-center justify-between text-xs font-semibold text-amber-400">
               <span>Guaranteed Quality &amp; Margin</span>
               <CheckCircle2 className="w-4 h-4" />
             </div>
@@ -499,11 +499,11 @@ export function LandingOverview({
             <h2 className="text-base sm:text-xl font-bold text-white">
               Operational Use Cases &amp; Real-World Workflows
             </h2>
-            <p className="text-xs sm:text-sm text-slate-400">
+            <p className="text-xs sm:text-sm text-stone-400">
               Select a workflow below to inspect how the system orchestrates each client and site scenario
             </p>
           </div>
-          <span className="text-xs text-slate-400 font-mono">
+          <span className="text-xs text-stone-400 font-mono">
             Scenario {selectedUseCase + 1} of {useCases.length}
           </span>
         </div>
@@ -520,8 +520,8 @@ export function LandingOverview({
                 onClick={() => setSelectedUseCase(index)}
                 className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                   isSelected
-                    ? "bg-slate-800 text-white border border-slate-700 shadow-md"
-                    : "text-slate-400 hover:text-white hover:bg-slate-900 border border-transparent"
+                    ? "bg-stone-800 text-white border border-stone-700 shadow-md"
+                    : "text-stone-400 hover:text-white hover:bg-stone-900 border border-transparent"
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -537,28 +537,28 @@ export function LandingOverview({
           const Icon = activeUc.icon;
           return (
             <div
-              className={`p-6 rounded-2xl bg-gradient-to-br ${activeUc.color} bg-slate-950/80 border space-y-6 shadow-xl`}
+              className={`p-6 rounded-2xl bg-gradient-to-br ${activeUc.color} bg-stone-950/80 border space-y-6 shadow-xl`}
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-center shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-stone-900/90 border border-stone-800 flex items-center justify-center shrink-0">
                     <Icon className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400">
                       {activeUc.badge}
                     </span>
                     <h3 className="text-base sm:text-lg font-bold text-white">
                       {activeUc.title}
                     </h3>
-                    <p className="text-xs text-slate-300">{activeUc.subtitle}</p>
+                    <p className="text-xs text-stone-300">{activeUc.subtitle}</p>
                   </div>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => onNavigate(activeUc.ctaTab)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-white text-slate-950 hover:bg-slate-200 transition shadow-md cursor-pointer shrink-0"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-white text-stone-950 hover:bg-stone-200 transition shadow-md cursor-pointer shrink-0"
                 >
                   <span>{activeUc.ctaLabel}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -570,16 +570,16 @@ export function LandingOverview({
                 {activeUc.steps.map((st) => (
                   <div
                     key={st.num}
-                    className="p-4 rounded-xl bg-slate-900/90 border border-slate-800/80 flex flex-col justify-between"
+                    className="p-4 rounded-xl bg-stone-900/90 border border-stone-800/80 flex flex-col justify-between"
                   >
                     <div>
-                      <span className="text-xs font-mono font-bold text-slate-400">
+                      <span className="text-xs font-mono font-bold text-stone-400">
                         {st.num}
                       </span>
                       <h4 className="text-xs sm:text-sm font-semibold text-white mt-1">
                         {st.name}
                       </h4>
-                      <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                      <p className="text-xs text-stone-300 mt-1.5 leading-relaxed">
                         {st.detail}
                       </p>
                     </div>
@@ -595,13 +595,13 @@ export function LandingOverview({
       <section aria-label="System Links" className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-            <Link2 className="w-4 h-4 text-blue-400" />
+            <Link2 className="w-4 h-4 text-amber-400" />
             <span>Essential Workspaces &amp; System Integration Links</span>
           </h3>
           <button
             type="button"
             onClick={() => onNavigate("resources")}
-            className="text-xs font-semibold text-blue-400 hover:text-blue-300 inline-flex items-center gap-1 cursor-pointer"
+            className="text-xs font-semibold text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 cursor-pointer"
           >
             <span>View Full Resource Hub</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -613,17 +613,17 @@ export function LandingOverview({
             href={hubUrl}
             target="_blank"
             rel="noreferrer"
-            className="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800 hover:border-blue-500/50 transition flex items-center justify-between group"
+            className="p-3.5 rounded-xl bg-stone-900/70 border border-stone-800 hover:border-amber-500/50 transition flex items-center justify-between group"
           >
             <div>
-              <div className="text-xs font-bold text-white group-hover:text-blue-300 transition-colors">
+              <div className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors">
                 Notion OS Hub Page
               </div>
-              <div className="text-[11px] text-slate-400">
+              <div className="text-[11px] text-stone-400">
                 Single source of truth workspace
               </div>
             </div>
-            <ExternalLink className="w-4 h-4 text-blue-400 shrink-0" />
+            <ExternalLink className="w-4 h-4 text-amber-400 shrink-0" />
           </a>
 
           {salesDashboardUrl && (
@@ -631,13 +631,13 @@ export function LandingOverview({
               href={salesDashboardUrl}
               target="_blank"
               rel="noreferrer"
-              className="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800 hover:border-amber-500/50 transition flex items-center justify-between group"
+              className="p-3.5 rounded-xl bg-stone-900/70 border border-stone-800 hover:border-amber-500/50 transition flex items-center justify-between group"
             >
               <div>
                 <div className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors">
                   Notion Sales Board
                 </div>
-                <div className="text-[11px] text-slate-400">
+                <div className="text-[11px] text-stone-400">
                   Visual Kanban stage pipeline
                 </div>
               </div>
@@ -649,30 +649,30 @@ export function LandingOverview({
             href={n8nUrl}
             target="_blank"
             rel="noreferrer"
-            className="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800 hover:border-purple-500/50 transition flex items-center justify-between group"
+            className="p-3.5 rounded-xl bg-stone-900/70 border border-stone-800 hover:border-amber-500/50 transition flex items-center justify-between group"
           >
             <div>
-              <div className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors">
+              <div className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors">
                 n8n Automation Flow
               </div>
-              <div className="text-[11px] text-slate-400">
+              <div className="text-[11px] text-stone-400">
                 Live email &amp; webhook workflow
               </div>
             </div>
-            <ExternalLink className="w-4 h-4 text-purple-400 shrink-0" />
+            <ExternalLink className="w-4 h-4 text-amber-400 shrink-0" />
           </a>
 
           <a
             href={`${apiBase}/docs/download/diagram/`}
             target="_blank"
             rel="noreferrer"
-            className="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800 hover:border-emerald-500/50 transition flex items-center justify-between group"
+            className="p-3.5 rounded-xl bg-stone-900/70 border border-stone-800 hover:border-emerald-500/50 transition flex items-center justify-between group"
           >
             <div>
               <div className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">
                 Architecture Blueprint
               </div>
-              <div className="text-[11px] text-slate-400">
+              <div className="text-[11px] text-stone-400">
                 High-res end-to-end diagram
               </div>
             </div>

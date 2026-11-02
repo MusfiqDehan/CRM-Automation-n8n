@@ -21,7 +21,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
-    const saved = localStorage.getItem("kevin_theme") as Theme | null;
+    const saved = (localStorage.getItem("beamline_theme") ||
+      localStorage.getItem("kevin_theme")) as Theme | null;
     if (saved && (saved === "light" || saved === "dark" || saved === "system")) {
       setThemeState(saved);
     }
@@ -64,7 +65,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
-    localStorage.setItem("kevin_theme", newTheme);
+    localStorage.setItem("beamline_theme", newTheme);
   };
 
   return (
@@ -77,4 +78,3 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 export function useTheme() {
   return useContext(ThemeContext);
 }
-

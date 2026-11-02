@@ -1,5 +1,5 @@
 {
-  "description": "Bootstraps imported Figma Make projects with verified deployment and preview setup, helping developers prepare initial imports for reliable publishing.",
+  "description": "Manage client-facing pages with a consistent landing-page color theme, updated branding, and controls to enable or disable each landing page.",
   "robots": {
     "index": false
   },

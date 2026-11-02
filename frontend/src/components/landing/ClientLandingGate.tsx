@@ -9,31 +9,73 @@ import { ClientLandingPage } from "./ClientLandingPage";
 import { LandingPage } from "./LandingPage";
 import { PlatformIntro, shouldPlayPlatformIntro } from "./PlatformIntro";
 
+/**
+ * Checks whether the current request is visiting the platform apex
+ * (e.g. localhost:3017 or beamline.musfiqdehan.com) rather than a tenant workspace.
+ */
+function isPlatformApexHost(): boolean {
+  if (typeof window === "undefined") return true;
+
+  // Explicit ?tenant= query parameter means specifically inspecting a tenant workspace
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("tenant")?.trim()) return false;
+
+  const host = window.location.hostname.toLowerCase();
+
+  // Platform apex hosts
+  if (
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host === "beamline.musfiqdehan.com" ||
+    host === "musfiqdehan.com" ||
+    host === "www.beamline.musfiqdehan.com"
+  ) {
+    return true;
+  }
+
+  // Tenant subdomain check: e.g. kevin.localhost or kevin.beamline.musfiqdehan.com
+  if (host.includes(".beamline.musfiqdehan.com") || host.includes(".localhost")) {
+    const sub = host.split(".")[0];
+    if (sub && sub !== "www" && sub !== "app" && sub !== "api" && sub !== "beamline") {
+      return false;
+    }
+    return true;
+  }
+
+  // Any other external domain is a tenant custom domain (e.g. kevinbuild.com)
+  return false;
+}
+
 export function ClientLandingGate() {
   const router = useRouter();
   const [config, setConfig] = useState<OAuthPublicConfig | null>(null);
   const [isChecking, setIsChecking] = useState(true);
+  const [isPlatform, setIsPlatform] = useState(true);
   // Opening intro runs on the initial page load only; it also covers tenant discovery.
   const [introActive, setIntroActive] = useState(shouldPlayPlatformIntro);
   const [introRevealed, setIntroRevealed] = useState(false);
 
   useEffect(() => {
     let isActive = true;
+    const isApex = isPlatformApexHost();
+    setIsPlatform(isApex);
 
     apiClient
       .get<OAuthPublicConfig>("/auth/oauth-config/")
-      .then((config) => {
+      .then((cfg) => {
         if (!isActive) return;
 
-        const isClientLandingDisabled =
-          Boolean(config.tenant) && config.tenant?.feature_flags.page_landing !== true;
-
-        if (isClientLandingDisabled) {
-          router.replace("/admin");
-          return;
+        // Platform landing page should always stay on localhost:3017 or beamline.musfiqdehan.com.
+        // For tenant sites (subdomains, custom domains, or ?tenant=), check if client landing page is enabled.
+        if (!isApex && cfg.tenant) {
+          const isClientLandingDisabled = cfg.tenant.feature_flags.page_landing !== true;
+          if (isClientLandingDisabled) {
+            router.replace("/admin");
+            return;
+          }
         }
 
-        setConfig(config);
+        setConfig(cfg);
         setIsChecking(false);
       })
       .catch(() => {
@@ -51,12 +93,23 @@ export function ClientLandingGate() {
   const intro = introActive ? (
     <PlatformIntro
       ready={!isChecking}
-      exitStyle={config?.tenant ? "fade" : "split"}
+      exitStyle={!isPlatform && config?.tenant ? "fade" : "split"}
       onReveal={() => setIntroRevealed(true)}
       onDone={() => setIntroActive(false)}
     />
   ) : null;
 
+  // Platform landing page (always stays on localhost:3017 or beamline.musfiqdehan.com)
+  if (isPlatform) {
+    return (
+      <>
+        <LandingPage introState={introActive && !introRevealed ? "hold" : "play"} />
+        {intro}
+      </>
+    );
+  }
+
+  // Tenant workspace: wait for tenant configuration discovery
   if (isChecking) {
     if (intro) return intro;
     return (
@@ -76,6 +129,7 @@ export function ClientLandingGate() {
     );
   }
 
+  // Tenant landing page (rendered when accessing a tenant and page_landing is enabled)
   if (config?.tenant) {
     return (
       <>

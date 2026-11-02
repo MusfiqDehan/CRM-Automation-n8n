@@ -4,8 +4,8 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties
 
 type Phase = "assemble" | "complete" | "exit";
 
-/** Minimum time the brand sequence plays before the doors may open. */
-const ASSEMBLE_MS = 1850;
+/** Minimum time the brand sequence plays before the doors may open (at least 2 seconds). */
+const ASSEMBLE_MS = 2000;
 const COMPLETE_MS = 420;
 const EXIT_MS = 1100;
 const FONT_WAIT_MS = 1500;
@@ -122,7 +122,7 @@ export function PlatformIntro({
   useEffect(() => {
     if (phase !== "assemble") return;
     const reduce = prefersReducedMotion();
-    const minMs = reduce || skipRequested ? 0 : ASSEMBLE_MS;
+    const minMs = skipRequested ? 0 : ASSEMBLE_MS;
     if (startRef.current === null) startRef.current = performance.now();
     const start = startRef.current;
     let frame = 0;

@@ -755,7 +755,13 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
           <div className="flex items-center gap-3">
             {activeTenant?.feature_flags.page_landing === true && (
               <Link
-                href="/"
+                href={
+                  activeTenant?.custom_domain
+                    ? `https://${activeTenant.custom_domain}`
+                    : activeTenant?.slug
+                    ? `/?tenant=${activeTenant.slug}`
+                    : "/"
+                }
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-600 hover:text-amber-600 dark:text-stone-400 dark:hover:text-amber-400 transition"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />

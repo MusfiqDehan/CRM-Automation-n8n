@@ -63,7 +63,7 @@ class TenantResolutionMiddleware:
                 suffix = f".{base}"
                 if raw_host.endswith(suffix):
                     subdomain = raw_host[: -len(suffix)].split(".")[-1]
-                    if subdomain and subdomain not in ("www", "api", "app"):
+                    if subdomain and subdomain not in ("www", "api", "app", "beamline"):
                         tenant = Organization.objects.filter(slug__iexact=subdomain).first()
                         if tenant:
                             break
@@ -91,15 +91,20 @@ class TenantResolutionMiddleware:
                     except Exception:
                         tenant = None
 
-        # 5. Localhost / Testserver Default Fallback to 'kevin'
+        # 5. Localhost / Testserver Default Fallback to 'kevin' (excluding platform apex & public platform endpoints)
         if not tenant:
-            is_local = (
-                settings.DEBUG
-                or "localhost" in raw_host
-                or "127.0.0.1" in raw_host
-                or "testserver" in raw_host
+            is_platform_apex = raw_host in (
+                "localhost",
+                "127.0.0.1",
+                "beamline.musfiqdehan.com",
+                "musfiqdehan.com",
+                "www.beamline.musfiqdehan.com",
             )
-            if is_local:
+            is_platform_endpoint = request.path_info.startswith(
+                "/api/v1/auth/oauth-config"
+            ) or request.path_info.startswith("/api/v1/superadmin/")
+
+            if raw_host == "testserver" or (settings.DEBUG and not is_platform_apex and not is_platform_endpoint):
                 tenant = Organization.objects.filter(slug="kevin").first()
 
         # Check if tenant is suspended (is_active == False)

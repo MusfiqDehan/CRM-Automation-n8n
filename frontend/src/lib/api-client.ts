@@ -99,16 +99,24 @@ export class ApiClient {
 
   public getTenantSlug(): string | null {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("beamline_tenant_slug");
-      if (stored) return stored;
-      // Derive client subdomains while leaving platform and custom domains to
-      // server-side host resolution.
-      const host = window.location.hostname;
+      // Derive client subdomains while leaving platform apex to server-side resolution
+      const host = window.location.hostname.toLowerCase();
       if (host.includes(".beamline.musfiqdehan.com") || host.includes(".localhost")) {
         const sub = host.split(".")[0];
-        if (sub && sub !== "www" && sub !== "app") return sub;
+        if (sub && sub !== "www" && sub !== "app" && sub !== "api" && sub !== "beamline") return sub;
       }
-      if (host === "localhost" || host === "127.0.0.1") return "kevin";
+
+      // Explicit ?tenant= query parameter (for dev testing & preview links)
+      const params = new URLSearchParams(window.location.search);
+      const queryTenant = params.get("tenant")?.trim();
+      if (queryTenant) return queryTenant;
+
+      // When inside /admin, use the authenticated user's active tenant slug
+      const pathname = window.location.pathname;
+      if (pathname.startsWith("/admin")) {
+        const stored = localStorage.getItem("beamline_tenant_slug");
+        if (stored) return stored;
+      }
     }
     return null;
   }

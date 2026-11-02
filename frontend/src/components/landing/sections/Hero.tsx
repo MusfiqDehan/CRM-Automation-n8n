@@ -89,7 +89,7 @@ export function Hero() {
             className="intro-rise mt-7 max-w-xl text-pretty text-lg leading-8 text-stone-300"
             style={{ "--intro-delay": "540ms" } as CSSProperties}
           >
-            BeamLine unites your CRM, project delivery, and invoice automation in a private, branded workspace — so your team builds more and chases less.
+            Purpose-built for luxury residential builders. BeamLine unites your CRM, project delivery, and invoice automation in a private, branded workspace — so your team builds more and chases less.
           </p>
 
           {/* Interactive subdomain preview */}

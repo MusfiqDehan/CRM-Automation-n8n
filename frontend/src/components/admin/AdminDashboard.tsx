@@ -457,7 +457,12 @@ export function AdminDashboard() {
               description: "Open your client-facing landing page",
               icon: ArrowLeft,
               onSelect: () => {
-                window.location.href = "/";
+                const target = activeOrg?.custom_domain
+                  ? `https://${activeOrg.custom_domain}`
+                  : activeOrg?.slug
+                  ? `/?tenant=${activeOrg.slug}`
+                  : "/";
+                window.location.href = target;
               },
             },
           ]
@@ -645,7 +650,16 @@ export function AdminDashboard() {
                 </button>
               )}
               {showPublicSite && (
-                <Link href="/" className="btn-ghost btn-sm w-full">
+                <Link
+                  href={
+                    activeOrg?.custom_domain
+                      ? `https://${activeOrg.custom_domain}`
+                      : activeOrg?.slug
+                      ? `/?tenant=${activeOrg.slug}`
+                      : "/"
+                  }
+                  className="btn-ghost btn-sm w-full"
+                >
                   <ArrowLeft className="h-4 w-4" />
                   View public site
                 </Link>

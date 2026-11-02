@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import {
   AlertCircle,
-  Building2,
   CheckCircle2,
   DollarSign,
   Globe,
@@ -19,7 +18,8 @@ import {
   X,
 } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
-import type { Invitation, Organization, OrganizationMember } from "@/lib/types";
+import { BeamLineMark } from "@/components/brand/BeamLineLogo";
+import type { Organization, OrganizationMember } from "@/lib/types";
 
 interface TenantSettingsModalProps {
   isOpen: boolean;
@@ -177,21 +177,19 @@ export function TenantSettingsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
-      <div className="relative w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900 flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-xs">
+      <div className="relative w-full max-w-2xl rounded-2xl border border-stone-200 bg-white shadow-2xl dark:border-stone-800 dark:bg-stone-900 flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+        <div className="flex items-center justify-between border-b border-stone-200 px-6 py-4 dark:border-stone-800">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-600/30">
-              <Building2 className="h-5 w-5" />
-            </div>
+            <BeamLineMark className="size-10" title="BeamLine" />
             <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+              <h2 className="text-base font-bold text-stone-900 dark:text-white">
                 Client Organization Settings
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-stone-500 dark:text-stone-400">
                 {org?.name} • Subdomain:{" "}
-                <span className="font-mono text-indigo-600 dark:text-indigo-400">
+                <span className="font-mono text-amber-600 dark:text-amber-400">
                   {org?.subdomain_host}
                 </span>
               </p>
@@ -199,7 +197,7 @@ export function TenantSettingsModal({
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            className="rounded-lg p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-stone-800 dark:hover:text-stone-200"
           >
             <X className="h-5 w-5" />
           </button>
@@ -224,14 +222,14 @@ export function TenantSettingsModal({
         )}
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-slate-200 px-6 dark:border-slate-800">
+        <div className="flex border-b border-stone-200 px-6 dark:border-stone-800">
           <button
             type="button"
             onClick={() => setActiveTab("domains")}
             className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-semibold transition ${
               activeTab === "domains"
-                ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                ? "border-amber-600 text-amber-600 dark:border-amber-400 dark:text-amber-400"
+                : "border-transparent text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200"
             }`}
           >
             <Globe className="h-4 w-4" />
@@ -242,8 +240,8 @@ export function TenantSettingsModal({
             onClick={() => setActiveTab("thresholds")}
             className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-semibold transition ${
               activeTab === "thresholds"
-                ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                ? "border-amber-600 text-amber-600 dark:border-amber-400 dark:text-amber-400"
+                : "border-transparent text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200"
             }`}
           >
             <Sliders className="h-4 w-4" />
@@ -254,8 +252,8 @@ export function TenantSettingsModal({
             onClick={() => setActiveTab("google_oauth")}
             className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-semibold transition ${
               activeTab === "google_oauth"
-                ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                ? "border-amber-600 text-amber-600 dark:border-amber-400 dark:text-amber-400"
+                : "border-transparent text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200"
             }`}
           >
             <KeyRound className="h-4 w-4" />
@@ -266,8 +264,8 @@ export function TenantSettingsModal({
             onClick={() => setActiveTab("team")}
             className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-semibold transition ${
               activeTab === "team"
-                ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                ? "border-amber-600 text-amber-600 dark:border-amber-400 dark:text-amber-400"
+                : "border-transparent text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200"
             }`}
           >
             <Users className="h-4 w-4" />
@@ -278,13 +276,13 @@ export function TenantSettingsModal({
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-6">
           {loading ? (
-            <div className="flex h-40 items-center justify-center text-xs text-slate-400">
+            <div className="flex h-40 items-center justify-center text-xs text-stone-400">
               Loading organization settings...
             </div>
           ) : activeTab === "domains" ? (
             <form onSubmit={handleSaveSettings} className="space-y-4">
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                   Organization Name
                 </label>
                 <input
@@ -292,24 +290,24 @@ export function TenantSettingsModal({
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="w-full rounded-xl border border-stone-200 bg-white py-2 px-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                   Assigned Platform Subdomain
                 </label>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 font-mono text-xs text-indigo-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-indigo-400">
+                <div className="rounded-xl border border-stone-200 bg-stone-50 p-2.5 font-mono text-xs text-amber-600 dark:border-stone-700 dark:bg-stone-800/60 dark:text-amber-400">
                   https://{org?.subdomain_host}
                 </div>
-                <p className="mt-1 text-[11px] text-slate-500">
+                <p className="mt-1 text-[11px] text-stone-500">
                   Every subscriber automatically has their own isolated subdomain.
                 </p>
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                   Custom Domain Attachment
                 </label>
                 <input
@@ -317,7 +315,7 @@ export function TenantSettingsModal({
                   placeholder="e.g. kevinbuild.com or portal.kevinconstruction.com"
                   value={customDomain}
                   onChange={(e) => setCustomDomain(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm font-mono focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="w-full rounded-xl border border-stone-200 bg-white py-2 px-3 text-sm font-mono focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                 />
                 <div className="mt-2 rounded-xl border border-amber-200/60 bg-amber-50/50 p-3 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
                   <p className="font-semibold">DNS Configuration Instruction:</p>
@@ -349,14 +347,14 @@ export function TenantSettingsModal({
             </form>
           ) : activeTab === "thresholds" ? (
             <form onSubmit={handleSaveSettings} className="space-y-4">
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-stone-500 dark:text-stone-400">
                 Configure threshold rules that automatically escalate items into the
                 Executive Triage review queue.
               </p>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                     High-Value Deal Review Threshold ($)
                   </label>
                   <input
@@ -365,15 +363,15 @@ export function TenantSettingsModal({
                     required
                     value={dealThreshold}
                     onChange={(e) => setDealThreshold(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="w-full rounded-xl border border-stone-200 bg-white py-2 px-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                   />
-                  <p className="mt-1 text-[11px] text-slate-400">
+                  <p className="mt-1 text-[11px] text-stone-400">
                     Deals with estimated value ≥ this amount trigger executive review.
                   </p>
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                     Vendor Invoice Review Threshold ($)
                   </label>
                   <input
@@ -382,16 +380,16 @@ export function TenantSettingsModal({
                     required
                     value={invoiceThreshold}
                     onChange={(e) => setInvoiceThreshold(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="w-full rounded-xl border border-stone-200 bg-white py-2 px-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                   />
-                  <p className="mt-1 text-[11px] text-slate-400">
+                  <p className="mt-1 text-[11px] text-stone-400">
                     Subcontractor invoices ≥ this amount trigger executive review.
                   </p>
                 </div>
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                   Executive Notification Recipient Email
                 </label>
                 <input
@@ -399,22 +397,22 @@ export function TenantSettingsModal({
                   placeholder="kevin@kevinbuild.com"
                   value={execEmail}
                   onChange={(e) => setExecEmail(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="w-full rounded-xl border border-stone-200 bg-white py-2 px-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                 />
-                <p className="mt-1 text-[11px] text-slate-400">
+                <p className="mt-1 text-[11px] text-stone-400">
                   High-value exceptions and clarification notices will be routed to
                   this address.
                 </p>
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                   Default Currency
                 </label>
                 <select
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="w-full rounded-xl border border-stone-200 bg-white py-2 px-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                 >
                   <option value="USD">USD ($)</option>
                   <option value="CAD">CAD ($)</option>
@@ -436,12 +434,12 @@ export function TenantSettingsModal({
             </form>
           ) : activeTab === "google_oauth" ? (
             <form onSubmit={handleSaveSettings} className="space-y-4">
-              <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/50">
+              <div className="flex items-center justify-between rounded-xl border border-stone-200 bg-stone-50 p-4 dark:border-stone-800 dark:bg-stone-800/50">
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                  <h4 className="text-xs font-bold text-stone-900 dark:text-white">
                     Client Custom Google OAuth
                   </h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="text-[11px] text-stone-500 dark:text-stone-400">
                     When enabled, users logging into your custom domain see your
                     company&apos;s brand on Google&apos;s sign-in screen.
                   </p>
@@ -453,14 +451,14 @@ export function TenantSettingsModal({
                     onChange={(e) => setUseCustomGoogleOAuth(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="h-6 w-11 rounded-full bg-slate-200 peer-focus:outline-hidden peer-checked:bg-indigo-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all dark:bg-slate-700" />
+                  <div className="h-6 w-11 rounded-full bg-stone-200 peer-focus:outline-hidden peer-checked:bg-amber-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-stone-300 after:bg-white after:transition-all dark:bg-stone-700" />
                 </label>
               </div>
 
               {useCustomGoogleOAuth && (
                 <div className="space-y-3 pt-2">
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                       Google OAuth Client ID
                     </label>
                     <input
@@ -468,12 +466,12 @@ export function TenantSettingsModal({
                       placeholder="e.g. 123456789-abc.apps.googleusercontent.com"
                       value={googleClientId}
                       onChange={(e) => setGoogleClientId(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm font-mono focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-xl border border-stone-200 bg-white py-2 px-3 text-sm font-mono focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                       Google OAuth Client Secret
                     </label>
                     <input
@@ -485,7 +483,7 @@ export function TenantSettingsModal({
                       }
                       value={googleClientSecret}
                       onChange={(e) => setGoogleClientSecret(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm font-mono focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-xl border border-stone-200 bg-white py-2 px-3 text-sm font-mono focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                     />
                   </div>
                 </div>
@@ -508,14 +506,14 @@ export function TenantSettingsModal({
               {/* Send Invitation Form */}
               <form
                 onSubmit={handleSendInvite}
-                className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/40"
+                className="rounded-xl border border-stone-200 bg-stone-50 p-4 dark:border-stone-800 dark:bg-stone-800/40"
               >
-                <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300">
                   Invite Team Member
                 </h4>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div>
-                    <label className="mb-1 block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                    <label className="mb-1 block text-[11px] font-semibold text-stone-600 dark:text-stone-400">
                       Email Address
                     </label>
                     <input
@@ -524,12 +522,12 @@ export function TenantSettingsModal({
                       placeholder="colleague@build.com"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
-                      className="w-full rounded-lg border border-slate-200 bg-white py-1.5 px-2.5 text-xs focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-lg border border-stone-200 bg-white py-1.5 px-2.5 text-xs focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                    <label className="mb-1 block text-[11px] font-semibold text-stone-600 dark:text-stone-400">
                       Full Name
                     </label>
                     <input
@@ -537,18 +535,18 @@ export function TenantSettingsModal({
                       placeholder="Marcus Vance"
                       value={inviteName}
                       onChange={(e) => setInviteName(e.target.value)}
-                      className="w-full rounded-lg border border-slate-200 bg-white py-1.5 px-2.5 text-xs focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-lg border border-stone-200 bg-white py-1.5 px-2.5 text-xs focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                    <label className="mb-1 block text-[11px] font-semibold text-stone-600 dark:text-stone-400">
                       Role
                     </label>
                     <select
                       value={inviteRole}
                       onChange={(e) => setInviteRole(e.target.value)}
-                      className="w-full rounded-lg border border-slate-200 bg-white py-1.5 px-2.5 text-xs focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-lg border border-stone-200 bg-white py-1.5 px-2.5 text-xs focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                     >
                       <option value="Admin">Admin</option>
                       <option value="PM">Project Manager</option>
@@ -574,12 +572,12 @@ export function TenantSettingsModal({
 
               {/* Members List */}
               <div>
-                <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300">
                   Active Team Members ({members.length})
                 </h4>
-                <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+                <div className="overflow-hidden rounded-xl border border-stone-200 dark:border-stone-800">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 text-slate-600 dark:bg-slate-800/60 dark:text-slate-400">
+                    <thead className="bg-stone-50 text-stone-600 dark:bg-stone-800/60 dark:text-stone-400">
                       <tr>
                         <th className="py-2.5 px-3 font-semibold">User</th>
                         <th className="py-2.5 px-3 font-semibold">Email</th>
@@ -587,17 +585,17 @@ export function TenantSettingsModal({
                         <th className="py-2.5 px-3 font-semibold">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
                       {members.map((m) => (
-                        <tr key={m.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                          <td className="py-2.5 px-3 font-medium text-slate-900 dark:text-white">
+                        <tr key={m.id} className="hover:bg-stone-50/50 dark:hover:bg-stone-800/30">
+                          <td className="py-2.5 px-3 font-medium text-stone-900 dark:text-white">
                             {m.username}
                           </td>
-                          <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400">
+                          <td className="py-2.5 px-3 text-stone-500 dark:text-stone-400">
                             {m.email}
                           </td>
                           <td className="py-2.5 px-3">
-                            <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                            <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-300">
                               {m.role}
                             </span>
                           </td>

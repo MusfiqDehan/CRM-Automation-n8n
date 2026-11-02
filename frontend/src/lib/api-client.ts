@@ -101,14 +101,16 @@ export class ApiClient {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("beamline_tenant_slug");
       if (stored) return stored;
-      // Derive from subdomain if on something.beamline.musfiqdehan.com or something.localhost
+      // Derive client subdomains while leaving platform and custom domains to
+      // server-side host resolution.
       const host = window.location.hostname;
       if (host.includes(".beamline.musfiqdehan.com") || host.includes(".localhost")) {
         const sub = host.split(".")[0];
         if (sub && sub !== "www" && sub !== "app") return sub;
       }
+      if (host === "localhost" || host === "127.0.0.1") return "kevin";
     }
-    return "kevin";
+    return null;
   }
 
   public clearAuth() {
@@ -223,4 +225,3 @@ export class ApiClient {
 }
 
 export const apiClient = new ApiClient();
-

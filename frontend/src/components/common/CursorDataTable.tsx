@@ -125,12 +125,12 @@ export function CursorDataTable<T extends { id: string }>({
   return (
     <div className="card relative">
       {/* Toolbar */}
-      <div className="flex flex-col gap-3 border-b border-slate-100 dark:border-slate-800 p-4 lg:flex-row lg:items-center">
+      <div className="flex flex-col gap-3 border-b border-stone-100 dark:border-stone-800 p-4 lg:flex-row lg:items-center">
         {title && (
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 lg:mr-2">{title}</h3>
+          <h3 className="text-base font-semibold text-stone-900 dark:text-stone-100 lg:mr-2">{title}</h3>
         )}
         <div className="relative flex-1 lg:max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
           <input
             type="text"
             value={searchInput}
@@ -185,7 +185,7 @@ export function CursorDataTable<T extends { id: string }>({
             onClick={fetchRows}
             title="Refresh"
             aria-label="Refresh list"
-            className="rounded-xl border border-slate-200 dark:border-slate-800 p-2 text-slate-500 transition hover:bg-slate-50 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer"
+            className="rounded-xl border border-stone-200 dark:border-stone-800 p-2 text-stone-500 transition hover:bg-stone-50 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-200 cursor-pointer"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
@@ -209,7 +209,7 @@ export function CursorDataTable<T extends { id: string }>({
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="border-b border-slate-100 dark:border-slate-800 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <tr className="border-b border-stone-100 dark:border-stone-800 text-xs font-medium text-stone-500 dark:text-stone-400">
               {columns.map((col) => (
                 <th key={col.key} className={`px-4 py-3 font-medium ${col.className || ""}`}>
                   {col.header}
@@ -217,13 +217,13 @@ export function CursorDataTable<T extends { id: string }>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-sm text-slate-700 dark:text-slate-200">
+          <tbody className="divide-y divide-stone-100 dark:divide-stone-800/80 text-sm text-stone-700 dark:text-stone-200">
             {loading ? (
               Array.from({ length: 4 }).map((_, idx) => (
                 <tr key={idx}>
                   {columns.map((col) => (
                     <td key={col.key} className="px-4 py-4">
-                      <div className="h-4 w-3/4 animate-pulse rounded bg-slate-100 dark:bg-slate-800" />
+                      <div className="h-4 w-3/4 animate-pulse rounded bg-stone-100 dark:bg-stone-800" />
                     </td>
                   ))}
                 </tr>
@@ -238,7 +238,7 @@ export function CursorDataTable<T extends { id: string }>({
               </tr>
             ) : (
               rows.map((row) => (
-                <tr key={row.id} className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+                <tr key={row.id} className="transition-colors hover:bg-stone-50/70 dark:hover:bg-stone-800/40">
                   {columns.map((col) => (
                     <td key={col.key} className={`px-4 py-3.5 align-middle ${col.className || ""}`}>
                       {col.render(row)}
@@ -252,9 +252,9 @@ export function CursorDataTable<T extends { id: string }>({
       </div>
 
       {/* Mobile cards */}
-      <div className="divide-y divide-slate-100 dark:divide-slate-800 md:hidden">
+      <div className="divide-y divide-stone-100 dark:divide-stone-800 md:hidden">
         {loading ? (
-          <div className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">Loading...</div>
+          <div className="p-6 text-center text-sm text-stone-500 dark:text-stone-400">Loading...</div>
         ) : rows.length === 0 ? (
           <EmptyState
             message={hasActiveFilters ? "No results match your search." : emptyMessage}
@@ -262,11 +262,11 @@ export function CursorDataTable<T extends { id: string }>({
         ) : (
           rows.map((row) => (
             <div key={row.id} className="space-y-2.5 p-4">
-              <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{columns[0]?.render(row)}</div>
+              <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{columns[0]?.render(row)}</div>
               {columns.slice(1).map((col) => (
                 <div key={col.key} className="flex items-start justify-between gap-4 text-sm">
-                  <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">{col.header}</span>
-                  <div className="text-right text-slate-700 dark:text-slate-200">{col.render(row)}</div>
+                  <span className="shrink-0 text-xs text-stone-500 dark:text-stone-400">{col.header}</span>
+                  <div className="text-right text-stone-700 dark:text-stone-200">{col.render(row)}</div>
                 </div>
               ))}
             </div>
@@ -275,7 +275,7 @@ export function CursorDataTable<T extends { id: string }>({
       </div>
 
       {/* Pagination */}
-      <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800 px-4 py-3 text-sm text-slate-500 dark:text-slate-400 sm:flex-row">
+      <div className="flex flex-col items-center justify-between gap-3 border-t border-stone-100 dark:border-stone-800 px-4 py-3 text-sm text-stone-500 dark:text-stone-400 sm:flex-row">
         <div className="flex items-center gap-2">
           <span>Show</span>
           <DropdownSelect
@@ -326,10 +326,10 @@ export function CursorDataTable<T extends { id: string }>({
 function EmptyState({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 px-4 py-12 text-center">
-      <div className="rounded-2xl bg-slate-100 dark:bg-slate-800 p-3 text-slate-400 dark:text-slate-500">
+      <div className="rounded-2xl bg-stone-100 dark:bg-stone-800 p-3 text-stone-400 dark:text-stone-500">
         <Inbox className="h-6 w-6" />
       </div>
-      <p className="text-sm text-slate-500 dark:text-slate-400">{message}</p>
+      <p className="text-sm text-stone-500 dark:text-stone-400">{message}</p>
     </div>
   );
 }

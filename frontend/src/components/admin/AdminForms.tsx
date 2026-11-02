@@ -406,7 +406,7 @@ export function DealFormModal({ isOpen, onClose, onSaved, deal }: DealFormModalP
             </label>
             <textarea
               rows={2}
-              className="input bg-white dark:bg-slate-900"
+              className="input bg-white dark:bg-stone-900"
               value={form.kevin_review_notes}
               onChange={set("kevin_review_notes")}
               placeholder="e.g. Approved with 10% mobilization deposit requirement, or note items needing clarification."

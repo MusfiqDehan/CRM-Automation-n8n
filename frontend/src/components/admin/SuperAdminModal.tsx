@@ -236,24 +236,24 @@ export function SuperAdminModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
-      <div className="relative w-full max-w-4xl rounded-2xl border border-purple-200 bg-white shadow-2xl dark:border-purple-900/60 dark:bg-slate-900 flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-xs">
+      <div className="relative w-full max-w-4xl rounded-2xl border border-amber-200 bg-white shadow-2xl dark:border-amber-900/60 dark:bg-stone-900 flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+        <div className="flex items-center justify-between border-b border-stone-200 px-6 py-4 dark:border-stone-800">
           <div className="flex items-center gap-3">
             <BeamLineMark className="size-10" />
             <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+              <h2 className="text-base font-bold text-stone-900 dark:text-white">
                 BeamLine Platform Superadmin Console
               </h2>
-              <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+              <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
                 Global Client Governance, Dynamic OAuth & Feature Matrix
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            className="rounded-lg p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-stone-800 dark:hover:text-stone-200"
           >
             <X className="h-5 w-5" />
           </button>
@@ -278,14 +278,14 @@ export function SuperAdminModal({
         )}
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-slate-200 px-6 dark:border-slate-800">
+        <div className="flex border-b border-stone-200 px-6 dark:border-stone-800">
           <button
             type="button"
             onClick={() => setActiveTab("organizations")}
             className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-semibold transition ${
               activeTab === "organizations"
-                ? "border-purple-600 text-purple-600 dark:border-purple-400 dark:text-purple-400"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                ? "border-amber-600 text-amber-600 dark:border-amber-400 dark:text-amber-400"
+                : "border-transparent text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200"
             }`}
           >
             <Building2 className="h-4 w-4" />
@@ -296,8 +296,8 @@ export function SuperAdminModal({
             onClick={() => setActiveTab("platform_settings")}
             className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-semibold transition ${
               activeTab === "platform_settings"
-                ? "border-purple-600 text-purple-600 dark:border-purple-400 dark:text-purple-400"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                ? "border-amber-600 text-amber-600 dark:border-amber-400 dark:text-amber-400"
+                : "border-transparent text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200"
             }`}
           >
             <KeyRound className="h-4 w-4" />
@@ -308,8 +308,8 @@ export function SuperAdminModal({
             onClick={() => setActiveTab("invite_client")}
             className={`flex items-center gap-2 border-b-2 py-3 px-3 text-xs font-semibold transition ${
               activeTab === "invite_client"
-                ? "border-purple-600 text-purple-600 dark:border-purple-400 dark:text-purple-400"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                ? "border-amber-600 text-amber-600 dark:border-amber-400 dark:text-amber-400"
+                : "border-transparent text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200"
             }`}
           >
             <UserPlus className="h-4 w-4" />
@@ -320,29 +320,29 @@ export function SuperAdminModal({
         {/* Body Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {loading ? (
-            <div className="flex h-40 items-center justify-center text-xs text-slate-400">
+            <div className="flex h-40 items-center justify-center text-xs text-stone-400">
               Loading superadmin state...
             </div>
           ) : activeTab === "organizations" ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-stone-500 dark:text-stone-400">
                   Manage all tenant organizations, suspend/activate client accounts,
                   and configure granular feature entitlements per client.
                 </p>
                 <button
                   type="button"
                   onClick={() => setActiveTab("invite_client")}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-700 transition"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 transition"
                 >
                   <Plus className="h-3.5 w-3.5" /> Invite Client
                 </button>
               </div>
 
               {/* Clients Table */}
-              <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+              <div className="overflow-hidden rounded-xl border border-stone-200 dark:border-stone-800">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-600 dark:bg-slate-800/60 dark:text-slate-400">
+                  <thead className="bg-stone-50 text-stone-600 dark:bg-stone-800/60 dark:text-stone-400">
                     <tr>
                       <th className="py-2.5 px-3 font-semibold">Client Name & Slug</th>
                       <th className="py-2.5 px-3 font-semibold">Domains</th>
@@ -351,25 +351,25 @@ export function SuperAdminModal({
                       <th className="py-2.5 px-3 font-semibold text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
                     {organizations.map((o) => (
                       <tr
                         key={o.id}
-                        className={`transition hover:bg-slate-50/50 dark:hover:bg-slate-800/30 ${
+                        className={`transition hover:bg-stone-50/50 dark:hover:bg-stone-800/30 ${
                           !o.is_active ? "opacity-60 bg-red-50/20" : ""
                         }`}
                       >
                         <td className="py-3 px-3">
-                          <p className="font-bold text-slate-900 dark:text-white">
+                          <p className="font-bold text-stone-900 dark:text-white">
                             {o.name}
                           </p>
-                          <span className="font-mono text-[11px] text-purple-600 dark:text-purple-400">
+                          <span className="font-mono text-[11px] text-amber-600 dark:text-amber-400">
                             slug: {o.slug}
                           </span>
                         </td>
 
                         <td className="py-3 px-3">
-                          <p className="font-mono text-[11px] text-slate-600 dark:text-slate-300">
+                          <p className="font-mono text-[11px] text-stone-600 dark:text-stone-300">
                             {o.subdomain_host}
                           </p>
                           {o.custom_domain && (
@@ -379,7 +379,7 @@ export function SuperAdminModal({
                           )}
                         </td>
 
-                        <td className="py-3 px-3 text-[11px] text-slate-500">
+                        <td className="py-3 px-3 text-[11px] text-stone-500">
                           <div>Deals ≥ ${Number(o.deal_review_threshold).toLocaleString()}</div>
                           <div>Invoices ≥ ${Number(o.invoice_review_threshold).toLocaleString()}</div>
                         </td>
@@ -403,9 +403,9 @@ export function SuperAdminModal({
                           <button
                             type="button"
                             onClick={() => setSelectedOrgForFeatures(o)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                            className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-semibold text-stone-700 shadow-xs hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200"
                           >
-                            <Sliders className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                            <Sliders className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                             <span>Features</span>
                           </button>
                         </td>
@@ -417,19 +417,19 @@ export function SuperAdminModal({
 
               {/* Granular Feature Entitlements Drawer */}
               {selectedOrgForFeatures && (
-                <div className="mt-6 rounded-2xl border border-purple-200 bg-purple-50/40 p-5 dark:border-purple-900/60 dark:bg-purple-950/20">
-                  <div className="flex items-center justify-between pb-3 border-b border-purple-100 dark:border-purple-900/40">
+                <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50/40 p-5 dark:border-amber-900/60 dark:bg-amber-950/20">
+                  <div className="flex items-center justify-between pb-3 border-b border-amber-100 dark:border-amber-900/40">
                     <div>
-                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                      <h3 className="text-sm font-bold text-stone-900 dark:text-white">
                         Granular Feature Matrix: {selectedOrgForFeatures.name}
                       </h3>
-                      <p className="text-xs text-purple-700 dark:text-purple-300">
+                      <p className="text-xs text-amber-700 dark:text-amber-300">
                         Enable or disable individual pages, workflows, and sub-features for this specific client.
                       </p>
                     </div>
                     <button
                       onClick={() => setSelectedOrgForFeatures(null)}
-                      className="rounded-lg p-1 text-slate-400 hover:bg-purple-100 dark:hover:bg-purple-900/50"
+                      className="rounded-lg p-1 text-stone-400 hover:bg-amber-100 dark:hover:bg-amber-900/50"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -437,26 +437,27 @@ export function SuperAdminModal({
 
                   <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
                     {/* Top Level Pages */}
-                    <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs dark:border-slate-800 dark:bg-slate-800/80">
-                      <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    <div className="rounded-xl border border-stone-200 bg-white p-3.5 shadow-xs dark:border-stone-800 dark:bg-stone-800/80">
+                      <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
                         Top-Level Navigation Tabs
                       </h4>
                       <div className="space-y-2">
                         {[
-                          { key: "page_overview", label: "Executive Overview" },
-                          { key: "page_crm", label: "Sales CRM Pipeline" },
-                          { key: "page_projects", label: "4-Phase Projects" },
-                          { key: "page_automation", label: "Invoices & Automation" },
+                          { key: "page_landing", label: "Client Landing Page", defaultEnabled: false },
+                          { key: "page_overview", label: "Executive Overview", defaultEnabled: true },
+                          { key: "page_crm", label: "Sales CRM Pipeline", defaultEnabled: true },
+                          { key: "page_projects", label: "4-Phase Projects", defaultEnabled: true },
+                          { key: "page_automation", label: "Invoices & Automation", defaultEnabled: true },
                         ].map((item) => {
                           const isEnabled = Boolean(
-                            selectedOrgForFeatures.feature_flags[item.key] ?? true
+                            selectedOrgForFeatures.feature_flags[item.key] ?? item.defaultEnabled
                           );
                           return (
                             <div
                               key={item.key}
                               className="flex items-center justify-between text-xs"
                             >
-                              <span className="font-medium text-slate-700 dark:text-slate-300">
+                              <span className="font-medium text-stone-700 dark:text-stone-300">
                                 {item.label}
                               </span>
                               <button
@@ -467,7 +468,7 @@ export function SuperAdminModal({
                                 className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                                   isEnabled
                                     ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                                    : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400"
+                                    : "bg-stone-200 text-stone-600 dark:bg-stone-700 dark:text-stone-400"
                                 }`}
                               >
                                 {isEnabled ? "ENABLED" : "DISABLED"}
@@ -479,8 +480,8 @@ export function SuperAdminModal({
                     </div>
 
                     {/* CRM & Projects Sub-Features */}
-                    <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs dark:border-slate-800 dark:bg-slate-800/80">
-                      <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    <div className="rounded-xl border border-stone-200 bg-white p-3.5 shadow-xs dark:border-stone-800 dark:bg-stone-800/80">
+                      <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
                         CRM & Field Modules
                       </h4>
                       <div className="space-y-2">
@@ -500,7 +501,7 @@ export function SuperAdminModal({
                               key={item.key}
                               className="flex items-center justify-between text-xs"
                             >
-                              <span className="font-medium text-slate-700 dark:text-slate-300">
+                              <span className="font-medium text-stone-700 dark:text-stone-300">
                                 {item.label}
                               </span>
                               <button
@@ -511,7 +512,7 @@ export function SuperAdminModal({
                                 className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                                   isEnabled
                                     ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                                    : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400"
+                                    : "bg-stone-200 text-stone-600 dark:bg-stone-700 dark:text-stone-400"
                                 }`}
                               >
                                 {isEnabled ? "ENABLED" : "DISABLED"}
@@ -523,8 +524,8 @@ export function SuperAdminModal({
                     </div>
 
                     {/* Automation & White-Label */}
-                    <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs dark:border-slate-800 dark:bg-slate-800/80">
-                      <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    <div className="rounded-xl border border-stone-200 bg-white p-3.5 shadow-xs dark:border-stone-800 dark:bg-stone-800/80">
+                      <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
                         White-Label & Governance
                       </h4>
                       <div className="space-y-2">
@@ -544,7 +545,7 @@ export function SuperAdminModal({
                               key={item.key}
                               className="flex items-center justify-between text-xs"
                             >
-                              <span className="font-medium text-slate-700 dark:text-slate-300">
+                              <span className="font-medium text-stone-700 dark:text-stone-300">
                                 {item.label}
                               </span>
                               <button
@@ -555,7 +556,7 @@ export function SuperAdminModal({
                                 className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                                   isEnabled
                                     ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                                    : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400"
+                                    : "bg-stone-200 text-stone-600 dark:bg-stone-700 dark:text-stone-400"
                                 }`}
                               >
                                 {isEnabled ? "ENABLED" : "DISABLED"}
@@ -572,7 +573,7 @@ export function SuperAdminModal({
           ) : activeTab === "platform_settings" ? (
             <form onSubmit={handleSavePlatformSettings} className="space-y-4 max-w-xl">
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                   Platform Name
                 </label>
                 <input
@@ -580,12 +581,12 @@ export function SuperAdminModal({
                   required
                   value={platformName}
                   onChange={(e) => setPlatformName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm focus:border-purple-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="w-full rounded-xl border border-stone-200 bg-white py-2 px-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                   Platform Base Domain
                 </label>
                 <input
@@ -593,22 +594,22 @@ export function SuperAdminModal({
                   required
                   value={baseDomain}
                   onChange={(e) => setBaseDomain(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm font-mono focus:border-purple-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="w-full rounded-xl border border-stone-200 bg-white py-2 px-3 text-sm font-mono focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                 />
-                <p className="mt-1 text-[11px] text-slate-400">
+                <p className="mt-1 text-[11px] text-stone-400">
                   Subscribers receive subdomains formatted as:{" "}
-                  <span className="font-mono text-purple-600 dark:text-purple-400">
+                  <span className="font-mono text-amber-600 dark:text-amber-400">
                     &lt;slug&gt;.{baseDomain}
                   </span>
                 </p>
               </div>
 
-              <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/50">
+              <div className="flex items-center justify-between rounded-xl border border-stone-200 bg-stone-50 p-4 dark:border-stone-800 dark:bg-stone-800/50">
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                  <h4 className="text-xs font-bold text-stone-900 dark:text-white">
                     Platform-Wide Google OAuth Sign-In
                   </h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="text-[11px] text-stone-500 dark:text-stone-400">
                     Fallback Google OAuth app for all clients who have not provided
                     their own credentials.
                   </p>
@@ -620,12 +621,12 @@ export function SuperAdminModal({
                     onChange={(e) => setGoogleEnabled(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="h-6 w-11 rounded-full bg-slate-200 peer-focus:outline-hidden peer-checked:bg-purple-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all dark:bg-slate-700" />
+                  <div className="h-6 w-11 rounded-full bg-stone-200 peer-focus:outline-hidden peer-checked:bg-amber-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-stone-300 after:bg-white after:transition-all dark:bg-stone-700" />
                 </label>
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                   Platform Google OAuth Client ID
                 </label>
                 <input
@@ -633,12 +634,12 @@ export function SuperAdminModal({
                   placeholder="e.g. 104829104-platform.apps.googleusercontent.com"
                   value={googleClientId}
                   onChange={(e) => setGoogleClientId(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm font-mono focus:border-purple-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="w-full rounded-xl border border-stone-200 bg-white py-2 px-3 text-sm font-mono focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                   Platform Google OAuth Client Secret
                 </label>
                 <input
@@ -650,7 +651,7 @@ export function SuperAdminModal({
                   }
                   value={googleClientSecret}
                   onChange={(e) => setGoogleClientSecret(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm font-mono focus:border-purple-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="w-full rounded-xl border border-stone-200 bg-white py-2 px-3 text-sm font-mono focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                 />
               </div>
 
@@ -658,7 +659,7 @@ export function SuperAdminModal({
                 <button
                   type="submit"
                   disabled={savingPlatform}
-                  className="btn-primary bg-purple-600 hover:bg-purple-700 py-2 px-4 text-xs"
+                  className="btn-primary bg-amber-600 hover:bg-amber-700 py-2 px-4 text-xs"
                 >
                   <Save className="h-4 w-4" />
                   {savingPlatform ? "Saving..." : "Save Platform Configuration"}
@@ -668,7 +669,7 @@ export function SuperAdminModal({
           ) : (
             /* Invite Client Organization Tab */
             <div className="max-w-xl space-y-4">
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-stone-500 dark:text-stone-400">
                 Superadmin invites a new custom home builder client. This
                 automatically provisions their organization tenant, assigns their
                 subdomain, and generates a one-click onboarding URL.
@@ -676,7 +677,7 @@ export function SuperAdminModal({
 
               <form onSubmit={handleInviteClient} className="space-y-3.5">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                     Client Owner Email
                   </label>
                   <input
@@ -685,12 +686,12 @@ export function SuperAdminModal({
                     placeholder="sarah@apexbuilds.com"
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm focus:border-purple-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="w-full rounded-xl border border-stone-200 bg-white py-2 px-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                     Owner Name
                   </label>
                   <input
@@ -698,12 +699,12 @@ export function SuperAdminModal({
                     placeholder="Sarah Miller"
                     value={inviteName}
                     onChange={(e) => setInviteName(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm focus:border-purple-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="w-full rounded-xl border border-stone-200 bg-white py-2 px-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                     Organization Name
                   </label>
                   <input
@@ -722,12 +723,12 @@ export function SuperAdminModal({
                         );
                       }
                     }}
-                    className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm focus:border-purple-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="w-full rounded-xl border border-stone-200 bg-white py-2 px-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                     Subdomain Slug
                   </label>
                   <div className="flex items-center">
@@ -737,9 +738,9 @@ export function SuperAdminModal({
                       placeholder="apex"
                       value={inviteOrgSlug}
                       onChange={(e) => setInviteOrgSlug(e.target.value.toLowerCase())}
-                      className="w-full rounded-l-xl border border-slate-200 bg-white py-2 px-3 text-sm font-mono focus:border-purple-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-l-xl border border-stone-200 bg-white py-2 px-3 text-sm font-mono focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                     />
-                    <span className="rounded-r-xl border border-l-0 border-slate-200 bg-slate-100 py-2 px-3 text-xs font-mono text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+                    <span className="rounded-r-xl border border-l-0 border-stone-200 bg-stone-100 py-2 px-3 text-xs font-mono text-stone-500 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400">
                       .{baseDomain}
                     </span>
                   </div>
@@ -749,7 +750,7 @@ export function SuperAdminModal({
                   <button
                     type="submit"
                     disabled={invitingClient}
-                    className="btn-primary bg-purple-600 hover:bg-purple-700 py-2.5 px-4 text-xs"
+                    className="btn-primary bg-amber-600 hover:bg-amber-700 py-2.5 px-4 text-xs"
                   >
                     <Send className="h-4 w-4" />
                     {invitingClient ? "Generating..." : "Generate Client Invitation"}

@@ -13,6 +13,7 @@ def get_default_feature_flags() -> dict[str, bool]:
     """Returns the full default catalog of feature flags for new organizations."""
     return {
         # Top-level Pages / Navigation Tabs
+        "page_landing": False,
         "page_overview": True,
         "page_crm": True,
         "page_projects": True,

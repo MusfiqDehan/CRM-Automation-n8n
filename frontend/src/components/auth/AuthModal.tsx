@@ -17,7 +17,7 @@ import {
   UserPlus,
   X,
 } from "lucide-react";
-import { BeamLineMark } from "@/components/brand/BeamLineLogo";
+import { BeamLineLogo, BeamLineMark } from "@/components/brand/BeamLineLogo";
 import { apiClient } from "@/lib/api-client";
 import type { AuthTokens, AuthUser, OAuthPublicConfig, Organization } from "@/lib/types";
 
@@ -229,11 +229,11 @@ export function AuthModal({
   const googleConfig = oauthConfig?.google_oauth;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
-      <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-xs">
+      <div className="relative w-full max-w-md rounded-2xl border border-stone-200 bg-white p-6 shadow-2xl dark:border-stone-800 dark:bg-stone-900">
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+          className="absolute right-4 top-4 rounded-lg p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-stone-800 dark:hover:text-stone-200"
         >
           <X className="h-5 w-5" />
         </button>
@@ -242,10 +242,10 @@ export function AuthModal({
         <div className="mb-6 flex items-center gap-3">
           <BeamLineMark className="size-11" />
           <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+            <h2 className="text-lg font-bold text-stone-900 dark:text-white">
               {currentUser ? "Authentication & Profile" : "Sign In to BeamLine"}
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-stone-500 dark:text-stone-400">
               {activeTenant?.name
                 ? `${activeTenant.name} (${activeTenant.subdomain_host})`
                 : "Multi-Tenant Construction CRM Platform"}
@@ -255,9 +255,9 @@ export function AuthModal({
 
         {/* Dynamic Tenant & OAuth Banner */}
         {activeTenant && (
-          <div className="mb-5 rounded-xl border border-indigo-100 bg-indigo-50/60 p-3 dark:border-indigo-900/50 dark:bg-indigo-950/30">
+          <div className="mb-5 rounded-xl border border-amber-100 bg-amber-50/60 p-3 dark:border-amber-900/50 dark:bg-amber-950/30">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-indigo-900 dark:text-indigo-200">
+              <span className="font-semibold text-amber-900 dark:text-amber-200">
                 Workspace: {activeTenant.slug}
               </span>
               {googleConfig?.source === "client" ? (
@@ -265,15 +265,15 @@ export function AuthModal({
                   <ShieldCheck className="h-3 w-3" /> Client Custom OAuth
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700 dark:bg-indigo-900/70 dark:text-indigo-300">
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/70 dark:text-amber-300">
                   Platform OAuth
                 </span>
               )}
             </div>
             {activeTenant.custom_domain && (
-              <p className="mt-1 text-[11px] text-slate-600 dark:text-slate-400">
+              <p className="mt-1 text-[11px] text-stone-600 dark:text-stone-400">
                 Custom Domain:{" "}
-                <span className="font-mono text-indigo-600 dark:text-indigo-400">
+                <span className="font-mono text-amber-600 dark:text-amber-400">
                   {activeTenant.custom_domain}
                 </span>
               </p>
@@ -284,24 +284,24 @@ export function AuthModal({
         {/* Logged in state */}
         {currentUser ? (
           <div className="space-y-4">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/50">
+            <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 dark:border-stone-800 dark:bg-stone-800/50">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600/20 text-indigo-600 font-bold dark:bg-indigo-400/20 dark:text-indigo-400">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-600/20 text-amber-600 font-bold dark:bg-amber-400/20 dark:text-amber-400">
                   {currentUser.username.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">
+                  <p className="text-sm font-bold text-stone-900 dark:text-white">
                     {currentUser.username}
                   </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                  <p className="text-xs text-stone-500 dark:text-stone-400">
                     {currentUser.email}
                   </p>
                   <div className="mt-1 flex items-center gap-2">
-                    <span className="rounded-md bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
+                    <span className="rounded-md bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-900 dark:text-amber-300">
                       {currentRole}
                     </span>
                     {currentUser.is_superuser && (
-                      <span className="rounded-md bg-purple-100 px-2 py-0.5 text-[11px] font-semibold text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                      <span className="rounded-md bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-900 dark:text-amber-300">
                         Platform Superadmin
                       </span>
                     )}
@@ -325,7 +325,7 @@ export function AuthModal({
           /* Unauthenticated Modal Content */
           <div>
             {/* Tab switch between Sign In and Register */}
-            <div className="mb-4 flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="mb-4 flex rounded-xl bg-stone-100 p-1 dark:bg-stone-800">
               <button
                 type="button"
                 onClick={() => {
@@ -334,8 +334,8 @@ export function AuthModal({
                 }}
                 className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition cursor-pointer ${
                   activeTab === "login"
-                    ? "bg-white text-indigo-600 shadow-xs dark:bg-slate-900 dark:text-indigo-400"
-                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                    ? "bg-white text-amber-600 shadow-xs dark:bg-stone-900 dark:text-amber-400"
+                    : "text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white"
                 }`}
               >
                 Sign In
@@ -348,8 +348,8 @@ export function AuthModal({
                 }}
                 className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition cursor-pointer ${
                   activeTab === "register"
-                    ? "bg-white text-indigo-600 shadow-xs dark:bg-slate-900 dark:text-indigo-400"
-                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                    ? "bg-white text-amber-600 shadow-xs dark:bg-stone-900 dark:text-amber-400"
+                    : "text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white"
                 }`}
               >
                 Register Workspace
@@ -378,7 +378,7 @@ export function AuthModal({
                     type="button"
                     disabled={submitting}
                     onClick={() => handleMockGoogleLogin("kevin@kevinbuild.com")}
-                    className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white py-2.5 px-4 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition active:scale-[0.99] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-750 cursor-pointer"
+                    className="flex w-full items-center justify-center gap-3 rounded-xl border border-stone-300 bg-white py-2.5 px-4 text-sm font-semibold text-stone-700 shadow-xs hover:bg-stone-50 transition active:scale-[0.99] dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-750 cursor-pointer"
                   >
                     <svg className="h-4 w-4" viewBox="0 0 24 24">
                       <path
@@ -404,10 +404,10 @@ export function AuthModal({
 
                 <div className="relative my-4">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-200 dark:border-slate-800" />
+                    <div className="w-full border-t border-stone-200 dark:border-stone-800" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-2 text-slate-400 dark:bg-slate-900">
+                    <span className="bg-white px-2 text-stone-400 dark:bg-stone-900">
                       Or password login
                     </span>
                   </div>
@@ -415,35 +415,35 @@ export function AuthModal({
 
                 <form onSubmit={handlePasswordLogin} className="space-y-3.5">
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                       Username or Email
                     </label>
                     <div className="relative">
-                      <User className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                      <User className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
                       <input
                         type="text"
                         required
                         placeholder="kevin or kevin@kevinbuild.com"
                         value={loginId}
                         onChange={(e) => setLoginId(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                       Password
                     </label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                      <Lock className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
                       <input
                         type="password"
                         required
                         placeholder="••••••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                       />
                     </div>
                   </div>
@@ -458,22 +458,22 @@ export function AuthModal({
                 </form>
 
                 {/* Quick Dev Presets */}
-                <div className="mt-5 border-t border-slate-100 pt-3 dark:border-slate-800">
-                  <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <div className="mt-5 border-t border-stone-100 pt-3 dark:border-stone-800">
+                  <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-stone-400">
                     Quick Dev Presets:
                   </p>
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={() => handleQuickLogin("kevin", "kevinpass2026")}
-                      className="flex-1 rounded-lg border border-slate-200 bg-slate-50 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 cursor-pointer"
+                      className="flex-1 rounded-lg border border-stone-200 bg-stone-50 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300 cursor-pointer"
                     >
                       Kevin (Client Owner)
                     </button>
                     <button
                       type="button"
                       onClick={() => handleQuickLogin("admin", "adminpass2026")}
-                      className="flex-1 rounded-lg border border-purple-200 bg-purple-50 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-100 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-300 cursor-pointer"
+                      className="flex-1 rounded-lg border border-amber-200 bg-amber-50 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300 cursor-pointer"
                     >
                       Platform Superadmin
                     </button>
@@ -484,62 +484,62 @@ export function AuthModal({
               /* Registration Form */
               <form onSubmit={handleRegister} className="space-y-3">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                     Workspace / Company Name
                   </label>
                   <div className="relative">
-                    <Building2 className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                    <Building2 className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
                     <input
                       type="text"
                       required
                       placeholder="e.g. Apex Custom Homes"
                       value={regOrgName}
                       onChange={(e) => setRegOrgName(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                     Your Full Name
                   </label>
                   <div className="relative">
-                    <User className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                    <User className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
                     <input
                       type="text"
                       required
                       placeholder="e.g. Jane Builder"
                       value={regFullName}
                       onChange={(e) => setRegFullName(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                     Work Email
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                    <Mail className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
                     <input
                       type="email"
                       required
                       placeholder="jane@apexhomes.com"
                       value={regEmail}
                       onChange={(e) => setRegEmail(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                     Password (min. 8 characters)
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                    <Lock className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
                     <input
                       type="password"
                       required
@@ -547,7 +547,7 @@ export function AuthModal({
                       placeholder="••••••••••••"
                       value={regPassword}
                       onChange={(e) => setRegPassword(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                     />
                   </div>
                 </div>
@@ -750,32 +750,30 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f7f5] text-slate-900 transition-colors duration-200 dark:bg-[#0b0f19] dark:text-slate-100 flex flex-col justify-between">
+    <div className="min-h-screen bg-[#f7f7f5] text-stone-900 transition-colors duration-200 dark:bg-[#0b0f19] dark:text-stone-100 flex flex-col justify-between">
       {/* Top Navigation Bar */}
-      <header className="border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-slate-800/80 dark:bg-[#0f1523]/90">
+      <header className="border-b border-stone-200/80 bg-white/90 backdrop-blur-md dark:border-stone-800/80 dark:bg-[#0f1523]/90">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-600/30 shrink-0">
-              <Building2 className="h-5 w-5" />
-            </div>
-            <div>
-              <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
-                Beamline
-              </span>
-              <span className="ml-2 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300">
+          <BeamLineLogo
+            markClassName="size-10"
+            wordmarkClassName="text-base text-stone-900 dark:text-white"
+            badge={
+              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-950/70 dark:text-amber-300">
                 Operations Console
               </span>
-            </div>
-          </div>
+            }
+          />
 
           <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span>Return to Public Site</span>
-            </Link>
+            {activeTenant?.feature_flags.page_landing === true && (
+              <Link
+                href="/"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-600 hover:text-amber-600 dark:text-stone-400 dark:hover:text-amber-400 transition"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                <span>Return to Public Site</span>
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -784,41 +782,39 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
       <main className="flex-1 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-6">
           <div className="text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-xl shadow-indigo-600/25 mb-4">
-              <Building2 className="h-7 w-7" />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            <BeamLineMark className="mx-auto size-14 mb-4" title="BeamLine" />
+            <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-white">
               Beamline Operations Console
             </h1>
-            <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
+            <p className="mt-1.5 text-sm text-stone-500 dark:text-stone-400">
               Authentication required. Sign in or register to access workspace.
             </p>
           </div>
 
           {/* Active Tenant / Domain Badge */}
           {activeTenant && (
-            <div className="rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm dark:border-indigo-900/50 dark:bg-slate-900">
+            <div className="rounded-2xl border border-amber-100 bg-white p-4 shadow-sm dark:border-amber-900/50 dark:bg-stone-900">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-indigo-950 dark:text-indigo-200">
+                <span className="font-semibold text-amber-950 dark:text-amber-200">
                   {activeTenant.name}
                 </span>
-                <span className="rounded-full bg-indigo-50 px-2 py-0.5 font-mono text-[11px] text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300">
+                <span className="rounded-full bg-amber-50 px-2 py-0.5 font-mono text-[11px] text-amber-700 dark:bg-amber-950/80 dark:text-amber-300">
                   {activeTenant.subdomain_host}
                 </span>
               </div>
               {activeTenant.custom_domain && (
-                <div className="mt-2 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                  <Globe className="h-3 w-3 text-indigo-500" />
-                  <span>Custom Domain: <strong className="font-mono text-slate-700 dark:text-slate-300">{activeTenant.custom_domain}</strong></span>
+                <div className="mt-2 text-[11px] text-stone-500 dark:text-stone-400 flex items-center gap-1">
+                  <Globe className="h-3 w-3 text-amber-500" />
+                  <span>Custom Domain: <strong className="font-mono text-stone-700 dark:text-stone-300">{activeTenant.custom_domain}</strong></span>
                 </div>
               )}
             </div>
           )}
 
           {/* Authentication Card */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+          <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-xl dark:border-stone-800 dark:bg-stone-900">
             {/* Tab switch between Sign In and Register */}
-            <div className="mb-6 flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+            <div className="mb-6 flex rounded-xl bg-stone-100 p-1 dark:bg-stone-800">
               <button
                 type="button"
                 onClick={() => {
@@ -827,8 +823,8 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
                 }}
                 className={`flex-1 rounded-lg py-2 text-xs font-bold transition cursor-pointer ${
                   activeTab === "login"
-                    ? "bg-white text-indigo-600 shadow-xs dark:bg-slate-900 dark:text-indigo-400"
-                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                    ? "bg-white text-amber-600 shadow-xs dark:bg-stone-900 dark:text-amber-400"
+                    : "text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white"
                 }`}
               >
                 Sign In
@@ -841,8 +837,8 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
                 }}
                 className={`flex-1 rounded-lg py-2 text-xs font-bold transition cursor-pointer ${
                   activeTab === "register"
-                    ? "bg-white text-indigo-600 shadow-xs dark:bg-slate-900 dark:text-indigo-400"
-                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                    ? "bg-white text-amber-600 shadow-xs dark:bg-stone-900 dark:text-amber-400"
+                    : "text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white"
                 }`}
               >
                 Register Workspace
@@ -871,7 +867,7 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
                     type="button"
                     disabled={submitting}
                     onClick={() => handleMockGoogleLogin("kevin@kevinbuild.com")}
-                    className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white py-2.5 px-4 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition active:scale-[0.99] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-750 cursor-pointer"
+                    className="flex w-full items-center justify-center gap-3 rounded-xl border border-stone-300 bg-white py-2.5 px-4 text-sm font-semibold text-stone-700 shadow-xs hover:bg-stone-50 transition active:scale-[0.99] dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-750 cursor-pointer"
                   >
                     <svg className="h-4 w-4" viewBox="0 0 24 24">
                       <path
@@ -897,10 +893,10 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
 
                 <div className="relative my-4">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-200 dark:border-slate-800" />
+                    <div className="w-full border-t border-stone-200 dark:border-stone-800" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-2 text-slate-400 dark:bg-slate-900">
+                    <span className="bg-white px-2 text-stone-400 dark:bg-stone-900">
                       Or credentials login
                     </span>
                   </div>
@@ -908,35 +904,35 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
 
                 <form onSubmit={handlePasswordLogin} className="space-y-4">
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                       Username or Email
                     </label>
                     <div className="relative">
-                      <User className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                      <User className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
                       <input
                         type="text"
                         required
                         placeholder="kevin or kevin@kevinbuild.com"
                         value={loginId}
                         onChange={(e) => setLoginId(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                       Password
                     </label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                      <Lock className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
                       <input
                         type="password"
                         required
                         placeholder="••••••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                       />
                     </div>
                   </div>
@@ -951,22 +947,22 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
                 </form>
 
                 {/* Quick Presets */}
-                <div className="mt-6 border-t border-slate-100 pt-4 dark:border-slate-800">
-                  <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <div className="mt-6 border-t border-stone-100 pt-4 dark:border-stone-800">
+                  <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-stone-400">
                     Quick Dev Presets:
                   </p>
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={() => handleQuickLogin("kevin", "kevinpass2026")}
-                      className="flex-1 rounded-lg border border-slate-200 bg-slate-50 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 cursor-pointer text-center"
+                      className="flex-1 rounded-lg border border-stone-200 bg-stone-50 py-2 text-xs font-medium text-stone-700 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300 cursor-pointer text-center"
                     >
                       Kevin (Client Owner)
                     </button>
                     <button
                       type="button"
                       onClick={() => handleQuickLogin("admin", "adminpass2026")}
-                      className="flex-1 rounded-lg border border-purple-200 bg-purple-50 py-2 text-xs font-medium text-purple-700 hover:bg-purple-100 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-300 cursor-pointer text-center"
+                      className="flex-1 rounded-lg border border-amber-200 bg-amber-50 py-2 text-xs font-medium text-amber-700 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300 cursor-pointer text-center"
                     >
                       Platform Superadmin
                     </button>
@@ -977,62 +973,62 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
               /* Registration Form */
               <form onSubmit={handleRegister} className="space-y-3.5">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                     Workspace / Company Name
                   </label>
                   <div className="relative">
-                    <Building2 className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                    <Building2 className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
                     <input
                       type="text"
                       required
                       placeholder="e.g. Apex Custom Homes"
                       value={regOrgName}
                       onChange={(e) => setRegOrgName(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                     Your Full Name
                   </label>
                   <div className="relative">
-                    <User className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                    <User className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
                     <input
                       type="text"
                       required
                       placeholder="e.g. Jane Builder"
                       value={regFullName}
                       onChange={(e) => setRegFullName(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                     Work Email
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                    <Mail className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
                     <input
                       type="email"
                       required
                       placeholder="jane@apexhomes.com"
                       value={regEmail}
                       onChange={(e) => setRegEmail(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                     Password (min. 8 characters)
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                    <Lock className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
                     <input
                       type="password"
                       required
@@ -1040,7 +1036,7 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
                       placeholder="••••••••••••"
                       value={regPassword}
                       onChange={(e) => setRegPassword(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-indigo-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="w-full rounded-xl border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-amber-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-white"
                     />
                   </div>
                 </div>
@@ -1055,7 +1051,7 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
                 </button>
 
                 {/* Quick Register Demo Preset */}
-                <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-800">
+                <div className="mt-4 border-t border-stone-100 pt-3 dark:border-stone-800">
                   <button
                     type="button"
                     onClick={() => {
@@ -1064,7 +1060,7 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
                       setRegEmail("alex@apexbuilds.com");
                       setRegPassword("alexpass2026");
                     }}
-                    className="w-full rounded-lg border border-indigo-200 bg-indigo-50/70 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-300 cursor-pointer"
+                    className="w-full rounded-lg border border-amber-200 bg-amber-50/70 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300 cursor-pointer"
                   >
                     Auto-Fill Demo Client Registration
                   </button>
@@ -1076,7 +1072,7 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200/80 py-4 text-center text-xs text-slate-400 dark:border-slate-800/80">
+      <footer className="border-t border-stone-200/80 py-4 text-center text-xs text-stone-400 dark:border-stone-800/80">
         Beamline &copy; 2026 • Autonomous Operations &amp; Construction CRM SaaS
       </footer>
     </div>

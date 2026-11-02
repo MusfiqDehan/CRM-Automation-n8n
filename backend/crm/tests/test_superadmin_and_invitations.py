@@ -53,6 +53,7 @@ def test_superadmin_platform_settings_and_client_management():
     assert updated_flags["page_automation"] is False
     assert updated_flags["sub_crm_deals"] is False
     assert updated_flags["page_crm"] is True  # preserved default
+    assert updated_flags["page_landing"] is False  # client landing pages are opt-in
 
 
 @pytest.mark.django_db

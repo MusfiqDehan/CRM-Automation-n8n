@@ -48,22 +48,22 @@ export function ValidatedModalForm({
       role="dialog"
       aria-modal="true"
       aria-label={title}
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-stone-900/40 backdrop-blur-sm sm:items-center sm:p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="animate-fade-up flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 shadow-2xl sm:rounded-3xl">
-        <div className="flex items-start justify-between gap-4 border-b border-slate-100 dark:border-slate-800 px-6 py-5">
+      <div className="animate-fade-up flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl bg-white dark:bg-stone-900 border border-transparent dark:border-stone-800 shadow-2xl sm:rounded-3xl">
+        <div className="flex items-start justify-between gap-4 border-b border-stone-100 dark:border-stone-800 px-6 py-5">
           <div>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
-            {subtitle && <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>}
+            <h3 className="text-lg font-semibold text-stone-900 dark:text-stone-100">{title}</h3>
+            {subtitle && <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{subtitle}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer"
+            className="rounded-lg p-1.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-700 dark:hover:bg-stone-800 dark:hover:text-stone-200 cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
@@ -80,7 +80,7 @@ export function ValidatedModalForm({
             {children}
           </div>
 
-          <div className="flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 px-6 py-4">
+          <div className="flex items-center justify-end gap-2 border-t border-stone-100 dark:border-stone-800 bg-stone-50/60 dark:bg-stone-950/60 px-6 py-4">
             <button type="button" onClick={onClose} className="btn-ghost">
               Cancel
             </button>

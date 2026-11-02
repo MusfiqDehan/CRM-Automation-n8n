@@ -1,5 +1,5 @@
-import { LandingPage } from "@/components/landing/LandingPage";
+import { ClientLandingGate } from "@/components/landing/ClientLandingGate";
 
 export default function HomePage() {
-  return <LandingPage />;
+  return <ClientLandingGate />;
 }

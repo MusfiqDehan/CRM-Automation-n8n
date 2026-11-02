@@ -148,23 +148,23 @@ export function SMTPSettingsModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 backdrop-blur-sm p-4 overflow-y-auto"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="relative w-full max-w-2xl max-h-[92vh] flex flex-col rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-2xl max-h-[92vh] flex flex-col rounded-3xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-6 py-4.5 bg-slate-50/50 dark:bg-slate-800/40">
+        <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 px-6 py-4.5 bg-stone-50/50 dark:bg-stone-800/40">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-600/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400">
               <Mail className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+              <h2 className="text-base font-bold text-stone-900 dark:text-white">
                 SMTP Email &amp; Automation Credentials
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-stone-500 dark:text-stone-400">
                 Configure live Gmail SMTP for Part 3 notifications and client triggers
               </p>
             </div>
@@ -172,7 +172,7 @@ export function SMTPSettingsModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition"
+            className="rounded-xl p-2 text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-200 transition"
           >
             <X className="h-4 w-4" />
           </button>
@@ -181,19 +181,19 @@ export function SMTPSettingsModal({
         {/* Scrollable Content */}
         <div className="overflow-y-auto p-6 space-y-6 text-xs">
           {loading ? (
-            <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
-              <RefreshCw className="h-6 w-6 animate-spin text-indigo-500" />
+            <div className="py-12 flex flex-col items-center justify-center gap-2 text-stone-400">
+              <RefreshCw className="h-6 w-6 animate-spin text-amber-500" />
               <span>Loading current SMTP credentials...</span>
             </div>
           ) : (
             <form id="smtp-form" onSubmit={handleSave} className="space-y-4">
               {/* Active Credentials Callout */}
-              <div className="rounded-2xl border border-indigo-100 dark:border-indigo-900/60 bg-indigo-50/60 dark:bg-indigo-950/30 p-3.5 space-y-1">
-                <div className="flex items-center gap-1.5 font-bold text-indigo-950 dark:text-indigo-200">
-                  <ShieldCheck className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+              <div className="rounded-2xl border border-amber-100 dark:border-amber-900/60 bg-amber-50/60 dark:bg-amber-950/30 p-3.5 space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-amber-950 dark:text-amber-200">
+                  <ShieldCheck className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                   <span>Google Gmail SMTP Integration Active</span>
                 </div>
-                <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                <p className="text-[11px] text-stone-600 dark:text-stone-300 leading-relaxed">
                   Default credentials are dynamically managed by the backend and loaded from environment variables ({username ? <span className="font-mono font-semibold">{username}</span> : "system defaults"}). App passwords are write-only and hidden for security.
                 </p>
               </div>
@@ -201,8 +201,8 @@ export function SMTPSettingsModal({
               {/* Host & Port */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-2 space-y-1">
-                  <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                    <Server className="h-3.5 w-3.5 text-slate-400" />
+                  <label className="font-semibold text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
+                    <Server className="h-3.5 w-3.5 text-stone-400" />
                     SMTP Host
                   </label>
                   <input
@@ -211,11 +211,11 @@ export function SMTPSettingsModal({
                     onChange={(e) => setHost(e.target.value)}
                     required
                     placeholder="smtp.gmail.com"
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-mono text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                    className="w-full rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 px-3 py-2 text-xs font-mono text-stone-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="font-semibold text-stone-700 dark:text-stone-300">
                     Port
                   </label>
                   <input
@@ -224,7 +224,7 @@ export function SMTPSettingsModal({
                     onChange={(e) => setPort(Number(e.target.value))}
                     required
                     placeholder="465"
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-mono text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                    className="w-full rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 px-3 py-2 text-xs font-mono text-stone-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
               </div>
@@ -232,8 +232,8 @@ export function SMTPSettingsModal({
               {/* Username & App Password */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                    <Mail className="h-3.5 w-3.5 text-slate-400" />
+                  <label className="font-semibold text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
+                    <Mail className="h-3.5 w-3.5 text-stone-400" />
                     Username / Email
                   </label>
                   <input
@@ -241,13 +241,13 @@ export function SMTPSettingsModal({
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="user@gmail.com"
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-mono text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                    className="w-full rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 px-3 py-2 text-xs font-mono text-stone-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                      <KeyRound className="h-3.5 w-3.5 text-slate-400" />
+                    <label className="font-semibold text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
+                      <KeyRound className="h-3.5 w-3.5 text-stone-400" />
                       App Password
                     </label>
                     {hasPassword ? (
@@ -268,15 +268,15 @@ export function SMTPSettingsModal({
                         ? "•••••••••••••••• (Configured — leave blank to keep)"
                         : "Enter 16-character Google App Password"
                     }
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-mono text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-400"
+                    className="w-full rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 px-3 py-2 text-xs font-mono text-stone-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-amber-500 placeholder:text-stone-400"
                   />
                 </div>
               </div>
 
               {/* Security Protocol Selection */}
-              <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 p-3.5 space-y-2">
-                <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                  <Shield className="h-3.5 w-3.5 text-indigo-500" />
+              <div className="rounded-2xl border border-stone-200/90 dark:border-stone-800 p-3.5 space-y-2">
+                <span className="font-semibold text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
+                  <Shield className="h-3.5 w-3.5 text-amber-500" />
                   Connection Security Protocol
                 </span>
                 <div className="flex items-center gap-6">
@@ -290,10 +290,10 @@ export function SMTPSettingsModal({
                         setUseTls(false);
                         setPort(465);
                       }}
-                      className="text-indigo-600 focus:ring-indigo-500"
+                      className="text-amber-600 focus:ring-amber-500"
                     />
-                    <span className="text-slate-700 dark:text-slate-300">
-                      SSL (Port 465) — <span className="text-slate-400">Recommended for Gmail</span>
+                    <span className="text-stone-700 dark:text-stone-300">
+                      SSL (Port 465) — <span className="text-stone-400">Recommended for Gmail</span>
                     </span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -306,9 +306,9 @@ export function SMTPSettingsModal({
                         setUseSsl(false);
                         setPort(587);
                       }}
-                      className="text-indigo-600 focus:ring-indigo-500"
+                      className="text-amber-600 focus:ring-amber-500"
                     />
-                    <span className="text-slate-700 dark:text-slate-300">
+                    <span className="text-stone-700 dark:text-stone-300">
                       STARTTLS (Port 587)
                     </span>
                   </label>
@@ -318,7 +318,7 @@ export function SMTPSettingsModal({
               {/* Sender & Founder Alert Email */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="font-semibold text-stone-700 dark:text-stone-300">
                     Default &quot;From&quot; Sender
                   </label>
                   <input
@@ -326,11 +326,11 @@ export function SMTPSettingsModal({
                     value={fromEmail}
                     onChange={(e) => setFromEmail(e.target.value)}
                     placeholder="Kevin's Construction OS <ops@example.com>"
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                    className="w-full rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="font-semibold text-stone-700 dark:text-stone-300">
                     Kevin / Founder Alert Recipient
                   </label>
                   <input
@@ -338,7 +338,7 @@ export function SMTPSettingsModal({
                     value={kevinEmail}
                     onChange={(e) => setKevinEmail(e.target.value)}
                     placeholder="kevin@example.com"
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-mono text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                    className="w-full rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 px-3 py-2 text-xs font-mono text-stone-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
               </div>
@@ -346,13 +346,13 @@ export function SMTPSettingsModal({
           )}
 
           {/* Test Connection Live Box */}
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-4 space-y-3">
+          <div className="rounded-2xl border border-stone-200 dark:border-stone-800 bg-stone-50/70 dark:bg-stone-800/40 p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                <Send className="h-3.5 w-3.5 text-indigo-500" />
+              <span className="font-bold text-stone-900 dark:text-white flex items-center gap-1.5">
+                <Send className="h-3.5 w-3.5 text-amber-500" />
                 Live SMTP Dispatch Test Bench
               </span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+              <span className="text-[11px] text-stone-500 dark:text-stone-400">
                 Transmits real email over {host}:{port}
               </span>
             </div>
@@ -363,13 +363,13 @@ export function SMTPSettingsModal({
                 value={testRecipient}
                 onChange={(e) => setTestRecipient(e.target.value)}
                 placeholder="recipient@example.com"
-                className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-mono text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                className="flex-1 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-3 py-2 text-xs font-mono text-stone-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-amber-500"
               />
               <button
                 type="button"
                 disabled={testing || !testRecipient}
                 onClick={handleTestConnection}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 dark:bg-white px-4 py-2 text-xs font-bold text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 transition cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-stone-900 dark:bg-white px-4 py-2 text-xs font-bold text-white dark:text-stone-900 hover:bg-stone-800 dark:hover:bg-stone-100 transition cursor-pointer disabled:opacity-50"
               >
                 {testing ? (
                   <RefreshCw className="h-3.5 w-3.5 animate-spin" />
@@ -382,12 +382,12 @@ export function SMTPSettingsModal({
 
             {/* Quick Test Recipient Pills */}
             <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-              <span className="text-slate-400">Quick Test Targets:</span>
+              <span className="text-stone-400">Quick Test Targets:</span>
               {kevinEmail ? (
                 <button
                   type="button"
                   onClick={() => setTestRecipient(kevinEmail)}
-                  className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 transition cursor-pointer"
+                  className="px-2 py-0.5 rounded-md bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 font-mono text-amber-600 dark:text-amber-400 hover:bg-amber-50 transition cursor-pointer"
                 >
                   {kevinEmail} (Founder / Admin)
                 </button>
@@ -396,7 +396,7 @@ export function SMTPSettingsModal({
                 <button
                   type="button"
                   onClick={() => setTestRecipient(username)}
-                  className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 transition cursor-pointer"
+                  className="px-2 py-0.5 rounded-md bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 font-mono text-amber-600 dark:text-amber-400 hover:bg-amber-50 transition cursor-pointer"
                 >
                   {username} (SMTP User)
                 </button>
@@ -429,11 +429,11 @@ export function SMTPSettingsModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 px-6 py-4 bg-slate-50/50 dark:bg-slate-800/40">
+        <div className="flex items-center justify-between border-t border-stone-100 dark:border-stone-800 px-6 py-4 bg-stone-50/50 dark:bg-stone-800/40">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+            className="rounded-xl px-4 py-2 text-xs font-semibold text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition cursor-pointer"
           >
             Cancel
           </button>
@@ -441,7 +441,7 @@ export function SMTPSettingsModal({
             type="submit"
             form="smtp-form"
             disabled={saving || loading}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-5 py-2 text-xs font-bold text-white hover:bg-indigo-500 shadow-sm shadow-indigo-600/30 transition cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-5 py-2 text-xs font-bold text-white hover:bg-amber-500 shadow-sm shadow-amber-600/30 transition cursor-pointer disabled:opacity-50"
           >
             {saving ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : null}
             <span>{saving ? "Saving Changes..." : "Save SMTP Credentials"}</span>

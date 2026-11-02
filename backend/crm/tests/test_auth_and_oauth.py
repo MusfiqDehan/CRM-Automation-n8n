@@ -98,3 +98,29 @@ def test_google_oauth_login_with_mock_token():
     data = res.json()["data"]
     assert data["user"]["email"] == "newpm@kevinbuild.com"
     assert "tokens" in data
+
+
+@pytest.mark.django_db
+def test_register_api_view_success_and_workspace_creation():
+    client = Client()
+    payload = {
+        "email": "jane@apexbuilds.com",
+        "password": "apexpassword2026",
+        "full_name": "Jane Builder",
+        "organization_name": "Apex Custom Builds",
+        "organization_slug": "apex",
+    }
+    res = client.post(
+        "/api/v1/auth/register/",
+        payload,
+        content_type="application/json",
+    )
+    assert res.status_code == 201
+    data = res.json()["data"]
+    assert data["user"]["email"] == "jane@apexbuilds.com"
+    assert data["organization"]["slug"] == "apex"
+    assert data["organization"]["name"] == "Apex Custom Builds"
+    assert data["role"] == "Owner"
+    assert "tokens" in data
+    assert Organization.objects.filter(slug="apex").exists()
+    assert User.objects.filter(email="jane@apexbuilds.com").exists()

@@ -1218,6 +1218,7 @@ from crm.serializers import (
     InvitationSerializer,
     GoogleAuthRequestSerializer,
     LoginRequestSerializer,
+    RegisterRequestSerializer,
 )
 
 User = get_user_model()
@@ -1325,6 +1326,135 @@ class LoginAPIView(APIView):
             },
             message="Login successful.",
             success=True,
+        )
+
+
+class RegisterAPIView(APIView):
+    """
+    Public registration endpoint.
+    Creates a new user account and provisions a new tenant organization workspace (Owner)
+    or links to the active tenant as a member.
+    Returns HS256 JWT tokens and user profile.
+    """
+
+    def post(self, request, *args, **kwargs):
+        from django.utils.text import slugify
+
+        serializer = RegisterRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"].lower().strip()
+        password = serializer.validated_data["password"]
+        full_name = serializer.validated_data.get("full_name", "").strip()
+        username = serializer.validated_data.get("username", "").strip()
+        org_name = serializer.validated_data.get("organization_name", "").strip()
+        org_slug = serializer.validated_data.get("organization_slug", "").strip()
+
+        # Check existing user
+        user = User.objects.filter(email__iexact=email).first()
+        if user:
+            if not user.check_password(password):
+                return api_response(
+                    message="An account with this email already exists. Please sign in with your password.",
+                    success=False,
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+        else:
+            uname = username or email.split("@")[0]
+            if User.objects.filter(username__iexact=uname).exists():
+                uname = f"{uname}_{secrets.token_hex(2)}"
+            parts = full_name.split(" ", 1)
+            first_name = parts[0] if parts else ""
+            last_name = parts[1] if len(parts) > 1 else ""
+            user = User.objects.create_user(
+                username=uname,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+            )
+
+        plat_settings = PlatformSettings.get_settings()
+        base_domain = plat_settings.base_domain or "beamline.musfiqdehan.com"
+
+        tenant = getattr(request, "tenant", None)
+        target_org = None
+        role = OrganizationMember.Role.OWNER
+
+        if org_name:
+            slug = org_slug.lower() if org_slug else slugify(org_name)
+            if not slug:
+                slug = f"org-{secrets.token_hex(3)}"
+            base_slug = slug
+            counter = 1
+            while Organization.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+
+            target_org = Organization.objects.create(
+                name=org_name,
+                slug=slug,
+                executive_recipient_email=email,
+                is_active=True,
+            )
+            OrganizationMember.objects.create(
+                organization=target_org,
+                user=user,
+                role=OrganizationMember.Role.OWNER,
+                is_active=True,
+            )
+        elif tenant and tenant.slug != "kevin":
+            target_org = tenant
+            role = OrganizationMember.Role.CLIENT
+            OrganizationMember.objects.get_or_create(
+                organization=target_org,
+                user=user,
+                defaults={"role": role, "is_active": True},
+            )
+        else:
+            default_name = f"{user.first_name or user.username.capitalize()}'s Builds"
+            slug = slugify(user.username) or f"ws-{secrets.token_hex(3)}"
+            base_slug = slug
+            counter = 1
+            while Organization.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+
+            target_org = Organization.objects.create(
+                name=default_name,
+                slug=slug,
+                executive_recipient_email=email,
+                is_active=True,
+            )
+            OrganizationMember.objects.create(
+                organization=target_org,
+                user=user,
+                role=OrganizationMember.Role.OWNER,
+                is_active=True,
+            )
+
+        tokens = JWTService.generate_token_pair(user, target_org, role=role)
+        return api_response(
+            data={
+                "tokens": tokens,
+                "user": {
+                    "id": str(user.id),
+                    "username": user.username,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "is_superuser": bool(user.is_superuser),
+                },
+                "organization": {
+                    "id": str(target_org.id) if target_org else None,
+                    "name": target_org.name if target_org else None,
+                    "slug": target_org.slug if target_org else None,
+                    "subdomain_host": target_org.subdomain_host if target_org else None,
+                } if target_org else None,
+                "role": role,
+            },
+            message="Registration and workspace creation successful.",
+            success=True,
+            status_code=status.HTTP_201_CREATED,
         )
 
 

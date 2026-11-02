@@ -1,6 +1,15 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 test.describe("Beamline — Commercial Multi-Tenant CRM & OS E2E Verification", () => {
+  const ensureAuthenticated = async (page: Page, role: "kevin" | "admin" = "kevin") => {
+    const btnName = role === "admin" ? "Platform Superadmin" : "Kevin (Client Owner)";
+    const quickLoginBtn = page.getByRole("button", { name: btnName });
+    await quickLoginBtn.waitFor({ state: "visible", timeout: 4000 }).catch(() => {});
+    if (await quickLoginBtn.isVisible()) {
+      await quickLoginBtn.click();
+      await page.waitForTimeout(600);
+    }
+  };
   test("loads Overview Landing Page, verifies executive action items and benefits", async ({
     page,
   }) => {
@@ -13,17 +22,53 @@ test.describe("Beamline — Commercial Multi-Tenant CRM & OS E2E Verification", 
     ).toBeVisible();
   });
 
-  test("navigates to Admin Sales Dashboard & Pipeline, checks visual KPIs and funnel", async ({
+  test("blocks unauthenticated visitor from admin panel with AuthGate requiring login or registration", async ({
+    page,
+  }) => {
+    // Navigate to /admin without token
+    await page.goto("/admin");
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+
+    // Verify AuthGate barrier is shown
+    await expect(
+      page.getByText("Authentication required. Sign in or register to access workspace.").first()
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: /Sign In to Operations Console/i })).toBeVisible();
+
+    // Verify dashboard data is completely hidden / not present
+    await expect(page.getByText("Sales Dashboard & Executive Pipeline Overview")).toHaveCount(0);
+    await expect(page.getByText("Total Pipeline Value")).toHaveCount(0);
+
+    // Switch to Register Workspace tab
+    const registerTabBtn = page.getByRole("button", { name: "Register Workspace" }).first();
+    await expect(registerTabBtn).toBeVisible();
+    await registerTabBtn.click();
+
+    // Verify registration fields are displayed
+    await expect(page.getByPlaceholder("e.g. Apex Custom Homes")).toBeVisible();
+    await expect(page.getByPlaceholder("jane@apexhomes.com")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Create Workspace & Enter Admin Panel/i })).toBeVisible();
+
+    // Switch back to Sign In
+    const signInTabBtn = page.getByRole("button", { name: "Sign In" }).first();
+    await signInTabBtn.click();
+    await expect(page.getByRole("button", { name: "Kevin (Client Owner)" })).toBeVisible();
+  });
+
+  test("authenticates into Admin Sales Dashboard & Pipeline, checks visual KPIs and funnel", async ({
     page,
   }) => {
     await page.goto("/admin");
+    await ensureAuthenticated(page);
+
     // Verify top KPIs on executive dashboard
     await expect(page.getByText("Total Pipeline Value").first()).toBeVisible();
     await expect(page.getByText("Sales Pipeline Overview").first()).toBeVisible();
 
     // Switch to Sales & Clients (CRM) tab
     const crmTabBtn = page.getByRole("tab", { name: /Sales/i }).or(page.getByRole("button", { name: /Sales/i })).first();
-    await crmTabBtn.click();
+    await crmTabBtn.click({ force: true });
     await page.waitForTimeout(500);
 
     // Verify Executive Pipeline Overview Visual Header and Funnel
@@ -42,11 +87,12 @@ test.describe("Beamline — Commercial Multi-Tenant CRM & OS E2E Verification", 
     page,
   }) => {
     await page.goto("/admin");
+    await ensureAuthenticated(page);
     
     // Switch to Builds/Projects tab (supports both desktop sidebar and mobile bottom nav)
     const projectsTab = page
       .getByRole("button", { name: /Active Builds/i })
-      .or(page.getByRole("button", { name: /^Builds$/i }))
+      .or(page.getByRole("button", { name: /Builds/i }))
       .filter({ visible: true })
       .first();
     await projectsTab.click({ force: true });
@@ -61,7 +107,7 @@ test.describe("Beamline — Commercial Multi-Tenant CRM & OS E2E Verification", 
     // Switch to Invoices/Automation tab (supports desktop and mobile)
     const autoTab = page
       .getByRole("button", { name: /Invoices & Bills/i })
-      .or(page.getByRole("button", { name: /^Invoices$/i }))
+      .or(page.getByRole("button", { name: /Invoices/i }))
       .filter({ visible: true })
       .first();
     await autoTab.click({ force: true });
@@ -78,6 +124,9 @@ test.describe("Beamline — Commercial Multi-Tenant CRM & OS E2E Verification", 
     page,
   }) => {
     await page.goto("/admin");
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+    await ensureAuthenticated(page, "admin");
 
     // Verify Beamline branding visible in viewport
     await expect(page.getByText("Beamline").filter({ visible: true }).first()).toBeVisible();

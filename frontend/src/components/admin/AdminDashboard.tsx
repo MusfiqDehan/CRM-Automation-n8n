@@ -37,7 +37,7 @@ import {
   Workflow,
   X,
 } from "lucide-react";
-import { AuthModal } from "@/components/auth/AuthModal";
+import { AuthModal, AuthGate } from "@/components/auth/AuthModal";
 import { SuperAdminModal } from "@/components/admin/SuperAdminModal";
 import { TenantSettingsModal } from "@/components/admin/TenantSettingsModal";
 import {
@@ -85,6 +85,8 @@ export function AdminDashboard() {
   const [refreshCounter, setRefreshCounter] = useState(0);
 
   // Multi-Tenant & Auth state
+  const [authChecked, setAuthChecked] = useState(false);
+  const [oauthConfig, setOAuthConfig] = useState<OAuthPublicConfig | null>(null);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [currentRole, setCurrentRole] = useState<string>("Owner");
   const [activeOrg, setActiveOrg] = useState<Organization | null>(null);
@@ -200,16 +202,27 @@ export function AdminDashboard() {
         apiClient.get<OAuthPublicConfig>("/auth/oauth-config/"),
       ]);
 
+      if (configRes) {
+        setOAuthConfig(configRes);
+        if (configRes.tenant) {
+          setActiveOrg(configRes.tenant as unknown as Organization);
+        }
+      }
+
       if (meRes?.is_authenticated && meRes.user) {
         setCurrentUser(meRes.user);
         setCurrentRole(meRes.active_role || "Owner");
         setUserOrgs(meRes.organizations || []);
-      }
-      if (configRes?.tenant) {
-        setActiveOrg(configRes.tenant as unknown as Organization);
+      } else {
+        setCurrentUser(null);
+        setCurrentRole("Guest");
       }
     } catch (err) {
       console.warn("Could not load auth/me", err);
+      setCurrentUser(null);
+      setCurrentRole("Guest");
+    } finally {
+      setAuthChecked(true);
     }
   }, []);
 
@@ -233,8 +246,10 @@ export function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    fetchSummary();
-  }, [fetchSummary, refreshCounter]);
+    if (currentUser) {
+      fetchSummary();
+    }
+  }, [fetchSummary, currentUser, refreshCounter]);
 
   const handleRunScenario = async (scenarioKey: string) => {
     setRunningScenario(scenarioKey);
@@ -345,6 +360,34 @@ export function AdminDashboard() {
       subtitle: "Automated email parsing, duplicate prevention, and budget variance tracking",
     },
   };
+
+  // 1. Initial Authentication Check Loading State
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-[#f7f7f5] dark:bg-[#0b0f19] flex flex-col items-center justify-center p-6 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-xl shadow-indigo-600/30 animate-pulse mb-4">
+          <Building2 className="h-6 w-6" />
+        </div>
+        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+          Verifying Beamline Credentials &amp; Workspace...
+        </p>
+      </div>
+    );
+  }
+
+  // 2. Unauthenticated Barrier: Superadmin or client cannot access admin panel without registration or login!
+  if (!currentUser) {
+    return (
+      <AuthGate
+        oauthConfig={oauthConfig}
+        onAuthSuccess={(user, role, tokens, orgSlug) => {
+          setCurrentUser(user);
+          setCurrentRole(role);
+          setRefreshCounter((c) => c + 1);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f7f7f5] text-slate-900 transition-colors duration-200 dark:bg-[#0b0f19] dark:text-slate-100 flex flex-col lg:flex-row">

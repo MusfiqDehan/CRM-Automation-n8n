@@ -761,3 +761,13 @@ class LoginRequestSerializer(serializers.Serializer):
     username_or_email = serializers.CharField(required=True)
     password = serializers.CharField(required=True)
 
+
+class RegisterRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(required=True, min_length=8)
+    full_name = serializers.CharField(required=False, allow_blank=True, default="")
+    username = serializers.CharField(required=False, allow_blank=True, default="")
+    organization_name = serializers.CharField(required=False, allow_blank=True, default="")
+    organization_slug = serializers.CharField(required=False, allow_blank=True, default="")
+
+

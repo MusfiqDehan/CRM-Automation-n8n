@@ -6,7 +6,6 @@ import type { ElementType, ReactNode } from "react";
 import {
   ArrowRight,
   BarChart3,
-  Building2,
   Check,
   CheckCircle2,
   ChevronRight,
@@ -15,7 +14,6 @@ import {
   Clock3,
   Cloud,
   Globe2,
-  HardHat,
   KeyRound,
   Layers3,
   LockKeyhole,
@@ -31,6 +29,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { BeamLineLogo } from "@/components/brand/BeamLineLogo";
 
 const heroImage =
   "https://images.unsplash.com/photo-1756435292384-1bf32eff7baf?auto=format&fit=crop&w=1800&q=88";
@@ -129,9 +128,9 @@ const plans = [
 
 const faqs = [
   {
-    question: "Is Beamline only for custom home builders?",
+    question: "Is BeamLine only for custom home builders?",
     answer:
-      "Beamline is designed around the operating patterns of custom residential construction, but the same structure also fits design-build firms, renovation specialists, and boutique commercial contractors.",
+      "BeamLine is designed around the operating patterns of custom residential construction, but the same structure also fits design-build firms, renovation specialists, and boutique commercial contractors.",
   },
   {
     question: "What does multi-tenant mean for my company?",
@@ -212,16 +211,10 @@ export function LandingPage() {
     <div className="min-h-screen overflow-hidden bg-stone-50 text-stone-950 selection:bg-amber-300 dark:bg-stone-950 dark:text-stone-50">
       <header className="sticky top-0 z-50 border-b border-stone-200/80 bg-stone-50/90 backdrop-blur-xl dark:border-stone-800 dark:bg-stone-950/90">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-3" aria-label="Beamline home">
-            <span className="flex size-10 items-center justify-center rounded-xl bg-stone-950 text-amber-400 dark:bg-amber-400 dark:text-stone-950">
-              <HardHat className="size-5" aria-hidden="true" />
-            </span>
-            <span>
-              <span className="block text-base font-black tracking-tight">Beamline</span>
-              <span className="hidden text-[0.65rem] font-bold uppercase tracking-[0.18em] text-stone-500 sm:block">
-                Construction OS
-              </span>
-            </span>
+          <Link href="/" aria-label="BeamLine home">
+            <BeamLineLogo
+              subtitle={<span className="hidden font-bold uppercase tracking-[0.18em] sm:inline">Construction OS</span>}
+            />
           </Link>
 
           <nav className="hidden items-center gap-7 lg:flex" aria-label="Primary navigation">
@@ -269,7 +262,7 @@ export function LandingPage() {
                 Run a stronger construction business, from lead to handover.
               </Heading>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-stone-300 sm:text-xl">
-                Beamline gives custom builders a ready-to-use CRM, project operating system, and automation layer—inside a private, branded workspace your team can call its own.
+                BeamLine gives custom builders a ready-to-use CRM, project operating system, and automation layer—inside a private, branded workspace your team can call its own.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link href="/admin" className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-400 px-6 py-3.5 text-sm font-black text-stone-950 transition hover:bg-amber-300">
@@ -377,7 +370,7 @@ export function LandingPage() {
                   Your operating system, not another disconnected app.
                 </Heading>
                 <p className="mt-5 text-lg leading-8 text-stone-300">
-                  Beamline connects the commercial, operational, and financial work that generic software leaves fragmented.
+                  BeamLine connects the commercial, operational, and financial work that generic software leaves fragmented.
                 </p>
                 <Link href="/admin" className="mt-8 inline-flex items-center gap-2 text-sm font-black text-amber-400 transition hover:text-amber-300">
                   See the live workspace
@@ -482,7 +475,7 @@ export function LandingPage() {
             <SectionHeader
               eyebrow="A complete operating rhythm"
               title="From first enquiry to repeatable growth."
-              description="Beamline follows the life of the work, so your business never loses context between sales, project delivery, and finance."
+              description="BeamLine follows the life of the work, so your business never loses context between sales, project delivery, and finance."
             />
             <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               {phases.map(([number, title, description]) => (
@@ -570,7 +563,7 @@ export function LandingPage() {
               <div className="mt-7 rounded-2xl bg-stone-100 p-5 dark:bg-stone-800">
                 <MailCheck className="size-6 text-amber-600 dark:text-amber-400" aria-hidden="true" />
                 <p className="mt-3 font-black">Have a workflow question?</p>
-                <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">We’ll map your current process and show where Beamline fits.</p>
+                <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">We’ll map your current process and show where BeamLine fits.</p>
               </div>
             </div>
             <div className="space-y-3">
@@ -598,7 +591,7 @@ export function LandingPage() {
               </Heading>
             </div>
             <Link href="/admin" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-stone-950 px-6 py-3.5 text-sm font-black text-white transition hover:bg-stone-800">
-              Open Beamline
+              Open BeamLine
               <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
           </div>
@@ -607,15 +600,14 @@ export function LandingPage() {
 
       <footer className="bg-stone-950 text-stone-300">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-2 lg:px-8">
-          <div className="flex items-center gap-3">
-            <span className="flex size-10 items-center justify-center rounded-xl bg-amber-400 text-stone-950">
-              <Building2 className="size-5" aria-hidden="true" />
-            </span>
-            <div>
-              <p className="font-black text-white">Beamline Construction OS</p>
-              <p className="text-xs text-stone-500">Built for custom builders ready to grow.</p>
-            </div>
-          </div>
+          <BeamLineLogo
+            tone="amber"
+            markClassName="size-11"
+            wordmarkClassName="text-lg text-white"
+            accentClassName="text-amber-400"
+            subtitle="Construction OS for builders ready to grow."
+            subtitleClassName="text-stone-500"
+          />
           <div className="flex flex-wrap gap-x-6 gap-y-3 md:justify-end">
             <Link href="#benefits" className="text-sm font-semibold transition hover:text-amber-400">Benefits</Link>
             <Link href="#platform" className="text-sm font-semibold transition hover:text-amber-400">Platform</Link>
@@ -625,7 +617,7 @@ export function LandingPage() {
         </div>
         <div className="border-t border-stone-800">
           <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-5 text-xs text-stone-500 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-            <p>© 2026 Beamline. Construction operations, connected.</p>
+            <p>© 2026 BeamLine. Construction operations, connected.</p>
             <p className="flex items-center gap-2">
               <Clock3 className="size-3.5" aria-hidden="true" />
               Ready for the next project

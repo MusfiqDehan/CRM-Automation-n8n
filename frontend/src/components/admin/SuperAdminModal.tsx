@@ -4,27 +4,17 @@ import React, { useEffect, useState } from "react";
 import {
   AlertCircle,
   Building2,
-  Check,
   CheckCircle2,
-  ChevronRight,
-  Globe,
   KeyRound,
-  Layers,
-  Lock,
   Plus,
   Power,
   Save,
   Send,
-  ShieldAlert,
-  ShieldCheck,
   Sliders,
-  Sparkles,
-  ToggleLeft,
-  ToggleRight,
   UserPlus,
-  Users,
   X,
 } from "lucide-react";
+import { BeamLineMark } from "@/components/brand/BeamLineLogo";
 import { apiClient } from "@/lib/api-client";
 import type { FeatureFlags, Organization, PlatformSettings } from "@/lib/types";
 
@@ -51,7 +41,7 @@ export function SuperAdminModal({
     useState<Organization | null>(null);
 
   // Platform form state
-  const [platformName, setPlatformName] = useState("Beamline");
+  const [platformName, setPlatformName] = useState("BeamLine");
   const [baseDomain, setBaseDomain] = useState("beamline.musfiqdehan.com");
   const [googleClientId, setGoogleClientId] = useState("");
   const [googleClientSecret, setGoogleClientSecret] = useState("");
@@ -83,7 +73,7 @@ export function SuperAdminModal({
       .then(([platRes, orgsRes]) => {
         const p = platRes;
         setPlatformSettings(p);
-        setPlatformName(p.platform_name || "Beamline");
+        setPlatformName(p.platform_name || "BeamLine");
         setBaseDomain(p.base_domain || "beamline.musfiqdehan.com");
         setGoogleClientId(p.google_oauth_client_id || "");
         setGoogleClientSecret("");
@@ -251,12 +241,10 @@ export function SuperAdminModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-600 text-white shadow-md shadow-purple-600/30">
-              <ShieldCheck className="h-6 w-6" />
-            </div>
+            <BeamLineMark className="size-10" />
             <div>
               <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                Beamline Platform Superadmin Console
+                BeamLine Platform Superadmin Console
               </h2>
               <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">
                 Global Client Governance, Dynamic OAuth & Feature Matrix

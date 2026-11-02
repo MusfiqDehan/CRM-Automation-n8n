@@ -1,636 +1,635 @@
 "use client";
 
-import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
+import type { ElementType, ReactNode } from "react";
 import {
   ArrowRight,
+  BarChart3,
   Building2,
+  Check,
   CheckCircle2,
   ChevronRight,
-  Clock,
-  DollarSign,
-  FileCheck2,
-  Layers,
-  Lock,
-  Mail,
-  Play,
-  Plus,
-  Shield,
+  CircleDollarSign,
+  ClipboardCheck,
+  Clock3,
+  Cloud,
+  Globe2,
+  HardHat,
+  KeyRound,
+  Layers3,
+  LockKeyhole,
+  MailCheck,
+  MapPin,
+  Menu,
+  Network,
+  ShieldCheck,
   Sparkles,
   TrendingUp,
-  Users,
+  UsersRound,
   Workflow,
-  Zap,
+  Wrench,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
-export function LandingPage() {
-  const [activeFeatureTab, setActiveFeatureTab] = useState<
-    "sales" | "projects" | "invoices"
-  >("sales");
+const heroImage =
+  "https://images.unsplash.com/photo-1756435292384-1bf32eff7baf?auto=format&fit=crop&w=1800&q=88";
 
+const benefits = [
+  {
+    icon: TrendingUp,
+    title: "Win more of the right work",
+    description:
+      "Qualify enquiries, protect follow-ups, and see every high-value opportunity from first contact to signed agreement.",
+    metric: "Clearer pipeline",
+  },
+  {
+    icon: ClipboardCheck,
+    title: "Deliver every build consistently",
+    description:
+      "Standardize the repeatable work across pre-construction, build, handover, and warranty without flattening what makes each project unique.",
+    metric: "Fewer missed handoffs",
+  },
+  {
+    icon: CircleDollarSign,
+    title: "Protect project margin",
+    description:
+      "Match invoices to projects, catch duplicates, surface exceptions, and give leadership a faster path to the numbers that matter.",
+    metric: "Tighter cost control",
+  },
+];
+
+const platformFeatures = [
+  {
+    icon: UsersRound,
+    title: "Construction CRM",
+    description: "Contacts, referrals, opportunities, activities, and next steps in one operating rhythm.",
+  },
+  {
+    icon: Layers3,
+    title: "Project delivery",
+    description: "Phases, milestones, materials, tasks, and review queues built around residential construction.",
+  },
+  {
+    icon: Workflow,
+    title: "Invoice automation",
+    description: "Structured intake, duplicate protection, project matching, and human review when context is missing.",
+  },
+  {
+    icon: BarChart3,
+    title: "Executive visibility",
+    description: "See pipeline health, active work, cost exposure, and decisions waiting on leadership.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Isolated tenant data",
+    description: "Each construction business operates in its own workspace with its own team and settings.",
+  },
+  {
+    icon: Cloud,
+    title: "Ready from day one",
+    description: "A guided operational structure replaces months of stitching together generic tools and spreadsheets.",
+  },
+];
+
+const phases = [
+  ["01", "Capture", "Enquiries, referrals, client details, and every follow-up enter one dependable pipeline."],
+  ["02", "Plan", "Signed work becomes a structured project with phases, owners, milestones, and cost controls."],
+  ["03", "Build", "Teams manage tasks, materials, field decisions, invoices, and leadership exceptions in real time."],
+  ["04", "Grow", "Reliable delivery data improves forecasting, referrals, margin, and the capacity to take on more work."],
+];
+
+const plans = [
+  {
+    name: "Foundation",
+    price: "$299",
+    description: "For small builders replacing scattered spreadsheets and generic CRM tools.",
+    features: ["1 branded subdomain", "Up to 5 team members", "CRM and project workflows", "Core dashboards", "Email support"],
+  },
+  {
+    name: "Builder",
+    price: "$699",
+    description: "For growing teams that need automation, oversight, and a consistent client experience.",
+    features: [
+      "Custom subdomain and domain",
+      "Up to 20 team members",
+      "Invoice intake automation",
+      "Executive review queues",
+      "Priority onboarding",
+    ],
+    featured: true,
+  },
+  {
+    name: "Enterprise",
+    price: "Custom",
+    description: "For multi-division builders and operators with tailored workflows or integrations.",
+    features: ["Multiple business units", "Unlimited team members", "Custom workflows", "Integration support", "Dedicated success lead"],
+  },
+];
+
+const faqs = [
+  {
+    question: "Is Beamline only for custom home builders?",
+    answer:
+      "Beamline is designed around the operating patterns of custom residential construction, but the same structure also fits design-build firms, renovation specialists, and boutique commercial contractors.",
+  },
+  {
+    question: "What does multi-tenant mean for my company?",
+    answer:
+      "Your company receives an isolated workspace with its own users, records, branding, and configuration. Your team works independently from every other business on the platform.",
+  },
+  {
+    question: "How does the custom subdomain work?",
+    answer:
+      "Your workspace can launch at a dedicated address such as northstar.beamline.app. Builder and Enterprise plans can also connect a company-owned domain for a fully branded experience.",
+  },
+  {
+    question: "Can we migrate our existing contacts and projects?",
+    answer:
+      "Yes. Onboarding can include structured imports from spreadsheets and common CRM exports, followed by a review to make sure your active opportunities and projects are ready to use.",
+  },
+  {
+    question: "Will my field team need technical training?",
+    answer:
+      "No. The interface is organized around familiar construction workflows and clear next actions. Most users can begin with a short role-based onboarding session.",
+  },
+  {
+    question: "Can the workflow be customized?",
+    answer:
+      "Yes. Phase labels, review rules, notifications, and integrations can be adapted to the way your company sells and delivers work, especially on Enterprise plans.",
+  },
+];
+
+function Heading({
+  as,
+  className,
+  children,
+}: {
+  as: "h1" | "h2" | "h3";
+  className: string;
+  children: ReactNode;
+}) {
+  const Tag = as;
+  return <Tag className={className}>{children}</Tag>;
+}
+
+function IconBadge({ icon: Icon }: { icon: ElementType }) {
   return (
-    <div className="min-h-screen bg-[#f7f7f5] text-slate-900 transition-colors duration-200 dark:bg-[#0b0f19] dark:text-slate-100 selection:bg-indigo-600 selection:text-white">
-      {/* ------------------------------------------------------------ */}
-      {/* Sticky Navigation Bar                                         */}
-      {/* ------------------------------------------------------------ */}
-      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-md transition-colors duration-200 dark:border-slate-800/80 dark:bg-[#0f1523]/90">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-600/30 shrink-0">
-              <Building2 className="h-5 w-5" />
-            </div>
-            <div>
-              <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
-                Beamline
-              </span>
-              <span className="ml-2 hidden rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-200/70 sm:inline-block dark:bg-indigo-950/70 dark:text-indigo-300 dark:ring-indigo-800">
-                Multi-Tenant Construction OS
-              </span>
-            </div>
-          </div>
+    <span className="inline-flex size-11 items-center justify-center rounded-xl bg-amber-400 text-stone-950 shadow-sm">
+      <Icon className="size-5" aria-hidden="true" />
+    </span>
+  );
+}
 
-          <nav className="hidden items-center gap-6 md:flex">
-            <a
-              href="#features"
-              className="text-sm font-medium text-slate-600 transition hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400"
-            >
-              Key Features
-            </a>
-            <a
-              href="#lifecycle"
-              className="text-sm font-medium text-slate-600 transition hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400"
-            >
-              4-Phase System
-            </a>
-            <a
-              href="#comparison"
-              className="text-sm font-medium text-slate-600 transition hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400"
-            >
-              Why Construction OS
-            </a>
+function SectionHeader({
+  eyebrow,
+  title,
+  description,
+  align = "left",
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+  align?: "left" | "center";
+}) {
+  const centered = align === "center";
+  return (
+    <div className={centered ? "mx-auto max-w-3xl text-center" : "max-w-2xl"}>
+      <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-600 dark:text-amber-400">{eyebrow}</p>
+      <Heading
+        as="h2"
+        className="mt-3 text-3xl font-black tracking-tight text-stone-950 sm:text-4xl lg:text-5xl dark:text-white"
+      >
+        {title}
+      </Heading>
+      <p className="mt-4 text-base leading-7 text-stone-600 sm:text-lg dark:text-stone-300">{description}</p>
+    </div>
+  );
+}
+
+export function LandingPage() {
+  return (
+    <div className="min-h-screen overflow-hidden bg-stone-50 text-stone-950 selection:bg-amber-300 dark:bg-stone-950 dark:text-stone-50">
+      <header className="sticky top-0 z-50 border-b border-stone-200/80 bg-stone-50/90 backdrop-blur-xl dark:border-stone-800 dark:bg-stone-950/90">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+          <Link href="/" className="flex items-center gap-3" aria-label="Beamline home">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-stone-950 text-amber-400 dark:bg-amber-400 dark:text-stone-950">
+              <HardHat className="size-5" aria-hidden="true" />
+            </span>
+            <span>
+              <span className="block text-base font-black tracking-tight">Beamline</span>
+              <span className="hidden text-[0.65rem] font-bold uppercase tracking-[0.18em] text-stone-500 sm:block">
+                Construction OS
+              </span>
+            </span>
+          </Link>
+
+          <nav className="hidden items-center gap-7 lg:flex" aria-label="Primary navigation">
+            {[
+              ["Benefits", "#benefits"],
+              ["Platform", "#platform"],
+              ["How it works", "#how-it-works"],
+              ["Pricing", "#pricing"],
+              ["FAQ", "#faq"],
+            ].map(([label, href]) => (
+              <Link
+                key={href}
+                href={href}
+                className="text-sm font-semibold text-stone-600 transition hover:text-stone-950 dark:text-stone-300 dark:hover:text-white"
+              >
+                {label}
+              </Link>
+            ))}
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="flex items-center gap-2">
             <ThemeToggle variant="compact" />
-            <Link
-              href="/admin"
-              className="btn-primary py-2 px-3 sm:px-4 text-xs sm:text-sm"
-            >
-              <span>Admin Panel</span>
-              <ArrowRight className="h-4 w-4" />
+            <Link href="/admin" className="btn-primary bg-stone-950 px-3 py-2 text-xs hover:bg-stone-800 sm:px-4 sm:text-sm dark:bg-amber-400 dark:text-stone-950 dark:hover:bg-amber-300">
+              <span className="hidden sm:inline">Open workspace</span>
+              <span className="sm:hidden">Open</span>
+              <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
+            <span className="flex size-10 items-center justify-center rounded-xl border border-stone-200 text-stone-700 lg:hidden dark:border-stone-800 dark:text-stone-200">
+              <Menu className="size-5" aria-hidden="true" />
+            </span>
           </div>
         </div>
       </header>
 
-      {/* ------------------------------------------------------------ */}
-      {/* Hero Section                                                 */}
-      {/* ------------------------------------------------------------ */}
-      <section className="relative overflow-hidden pt-12 pb-16 sm:pt-20 sm:pb-24">
-        {/* Subtle background glow */}
-        <div className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-96 w-96 -translate-x-1/2 rounded-full bg-indigo-200/40 blur-3xl dark:bg-indigo-900/20" />
-
-        <div className="mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
-          {/* Eyebrow badge */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200/80 bg-white px-3.5 py-1.5 shadow-xs dark:border-indigo-900/60 dark:bg-slate-900">
-            <Sparkles className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              White-Labeled Subdomains • Custom Domains • Two-Tier Google OAuth
-            </span>
-          </div>
-
-          <h1 className="mt-6 text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:leading-[1.12]">
-            Autonomous Operations & CRM for{" "}
-            <span className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 bg-clip-text text-transparent dark:from-indigo-400 dark:to-violet-400">
-              Custom Home Builders
-            </span>
-          </h1>
-
-          <p className="mx-auto mt-6 max-w-2xl text-base sm:text-lg text-slate-600 dark:text-slate-300 sm:leading-relaxed">
-            From pre-construction design agreements to closeout and automated accounts payable.
-            Purpose-built for luxury residential builders with dedicated client subdomains,
-            custom domains, and executive review queues.
-          </p>
-
-          {/* Primary Action Buttons */}
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-            <Link
-              href="/admin"
-              className="btn-primary w-full px-7 py-3 text-base sm:w-auto"
-            >
-              <span>Launch Admin Panel</span>
-              <ArrowRight className="h-5 w-5" />
-            </Link>
-            <a
-              href="#features"
-              className="btn-secondary w-full px-7 py-3 text-base sm:w-auto"
-            >
-              <span>Explore How It Works</span>
-              <ChevronRight className="h-4 w-4 text-slate-400" />
-            </a>
-          </div>
-
-          {/* Trust Metrics Strip */}
-          <div className="mt-14 grid grid-cols-2 gap-3.5 sm:grid-cols-4 sm:gap-6">
-            <div className="card p-4 text-left">
-              <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                $14.1M+
+      <main>
+        <section className="relative border-b border-stone-200 bg-stone-950 text-white dark:border-stone-800">
+          <div className="absolute inset-0 opacity-20 [background-image:linear-gradient(to_right,rgb(245_158_11/0.2)_1px,transparent_1px),linear-gradient(to_bottom,rgb(245_158_11/0.2)_1px,transparent_1px)] [background-size:3rem_3rem]" />
+          <div className="relative mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-8 lg:py-24">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1.5 text-xs font-bold text-amber-300">
+                <Sparkles className="size-3.5" aria-hidden="true" />
+                Built for the business behind every build
               </div>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Active deal pipeline</p>
+              <Heading as="h1" className="mt-6 max-w-3xl text-4xl font-black leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl">
+                Run a stronger construction business, from lead to handover.
+              </Heading>
+              <p className="mt-6 max-w-2xl text-lg leading-8 text-stone-300 sm:text-xl">
+                Beamline gives custom builders a ready-to-use CRM, project operating system, and automation layer—inside a private, branded workspace your team can call its own.
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link href="/admin" className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-400 px-6 py-3.5 text-sm font-black text-stone-950 transition hover:bg-amber-300">
+                  Explore the workspace
+                  <ArrowRight className="size-4" aria-hidden="true" />
+                </Link>
+                <Link href="#pricing" className="inline-flex items-center justify-center gap-2 rounded-xl border border-stone-700 bg-stone-900 px-6 py-3.5 text-sm font-bold text-white transition hover:border-stone-500">
+                  View plans
+                  <ChevronRight className="size-4" aria-hidden="true" />
+                </Link>
+              </div>
+              <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-stone-300">
+                {["Launch-ready workflows", "Private tenant data", "Your branded subdomain"].map((item) => (
+                  <span key={item} className="flex items-center gap-2">
+                    <CheckCircle2 className="size-4 text-amber-400" aria-hidden="true" />
+                    {item}
+                  </span>
+                ))}
+              </div>
             </div>
-            <div className="card p-4 text-left">
-              <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                4 Phases
+
+            <div className="relative">
+              <div className="overflow-hidden rounded-3xl border border-white/10 bg-stone-900 p-2 shadow-2xl shadow-black/40">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
+                  <Image
+                    src={heroImage}
+                    alt="A completed modern custom home at sunset"
+                    fill
+                    priority
+                    sizes="(max-width: 1024px) 100vw, 46vw"
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-transparent to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-300">Project pulse</p>
+                    <div className="mt-2 flex items-end justify-between gap-4">
+                      <div>
+                        <p className="text-lg font-black sm:text-xl">Hillside Modern Residence</p>
+                        <p className="mt-1 flex items-center gap-1.5 text-sm text-stone-300">
+                          <MapPin className="size-3.5" aria-hidden="true" />
+                          Phase 3 · Interior finishes
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-emerald-400/20 px-3 py-1 text-xs font-bold text-emerald-300 ring-1 ring-emerald-400/30">
+                        On track
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Standardized delivery</p>
-            </div>
-            <div className="card p-4 text-left">
-              <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                100% Audited
+              <div className="absolute -bottom-5 -left-3 rounded-2xl border border-stone-200 bg-white p-4 text-stone-950 shadow-xl sm:-left-8 dark:border-stone-700 dark:bg-stone-900 dark:text-white">
+                <p className="text-xs font-bold text-stone-500 dark:text-stone-400">This week</p>
+                <p className="mt-1 text-xl font-black">12 hours saved</p>
+                <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">Across admin and invoice review</p>
               </div>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Duplicate invoice protection</p>
-            </div>
-            <div className="card p-4 text-left">
-              <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                15+ Hours
-              </div>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Saved weekly per founder</p>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ------------------------------------------------------------ */}
-      {/* Product Interactive Spotlight                                 */}
-      {/* ------------------------------------------------------------ */}
-      <section
-        id="features"
-        className="py-16 sm:py-24 border-t border-slate-200/80 bg-white transition-colors duration-200 dark:border-slate-800/80 dark:bg-[#0f1523]"
-      >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-              Three Simple Pillars
-            </span>
-            <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-white">
-              Everything you need. Nothing you don&apos;t.
-            </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-slate-600 dark:text-slate-400 text-sm sm:text-base">
-              Traditional enterprise software is confusing and cluttered with technical jargon.
-              Kevin&apos;s OS was designed so anyone on your team can understand it in two minutes.
+        <section className="border-b border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900">
+          <div className="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-y divide-stone-200 px-4 sm:px-6 md:grid-cols-4 md:divide-y-0 lg:px-8 dark:divide-stone-800">
+            {[
+              ["One workspace", "Sales to warranty"],
+              ["4 phases", "Repeatable delivery"],
+              ["24/7 clarity", "Executive visibility"],
+              ["Your domain", "A branded experience"],
+            ].map(([value, label]) => (
+              <div key={value} className="px-4 py-6 text-center sm:px-6">
+                <p className="text-xl font-black text-stone-950 sm:text-2xl dark:text-white">{value}</p>
+                <p className="mt-1 text-xs font-semibold text-stone-500 sm:text-sm dark:text-stone-400">{label}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section id="benefits" className="py-20 sm:py-28">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <SectionHeader
+              eyebrow="Built for profitable growth"
+              title="Less operational drag. More capacity to build."
+              description="Give every person a clear next action while leadership keeps sight of sales, delivery, and margin."
+              align="center"
+            />
+            <div className="mt-12 grid gap-5 lg:grid-cols-3">
+              {benefits.map(({ icon: Icon, title, description, metric }) => (
+                <article key={title} className="group rounded-3xl border border-stone-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl sm:p-8 dark:border-stone-800 dark:bg-stone-900">
+                  <IconBadge icon={Icon} />
+                  <Heading as="h3" className="mt-6 text-2xl font-black tracking-tight">{title}</Heading>
+                  <p className="mt-3 leading-7 text-stone-600 dark:text-stone-300">{description}</p>
+                  <div className="mt-7 border-t border-stone-200 pt-5 dark:border-stone-800">
+                    <p className="text-sm font-black text-amber-600 dark:text-amber-400">{metric}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="platform" className="bg-stone-900 py-20 text-white sm:py-28">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+              <div className="lg:sticky lg:top-28">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-400">One connected platform</p>
+                <Heading as="h2" className="mt-3 text-3xl font-black tracking-tight sm:text-5xl">
+                  Your operating system, not another disconnected app.
+                </Heading>
+                <p className="mt-5 text-lg leading-8 text-stone-300">
+                  Beamline connects the commercial, operational, and financial work that generic software leaves fragmented.
+                </p>
+                <Link href="/admin" className="mt-8 inline-flex items-center gap-2 text-sm font-black text-amber-400 transition hover:text-amber-300">
+                  See the live workspace
+                  <ArrowRight className="size-4" aria-hidden="true" />
+                </Link>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {platformFeatures.map(({ icon: Icon, title, description }) => (
+                  <article key={title} className="rounded-2xl border border-stone-700 bg-stone-800/70 p-6">
+                    <Icon className="size-6 text-amber-400" aria-hidden="true" />
+                    <Heading as="h3" className="mt-5 text-xl font-black">{title}</Heading>
+                    <p className="mt-2 text-sm leading-6 text-stone-300">{description}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20 sm:py-28">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-xl dark:border-stone-800 dark:bg-stone-900">
+              <div className="grid lg:grid-cols-2">
+                <div className="p-7 sm:p-10 lg:p-14">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-black text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
+                    <Network className="size-3.5" aria-hidden="true" />
+                    Multi-tenant by design
+                  </span>
+                  <Heading as="h2" className="mt-5 text-3xl font-black tracking-tight sm:text-4xl">
+                    A private digital headquarters for every builder.
+                  </Heading>
+                  <p className="mt-4 leading-7 text-stone-600 dark:text-stone-300">
+                    Your team, clients, records, and workflows live inside an isolated workspace—branded for your business and accessible from a dedicated address.
+                  </p>
+                  <div className="mt-7 space-y-4">
+                    {[
+                      [LockKeyhole, "Tenant-isolated records and team access"],
+                      [Globe2, "Your own subdomain or connected custom domain"],
+                      [Wrench, "Workflows configured to the way your company builds"],
+                      [KeyRound, "Secure role-based access for leadership and staff"],
+                    ].map(([Icon, text]) => {
+                      const ItemIcon = Icon as ElementType;
+                      return (
+                        <div key={text as string} className="flex items-center gap-3">
+                          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-amber-400">
+                            <ItemIcon className="size-4" aria-hidden="true" />
+                          </span>
+                          <p className="font-semibold">{text as string}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="relative min-h-96 bg-stone-950 p-6 sm:p-10">
+                  <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(rgb(245_158_11)_1px,transparent_1px)] [background-size:1.5rem_1.5rem]" />
+                  <div className="relative mx-auto max-w-md">
+                    <div className="rounded-2xl border border-stone-700 bg-stone-900 p-4 shadow-2xl">
+                      <div className="flex items-center gap-2 border-b border-stone-700 pb-3">
+                        <span className="size-2.5 rounded-full bg-red-400" />
+                        <span className="size-2.5 rounded-full bg-amber-400" />
+                        <span className="size-2.5 rounded-full bg-emerald-400" />
+                        <div className="ml-2 flex-1 rounded-lg bg-stone-800 px-3 py-1.5 text-center text-xs text-stone-300">
+                          northstar.beamline.app
+                        </div>
+                      </div>
+                      <div className="mt-4 rounded-xl bg-stone-800 p-5">
+                        <div className="flex items-center gap-3">
+                          <span className="flex size-10 items-center justify-center rounded-xl bg-amber-400 font-black text-stone-950">N</span>
+                          <div>
+                            <p className="font-black text-white">Northstar Custom Homes</p>
+                            <p className="text-xs text-stone-400">Private operations workspace</p>
+                          </div>
+                        </div>
+                        <div className="mt-5 grid grid-cols-2 gap-3">
+                          {[
+                            ["$8.4M", "Active pipeline"],
+                            ["7", "Live projects"],
+                            ["4", "Items to review"],
+                            ["96%", "On-time tasks"],
+                          ].map(([value, label]) => (
+                            <div key={label} className="rounded-xl bg-stone-900 p-3">
+                              <p className="text-lg font-black text-white">{value}</p>
+                              <p className="mt-1 text-xs text-stone-400">{label}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mx-auto mt-5 flex w-fit items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-xs font-bold text-emerald-300">
+                      <ShieldCheck className="size-4" aria-hidden="true" />
+                      Workspace isolated and secure
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="how-it-works" className="border-y border-stone-200 bg-white py-20 sm:py-28 dark:border-stone-800 dark:bg-stone-900">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <SectionHeader
+              eyebrow="A complete operating rhythm"
+              title="From first enquiry to repeatable growth."
+              description="Beamline follows the life of the work, so your business never loses context between sales, project delivery, and finance."
+            />
+            <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {phases.map(([number, title, description]) => (
+                <article key={number} className="relative rounded-2xl border border-stone-200 bg-stone-50 p-6 dark:border-stone-700 dark:bg-stone-950">
+                  <p className="text-4xl font-black text-amber-400">{number}</p>
+                  <Heading as="h3" className="mt-5 text-xl font-black">{title}</Heading>
+                  <p className="mt-3 text-sm leading-6 text-stone-600 dark:text-stone-300">{description}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="pricing" className="py-20 sm:py-28">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <SectionHeader
+              eyebrow="Simple plans"
+              title="Start with structure. Scale with confidence."
+              description="Choose the operating foundation that fits your team today. Every plan includes a private company workspace and guided setup."
+              align="center"
+            />
+            <div className="mt-12 grid items-stretch gap-5 lg:grid-cols-3">
+              {plans.map((plan) => (
+                <article
+                  key={plan.name}
+                  className={`relative flex flex-col rounded-3xl border p-7 sm:p-8 ${
+                    plan.featured
+                      ? "border-amber-400 bg-stone-950 text-white shadow-2xl shadow-amber-900/10"
+                      : "border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900"
+                  }`}
+                >
+                  {plan.featured && (
+                    <span className="absolute right-5 top-5 rounded-full bg-amber-400 px-3 py-1 text-xs font-black text-stone-950">
+                      Most popular
+                    </span>
+                  )}
+                  <p className={`text-sm font-black ${plan.featured ? "text-amber-400" : "text-amber-600 dark:text-amber-400"}`}>
+                    {plan.name}
+                  </p>
+                  <p className="mt-4 text-4xl font-black tracking-tight">
+                    {plan.price}
+                    {plan.price.startsWith("$") && <span className="text-base font-semibold text-stone-400"> / month</span>}
+                  </p>
+                  <p className={`mt-4 min-h-20 leading-6 ${plan.featured ? "text-stone-300" : "text-stone-600 dark:text-stone-300"}`}>
+                    {plan.description}
+                  </p>
+                  <ul className="mt-6 space-y-3">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex gap-3 text-sm font-semibold">
+                        <Check className={`mt-0.5 size-4 shrink-0 ${plan.featured ? "text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`} aria-hidden="true" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/admin"
+                    className={`mt-8 inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-black transition ${
+                      plan.featured
+                        ? "bg-amber-400 text-stone-950 hover:bg-amber-300"
+                        : "bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
+                    }`}
+                  >
+                    {plan.name === "Enterprise" ? "Talk to our team" : "Explore this plan"}
+                    <ArrowRight className="size-4" aria-hidden="true" />
+                  </Link>
+                </article>
+              ))}
+            </div>
+            <p className="mt-6 text-center text-sm text-stone-500 dark:text-stone-400">
+              Pricing shown in USD. Onboarding scope depends on migration and customization needs.
             </p>
           </div>
+        </section>
 
-          {/* Pill Selector */}
-          <div className="mt-10 flex justify-center overflow-x-auto pb-1">
-            <div className="inline-flex rounded-2xl bg-slate-100 p-1.5 dark:bg-slate-900 border border-transparent dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => setActiveFeatureTab("sales")}
-                className={`flex items-center gap-2 rounded-xl px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold transition cursor-pointer whitespace-nowrap ${
-                  activeFeatureTab === "sales"
-                    ? "bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white"
-                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
-                }`}
-              >
-                <Users className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                <span>Sales &amp; Deals</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveFeatureTab("projects")}
-                className={`flex items-center gap-2 rounded-xl px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold transition cursor-pointer whitespace-nowrap ${
-                  activeFeatureTab === "projects"
-                    ? "bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white"
-                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
-                }`}
-              >
-                <Layers className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                <span>4-Phase Job Sites</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveFeatureTab("invoices")}
-                className={`flex items-center gap-2 rounded-xl px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold transition cursor-pointer whitespace-nowrap ${
-                  activeFeatureTab === "invoices"
-                    ? "bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white"
-                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
-                }`}
-              >
-                <Workflow className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                <span>Automated Invoices</span>
-              </button>
+        <section id="faq" className="border-y border-stone-200 bg-white py-20 sm:py-28 dark:border-stone-800 dark:bg-stone-900">
+          <div className="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[0.75fr_1.25fr] lg:px-8">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-600 dark:text-amber-400">Questions, answered</p>
+              <Heading as="h2" className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
+                Know what you’re building on.
+              </Heading>
+              <p className="mt-4 leading-7 text-stone-600 dark:text-stone-300">
+                A practical platform should be clear before your team ever logs in.
+              </p>
+              <div className="mt-7 rounded-2xl bg-stone-100 p-5 dark:bg-stone-800">
+                <MailCheck className="size-6 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+                <p className="mt-3 font-black">Have a workflow question?</p>
+                <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">We’ll map your current process and show where Beamline fits.</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {faqs.map((faq) => (
+                <details key={faq.question} className="group rounded-2xl border border-stone-200 bg-stone-50 p-5 open:bg-white dark:border-stone-700 dark:bg-stone-950 dark:open:bg-stone-950">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-black">
+                    {faq.question}
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-stone-200 text-stone-700 transition group-open:rotate-45 dark:bg-stone-800 dark:text-stone-200">
+                      <ChevronRight className="size-4 rotate-45" aria-hidden="true" />
+                    </span>
+                  </summary>
+                  <p className="mt-4 max-w-2xl pr-10 text-sm leading-7 text-stone-600 dark:text-stone-300">{faq.answer}</p>
+                </details>
+              ))}
             </div>
           </div>
+        </section>
 
-          {/* Interactive Feature Display */}
-          <div className="mt-8 rounded-3xl border border-slate-200/80 bg-[#fafaf9] p-6 sm:p-10 shadow-xs dark:border-slate-800 dark:bg-slate-900/60">
-            {activeFeatureTab === "sales" && (
-              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-2">
-                <div className="space-y-4">
-                  <span className="inline-block rounded-full bg-indigo-50 dark:bg-indigo-950/70 px-3 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300">
-                    High-Touch Client Relationship Management
-                  </span>
-                  <h3 className="text-2xl font-bold text-slate-900 sm:text-3xl dark:text-white">
-                    Never let a high-value referral slip through the cracks
-                  </h3>
-                  <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                    When high-net-worth clients reach out through architect partners or past clients,
-                    track them cleanly from first inquiry to signed building agreement.
-                  </p>
-                  <ul className="space-y-2.5 pt-2 text-sm text-slate-700 dark:text-slate-300">
-                    <li className="flex items-center gap-2.5">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span>Clear stages: Qualification → Design Agreement → Construction Agreement</span>
-                    </li>
-                    <li className="flex items-center gap-2.5">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span>&ldquo;Requires Kevin&apos;s Review&rdquo; flag brings critical custom requests directly to founder</span>
-                    </li>
-                    <li className="flex items-center gap-2.5">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span>One-click contact logging for calls, meetings, and architectural site visits</span>
-                    </li>
-                  </ul>
-                  <div className="pt-4">
-                    <Link href="/admin" className="btn-primary">
-                      <span>View Sales Pipeline in Admin</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </div>
-                </div>
+        <section className="bg-amber-400 py-16 sm:py-20">
+          <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 px-4 sm:px-6 lg:flex-row lg:items-center lg:px-8">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-stone-700">Ready to operate differently?</p>
+              <Heading as="h2" className="mt-3 max-w-3xl text-3xl font-black tracking-tight text-stone-950 sm:text-5xl">
+                Build the company with the same care you build the work.
+              </Heading>
+            </div>
+            <Link href="/admin" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-stone-950 px-6 py-3.5 text-sm font-black text-white transition hover:bg-stone-800">
+              Open Beamline
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
+          </div>
+        </section>
+      </main>
 
-                {/* Simulated UI Card */}
-                <div className="card space-y-3.5 p-6 shadow-md dark:border-slate-800">
-                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                      Live Deal Highlight
-                    </span>
-                    <span className="rounded-full bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-200 dark:ring-emerald-800">
-                      Design Agreement
-                    </span>
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-bold text-slate-900 dark:text-white">
-                      Mercer Modern Hillside Residence
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Client: Alexandra &amp; David Mercer • Owner: Jordan Blake
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 text-xs">
-                    <div>
-                      <span className="text-slate-400 dark:text-slate-500">Estimated Value</span>
-                      <div className="text-base font-bold text-slate-900 dark:text-white">$3,250,000</div>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 dark:text-slate-500">Next Action</span>
-                      <div className="font-semibold text-slate-800 dark:text-slate-200">Soils report review</div>
-                    </div>
-                  </div>
-                  <div className="rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/70 dark:bg-amber-950/30 p-3 text-xs text-amber-900 dark:text-amber-200">
-                    <strong>Founder Review:</strong> Cantilever engineering requires structural sign-off.
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeFeatureTab === "projects" && (
-              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-2">
-                <div className="space-y-4">
-                  <span className="inline-block rounded-full bg-emerald-50 dark:bg-emerald-950/70 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                    4-Phase Standardized Delivery
-                  </span>
-                  <h3 className="text-2xl font-bold text-slate-900 sm:text-3xl dark:text-white">
-                    Standardized checklists across every custom home
-                  </h3>
-                  <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                    Every luxury build is unique, but the operational rhythm doesn&apos;t have to be.
-                    Keep project managers, city inspectors, and trades completely aligned.
-                  </p>
-                  <ul className="space-y-2.5 pt-2 text-sm text-slate-700 dark:text-slate-300">
-                    <li className="flex items-center gap-2.5">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span>Phase 1 (Pre-Construction): Permits, engineering, baseline schedules</span>
-                    </li>
-                    <li className="flex items-center gap-2.5">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span>Phase 2 (Construction): Framing, rough MEP, milestone inspections</span>
-                    </li>
-                    <li className="flex items-center gap-2.5">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span>Phase 3 (Closeout): Certificate of Occupancy &amp; client walkthroughs</span>
-                    </li>
-                    <li className="flex items-center gap-2.5">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span>Phase 4 (Warranty): 30-day &amp; 11-month post-handover care</span>
-                    </li>
-                  </ul>
-                  <div className="pt-4">
-                    <Link href="/admin" className="btn-primary">
-                      <span>View Active Builds in Admin</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Simulated Project Card */}
-                <div className="card space-y-4 p-6 shadow-md dark:border-slate-800">
-                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                    <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                      PRJ-101
-                    </span>
-                    <span className="rounded-full bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-200 dark:ring-emerald-800">
-                      On Track
-                    </span>
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-bold text-slate-900 dark:text-white">
-                      Oakridge Estate Custom Residence
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      PM: Marcus Vance • 1288 Oakridge Rd, Woodside
-                    </p>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                      <span>Phase 2: Active Construction</span>
-                      <span>65% Complete</span>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                      <div className="h-full bg-indigo-600 dark:bg-indigo-500 rounded-full" style={{ width: "65%" }} />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 text-xs pt-1">
-                    <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-2.5">
-                      <span className="text-slate-400 dark:text-slate-500">Contract Budget</span>
-                      <div className="text-sm font-bold text-slate-900 dark:text-white">$4,250,000</div>
-                    </div>
-                    <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-2.5">
-                      <span className="text-slate-400 dark:text-slate-500">Target Completion</span>
-                      <div className="text-sm font-bold text-slate-900 dark:text-white">Nov 2026</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeFeatureTab === "invoices" && (
-              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-2">
-                <div className="space-y-4">
-                  <span className="inline-block rounded-full bg-purple-50 dark:bg-purple-950/70 px-3 py-1 text-xs font-semibold text-purple-700 dark:text-purple-300">
-                    Automated Invoices &amp; Margin Protection
-                  </span>
-                  <h3 className="text-2xl font-bold text-slate-900 sm:text-3xl dark:text-white">
-                    Stop margin bleed before payments go out
-                  </h3>
-                  <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                    Subcontractor bills and supplier receipts sent by email are automatically parsed.
-                    Amounts are matched to the right job, duplicates are rejected, and budget variances alert you instantly.
-                  </p>
-                  <ul className="space-y-2.5 pt-2 text-sm text-slate-700 dark:text-slate-300">
-                    <li className="flex items-center gap-2.5">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span>Zero manual data entry: forwards invoice PDFs directly from email</span>
-                    </li>
-                    <li className="flex items-center gap-2.5">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span>Instant duplicate protection prevents paying the same bill twice</span>
-                    </li>
-                    <li className="flex items-center gap-2.5">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span>In-place status updates mark bills &ldquo;Paid&rdquo; when receipts arrive</span>
-                    </li>
-                  </ul>
-                  <div className="pt-4">
-                    <Link href="/admin" className="btn-primary">
-                      <span>Test Invoice Ingestion in Admin</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Simulated Invoice Card */}
-                <div className="card space-y-3.5 p-6 shadow-md dark:border-slate-800">
-                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                    <span className="font-mono text-xs font-bold text-purple-700 dark:text-purple-400">
-                      INV-2026-501
-                    </span>
-                    <span className="rounded-full bg-amber-50 dark:bg-amber-950/60 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:text-amber-300 ring-1 ring-amber-200 dark:ring-amber-800">
-                      Unpaid
-                    </span>
-                  </div>
-                  <div>
-                    <h4 className="text-base font-bold text-slate-900 dark:text-white">
-                      Sierra Valley HVAC Solutions
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Linked to PRJ-101 Oakridge Estate • Rough-in ductwork package
-                    </p>
-                  </div>
-                  <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 text-xs flex items-center justify-between">
-                    <div>
-                      <span className="text-slate-400 dark:text-slate-500">Invoice Amount</span>
-                      <div className="text-lg font-bold text-slate-900 dark:text-white">$18,500.00</div>
-                    </div>
-                    <span className="rounded-md bg-emerald-100 dark:bg-emerald-950 px-2 py-1 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
-                      Matched to Budget Code 15-HVAC
-                    </span>
-                  </div>
-                  <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/30 p-2.5 text-xs text-emerald-900 dark:text-emerald-200 flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                    <span>Audited &amp; committed to financial ledger.</span>
-                  </div>
-                </div>
-              </div>
-            )}
+      <footer className="bg-stone-950 text-stone-300">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-2 lg:px-8">
+          <div className="flex items-center gap-3">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-amber-400 text-stone-950">
+              <Building2 className="size-5" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="font-black text-white">Beamline Construction OS</p>
+              <p className="text-xs text-stone-500">Built for custom builders ready to grow.</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-x-6 gap-y-3 md:justify-end">
+            <Link href="#benefits" className="text-sm font-semibold transition hover:text-amber-400">Benefits</Link>
+            <Link href="#platform" className="text-sm font-semibold transition hover:text-amber-400">Platform</Link>
+            <Link href="#pricing" className="text-sm font-semibold transition hover:text-amber-400">Pricing</Link>
+            <Link href="#faq" className="text-sm font-semibold transition hover:text-amber-400">FAQ</Link>
           </div>
         </div>
-      </section>
-
-      {/* ------------------------------------------------------------ */}
-      {/* 4-Phase Lifecycle Strip                                       */}
-      {/* ------------------------------------------------------------ */}
-      <section id="lifecycle" className="py-16 sm:py-24 bg-[#f7f7f5] transition-colors duration-200 dark:bg-[#0b0f19]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-              The Building Rhythm
-            </span>
-            <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-white">
-              From Soil to Keys to 1-Year Warranty
-            </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-slate-600 dark:text-slate-400 text-sm sm:text-base">
-              A standardized sequence that keeps everyone honest, calm, and on schedule.
+        <div className="border-t border-stone-800">
+          <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-5 text-xs text-stone-500 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+            <p>© 2026 Beamline. Construction operations, connected.</p>
+            <p className="flex items-center gap-2">
+              <Clock3 className="size-3.5" aria-hidden="true" />
+              Ready for the next project
             </p>
-          </div>
-
-          <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="card p-6 border-t-4 border-t-indigo-500">
-              <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                Phase 1
-              </span>
-              <h3 className="mt-1 text-lg font-bold text-slate-900 dark:text-white">
-                Pre-Construction
-              </h3>
-              <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-                Permits, architectural revisions, engineering sign-offs, and baseline budget schedules.
-              </p>
-            </div>
-
-            <div className="card p-6 border-t-4 border-t-emerald-500">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                Phase 2
-              </span>
-              <h3 className="mt-1 text-lg font-bold text-slate-900 dark:text-white">
-                Active Building
-              </h3>
-              <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-                Excavation, concrete foundations, structural timber &amp; steel, rough trades, and inspections.
-              </p>
-            </div>
-
-            <div className="card p-6 border-t-4 border-t-amber-500">
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                Phase 3
-              </span>
-              <h3 className="mt-1 text-lg font-bold text-slate-900 dark:text-white">
-                Handover &amp; Closeout
-              </h3>
-              <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-                Punchlist completion, final inspections, Certificate of Occupancy, and owner orientation.
-              </p>
-            </div>
-
-            <div className="card p-6 border-t-4 border-t-purple-500">
-              <span className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
-                Phase 4
-              </span>
-              <h3 className="mt-1 text-lg font-bold text-slate-900 dark:text-white">
-                12-Month Warranty
-              </h3>
-              <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-                Scheduled 30-day and 11-month walkthroughs with dedicated service tracking for the client.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ------------------------------------------------------------ */}
-      {/* Simple Before vs After Comparison                             */}
-      {/* ------------------------------------------------------------ */}
-      <section
-        id="comparison"
-        className="py-16 sm:py-24 border-t border-slate-200/80 bg-white transition-colors duration-200 dark:border-slate-800/80 dark:bg-[#0f1523]"
-      >
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-              The Real Difference
-            </span>
-            <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-white">
-              Why builders switch from spreadsheets
-            </h2>
-          </div>
-
-          <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2">
-            {/* The Old Way */}
-            <div className="rounded-3xl border border-rose-200 bg-rose-50/50 p-6 sm:p-8 dark:border-rose-900/40 dark:bg-rose-950/20">
-              <div className="inline-flex rounded-full bg-rose-100 dark:bg-rose-900/60 px-3 py-1 text-xs font-bold text-rose-800 dark:text-rose-300">
-                The Old Chaotic Way
-              </div>
-              <ul className="mt-6 space-y-3.5 text-sm text-slate-700 dark:text-slate-300">
-                <li className="flex items-start gap-2.5">
-                  <span className="text-rose-500 font-bold">✕</span>
-                  <span>Invoices buried in messy email threads and glove boxes</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <span className="text-rose-500 font-bold">✕</span>
-                  <span>Duplicate payments made to subcontractors by mistake</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <span className="text-rose-500 font-bold">✕</span>
-                  <span>Surprise budget overruns discovered only at job closeout</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <span className="text-rose-500 font-bold">✕</span>
-                  <span>Founder spends 15+ weekend hours on manual paperwork</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* The OS Way */}
-            <div className="rounded-3xl border border-emerald-200 bg-emerald-50/50 p-6 sm:p-8 dark:border-emerald-900/40 dark:bg-emerald-950/20">
-              <div className="inline-flex rounded-full bg-emerald-100 dark:bg-emerald-900/60 px-3 py-1 text-xs font-bold text-emerald-800 dark:text-emerald-300">
-                With Construction OS
-              </div>
-              <ul className="mt-6 space-y-3.5 text-sm text-slate-700 dark:text-slate-300">
-                <li className="flex items-start gap-2.5">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
-                  <span>Subcontractor invoices automatically parsed and logged</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
-                  <span>Duplicate bills blocked before checks are written</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
-                  <span>Real-time budget tracking on every phase and trade code</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
-                  <span>Founder has total clarity to focus on craft and client relationships</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ------------------------------------------------------------ */}
-      {/* Bottom Call to Action                                        */}
-      {/* ------------------------------------------------------------ */}
-      <section className="py-16 sm:py-20 bg-indigo-900 dark:bg-indigo-950 text-white border-t border-indigo-800 dark:border-indigo-900">
-        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-white">
-            Ready to streamline your luxury residential operations?
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-indigo-200 dark:text-indigo-300 text-sm sm:text-base">
-            Access the clean admin panel to manage deals, monitor live build milestones,
-            and process invoices instantly.
-          </p>
-          <div className="mt-8 flex justify-center">
-            <Link
-              href="/admin"
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3 text-base font-semibold text-indigo-900 shadow-lg transition hover:bg-indigo-50 cursor-pointer"
-            >
-              <span>Enter Admin Panel</span>
-              <ArrowRight className="h-5 w-5" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ------------------------------------------------------------ */}
-      {/* Footer                                                       */}
-      {/* ------------------------------------------------------------ */}
-      <footer className="border-t border-slate-200 bg-white py-8 transition-colors duration-200 dark:border-slate-800 dark:bg-[#0f1523]">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 text-xs text-slate-500 dark:text-slate-400 sm:flex-row sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-            <span className="font-semibold text-slate-700 dark:text-slate-300">
-              Kevin&apos;s Construction OS
-            </span>
-            <span>• Luxury Residential Management</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/admin" className="text-indigo-600 dark:text-indigo-400 hover:underline">
-              Admin Panel
-            </Link>
-            <span>•</span>
-            <span>All rights reserved.</span>
           </div>
         </div>
       </footer>

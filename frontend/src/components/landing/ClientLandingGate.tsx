@@ -7,11 +7,15 @@ import { apiClient } from "@/lib/api-client";
 import type { OAuthPublicConfig } from "@/lib/types";
 import { ClientLandingPage } from "./ClientLandingPage";
 import { LandingPage } from "./LandingPage";
+import { PlatformIntro, shouldPlayPlatformIntro } from "./PlatformIntro";
 
 export function ClientLandingGate() {
   const router = useRouter();
   const [config, setConfig] = useState<OAuthPublicConfig | null>(null);
   const [isChecking, setIsChecking] = useState(true);
+  // Opening intro runs on the initial page load only; it also covers tenant discovery.
+  const [introActive, setIntroActive] = useState(shouldPlayPlatformIntro);
+  const [introRevealed, setIntroRevealed] = useState(false);
 
   useEffect(() => {
     let isActive = true;
@@ -44,7 +48,17 @@ export function ClientLandingGate() {
     };
   }, [router]);
 
+  const intro = introActive ? (
+    <PlatformIntro
+      ready={!isChecking}
+      exitStyle={config?.tenant ? "fade" : "split"}
+      onReveal={() => setIntroRevealed(true)}
+      onDone={() => setIntroActive(false)}
+    />
+  ) : null;
+
   if (isChecking) {
+    if (intro) return intro;
     return (
       <main className="flex min-h-screen items-center justify-center bg-stone-950 px-6 text-center text-stone-50">
         <div className="flex flex-col items-center gap-5">
@@ -63,8 +77,18 @@ export function ClientLandingGate() {
   }
 
   if (config?.tenant) {
-    return <ClientLandingPage tenant={config.tenant} />;
+    return (
+      <>
+        <ClientLandingPage tenant={config.tenant} />
+        {intro}
+      </>
+    );
   }
 
-  return <LandingPage />;
+  return (
+    <>
+      <LandingPage introState={introActive && !introRevealed ? "hold" : "play"} />
+      {intro}
+    </>
+  );
 }

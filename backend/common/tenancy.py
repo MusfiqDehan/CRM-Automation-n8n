@@ -274,3 +274,143 @@ class TenantManager(models.Manager):
         if tenant:
             return qs.filter(organization=tenant)
         return qs
+
+
+class ClientSubscription(models.Model):
+    """Tracks client tenant billing subscription, payment status, and renewal."""
+
+    class PlanTier(models.TextChoices):
+        STARTER = "Starter", "Starter Builder ($199/mo)"
+        PRO = "Pro", "Professional Contractor ($499/mo)"
+        ENTERPRISE = "Enterprise", "Enterprise Developer ($899/mo)"
+
+    class Status(models.TextChoices):
+        ACTIVE = "Active", "Active"
+        TRIALING = "Trialing", "Trialing"
+        PAST_DUE = "Past Due", "Past Due"
+        CANCELED = "Canceled", "Canceled"
+
+    class BillingCycle(models.TextChoices):
+        MONTHLY = "Monthly", "Monthly"
+        ANNUAL = "Annual", "Annual (15% discount)"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    organization = models.OneToOneField(
+        Organization, on_delete=models.CASCADE, related_name="subscription"
+    )
+    plan_tier = models.CharField(
+        max_length=32, choices=PlanTier.choices, default=PlanTier.ENTERPRISE, db_index=True
+    )
+    monthly_price = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("899.00")
+    )
+    billing_cycle = models.CharField(
+        max_length=24, choices=BillingCycle.choices, default=BillingCycle.MONTHLY
+    )
+    status = models.CharField(
+        max_length=24, choices=Status.choices, default=Status.ACTIVE, db_index=True
+    )
+    payment_method = models.CharField(
+        max_length=100, default="Stripe Card •••• 4242"
+    )
+    next_billing_date = models.DateField(null=True, blank=True)
+    last_payment_date = models.DateField(null=True, blank=True)
+    total_paid_ytd = models.DecimalField(
+        max_digits=12, decimal_places=2, default=Decimal("5394.00")
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.organization.name} - {self.plan_tier} ({self.status})"
+
+
+class ClientSupportTicket(models.Model):
+    """Support requests & queries submitted by client builder organizations."""
+
+    class Category(models.TextChoices):
+        DOMAIN_DNS = "Domain & DNS", "Custom Domain & DNS"
+        GOOGLE_OAUTH = "Google OAuth", "Google OAuth Configuration"
+        BILLING = "Billing", "Billing & Subscription"
+        FEATURE = "Feature Request", "Feature Request & Modules"
+        TECHNICAL = "Technical Support", "Technical Support"
+
+    class Priority(models.TextChoices):
+        LOW = "Low", "Low Priority"
+        MEDIUM = "Medium", "Medium Priority"
+        HIGH = "High", "High Priority"
+        CRITICAL = "Critical", "Critical Priority"
+
+    class Status(models.TextChoices):
+        OPEN = "Open", "Open"
+        IN_PROGRESS = "In Progress", "In Progress"
+        WAITING = "Waiting on Client", "Waiting on Client"
+        RESOLVED = "Resolved", "Resolved"
+        CLOSED = "Closed", "Closed"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="support_tickets"
+    )
+    submitted_by_name = models.CharField(max_length=180, blank=True, default="")
+    submitted_by_email = models.EmailField()
+    subject = models.CharField(max_length=255)
+    category = models.CharField(
+        max_length=48, choices=Category.choices, default=Category.TECHNICAL, db_index=True
+    )
+    priority = models.CharField(
+        max_length=24, choices=Priority.choices, default=Priority.MEDIUM, db_index=True
+    )
+    status = models.CharField(
+        max_length=32, choices=Status.choices, default=Status.OPEN, db_index=True
+    )
+    message = models.TextField()
+    admin_notes = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"[{self.priority}] {self.subject} ({self.organization.slug})"
+
+
+class PlatformNotification(models.Model):
+    """System-wide announcements & broadcast alerts sent to client organizations."""
+
+    class Severity(models.TextChoices):
+        INFO = "info", "Information"
+        WARNING = "warning", "Warning"
+        CRITICAL = "critical", "Critical Alert"
+        SUCCESS = "success", "Operational Notice"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    severity = models.CharField(
+        max_length=24, choices=Severity.choices, default=Severity.INFO, db_index=True
+    )
+    target_organization = models.ForeignKey(
+        Organization,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="platform_notifications",
+        help_text="If null, applies as a platform-wide announcement to all client tenants.",
+    )
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        target = self.target_organization.slug if self.target_organization else "ALL"
+        return f"[{self.severity.upper()}] {self.title} -> {target}"
+

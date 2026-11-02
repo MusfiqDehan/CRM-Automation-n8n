@@ -409,3 +409,94 @@ export interface OAuthPublicConfig {
   };
 }
 
+export interface SuperadminDashboardStats {
+  kpis: {
+    total_organizations: number;
+    active_organizations: number;
+    suspended_organizations: number;
+    total_users: number;
+    active_users: number;
+    mrr: number;
+    annual_run_rate: number;
+    open_support_queries: number;
+    active_system_broadcasts: number;
+  };
+  platform: {
+    platform_name: string;
+    base_domain: string;
+    google_oauth_enabled: boolean;
+    has_google_secret: boolean;
+  };
+  recent_activity: Array<{
+    id: string;
+    title: string;
+    description: string;
+    timestamp: string;
+    type: "tenant" | "billing" | "support" | "security";
+  }>;
+}
+
+export interface PlatformUser {
+  id: string;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  is_active: boolean;
+  is_superuser: boolean;
+  date_joined: string;
+  last_login: string | null;
+  organization: string | null;
+  organization_name: string | null;
+  role: string;
+}
+
+export interface ClientSubscription {
+  id: string;
+  organization: string;
+  organization_name: string;
+  organization_slug: string;
+  plan_tier: "Starter" | "Pro" | "Enterprise";
+  monthly_price: number | string;
+  billing_cycle: "Monthly" | "Annual";
+  status: "Active" | "Trialing" | "Past Due" | "Canceled";
+  payment_method: string;
+  next_billing_date: string | null;
+  last_payment_date: string | null;
+  total_paid_ytd: number | string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClientSupportTicket {
+  id: string;
+  organization: string;
+  organization_name: string;
+  organization_slug: string;
+  submitted_by_name: string;
+  submitted_by_email: string;
+  subject: string;
+  category: "Domain & DNS" | "Google OAuth" | "Billing" | "Feature Request" | "Technical Support";
+  priority: "Low" | "Medium" | "High" | "Critical";
+  status: "Open" | "In Progress" | "Waiting on Client" | "Resolved" | "Closed";
+  message: string;
+  admin_notes: string;
+  created_at: string;
+  updated_at: string;
+  resolved_at: string | null;
+}
+
+export interface PlatformNotification {
+  id: string;
+  title: string;
+  message: string;
+  severity: "info" | "warning" | "critical" | "success";
+  target_organization: string | null;
+  target_organization_name: string | null;
+  target_organization_slug: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+

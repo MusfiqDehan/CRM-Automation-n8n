@@ -30,7 +30,8 @@ import {
 } from "lucide-react";
 import { BeamLineLogo, BeamLineMark } from "@/components/brand/BeamLineLogo";
 import { AuthModal, AuthGate } from "@/components/auth/AuthModal";
-import { SuperAdminModal, SuperAdminControlPlane } from "@/components/admin/SuperAdminModal";
+import { PlatformSuperAdminPortal } from "@/components/admin/PlatformSuperAdminPortal";
+import { SuperAdminModal } from "@/components/admin/SuperAdminModal";
 import { TenantSettingsModal } from "@/components/admin/TenantSettingsModal";
 import {
   ContactFormModal,
@@ -69,7 +70,7 @@ import type {
   SimulatorTriggerResponse,
 } from "@/lib/types";
 
-export type AdminTab = "platform" | "overview" | "crm" | "projects" | "automation";
+export type AdminTab = "overview" | "crm" | "projects" | "automation";
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
@@ -83,6 +84,7 @@ export function AdminDashboard() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [currentRole, setCurrentRole] = useState<string>("Owner");
   const [activeOrg, setActiveOrg] = useState<Organization | null>(null);
+  const [inspectingOrg, setInspectingOrg] = useState<Organization | null>(null);
   const [userOrgs, setUserOrgs] = useState<
     Array<{ id: string; name: string; slug: string; role: string; is_active: boolean }>
   >([]);
@@ -272,17 +274,6 @@ export function AdminDashboard() {
     badgeCount?: number;
     badgeTone?: "amber" | "emerald" | "red";
   }> = [
-    ...(isSuperadmin
-      ? [
-          {
-            id: "platform" as const,
-            label: "Platform Control Plane",
-            shortLabel: "Platform",
-            description: "Govern clients, auth & flags",
-            icon: ShieldCheck,
-          },
-        ]
-      : []),
     {
       id: "overview",
       label: "Dashboard",
@@ -326,7 +317,6 @@ export function AdminDashboard() {
   };
 
   const filteredNavItems = navItems.filter((item) => {
-    if (item.id === "platform") return isSuperadmin;
     if (!activeOrg?.feature_flags) return true;
     if (item.id === "overview") return activeOrg.feature_flags.page_overview !== false;
     if (item.id === "crm") return activeOrg.feature_flags.page_crm !== false;
@@ -334,12 +324,6 @@ export function AdminDashboard() {
     if (item.id === "automation") return activeOrg.feature_flags.page_automation !== false;
     return true;
   });
-
-  useEffect(() => {
-    if (currentUser && isSuperadmin && !activeOrg) {
-      setActiveTab("platform");
-    }
-  }, [currentUser, isSuperadmin, activeOrg]);
 
   useEffect(() => {
     if (filteredNavItems.length > 0 && !filteredNavItems.some((n) => n.id === activeTab)) {
@@ -493,10 +477,6 @@ export function AdminDashboard() {
   ];
 
   const pageMeta: Record<AdminTab, { title: string; subtitle: string }> = {
-    platform: {
-      title: "Platform Control Plane",
-      subtitle: "Multi-tenant builder organization governance, routing, and global authentication",
-    },
     overview: {
       title: "Executive Dashboard",
       subtitle: "High-level snapshot of pipeline, builds, and priority items",
@@ -541,8 +521,58 @@ export function AdminDashboard() {
     );
   }
 
+  // 3. Platform Superadmin Portal:
+  // When logged in as Platform Superadmin and NOT inspecting a client workspace,
+  // render the dedicated PlatformSuperAdminPortal!
+  // Platform Superadmin manages clients, users, subscriptions, queries, notifications, settings.
+  // Platform Superadmin is NOT doing construction builds or drywall tasks!
+  if (isSuperadmin && !inspectingOrg) {
+    return (
+      <PlatformSuperAdminPortal
+        currentUser={currentUser}
+        onLogout={() => {
+          apiClient.clearAuth();
+          setCurrentUser(null);
+          setCurrentRole("Guest");
+          setRefreshCounter((c) => c + 1);
+        }}
+        onInspectOrg={(org) => {
+          setActiveOrg(org);
+          setInspectingOrg(org);
+          setActiveTab("overview");
+          showToast(`Now inspecting workspace for ${org.name}`);
+        }}
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-900 transition-colors duration-200 dark:bg-stone-950 dark:text-stone-100 flex flex-col lg:flex-row">
+    <div
+      className={`min-h-screen bg-stone-50 text-stone-900 transition-colors duration-200 dark:bg-stone-950 dark:text-stone-100 flex flex-col lg:flex-row ${
+        isSuperadmin && inspectingOrg ? "pt-10" : ""
+      }`}
+    >
+      {/* Platform Superadmin Inspection Exit Banner */}
+      {isSuperadmin && inspectingOrg && (
+        <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between gap-4 border-b border-amber-300 bg-amber-500 px-4 py-2 text-stone-950 font-medium text-xs shadow-md">
+          <div className="flex items-center gap-2 truncate">
+            <ShieldCheck className="h-4 w-4 shrink-0" />
+            <span className="truncate">
+              Platform Superadmin Support Mode: Inspecting <strong>{inspectingOrg.name}</strong> ({inspectingOrg.subdomain_host}).
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setInspectingOrg(null);
+              setActiveOrg(null);
+            }}
+            className="rounded-lg bg-stone-900 px-3 py-1 text-white hover:bg-stone-800 transition text-[11px] font-bold shrink-0 cursor-pointer"
+          >
+            Exit Inspection &amp; Return to Platform Superadmin Portal
+          </button>
+        </div>
+      )}
       {/* Toast Notification */}
       {toast && (
         <div
@@ -865,39 +895,6 @@ export function AdminDashboard() {
             </div>
           ) : (
             <>
-          {/* ======================================================== */}
-          {/* TAB 0: PLATFORM SUPERADMIN CONTROL PLANE                  */}
-          {/* ======================================================== */}
-          {activeTab === "platform" && isSuperadmin && (
-            <SuperAdminControlPlane
-              isEmbedded={true}
-              onInspectWorkspace={(org) => {
-                setActiveOrg(org);
-                setActiveTab("overview");
-                showToast(`Now inspecting workspace for ${org.name}`, "success");
-              }}
-              onOrganizationsChanged={fetchAuthAndTenant}
-            />
-          )}
-
-          {isSuperadmin && activeTab !== "platform" && (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900 shadow-xs dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200">
-              <div className="flex items-center gap-2.5">
-                <ShieldCheck className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
-                <span className="text-sm font-medium">
-                  Platform Superadmin: Currently inspecting <strong>{activeOrg?.name || "Client Workspace"}</strong> ({activeOrg?.slug || "workspace"}).
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveTab("platform")}
-                className="btn-secondary btn-xs font-semibold self-start sm:self-auto cursor-pointer"
-              >
-                Return to Platform Control Plane
-              </button>
-            </div>
-          )}
-
           {/* ======================================================== */}
           {/* TAB 1: OVERVIEW DASHBOARD                                 */}
           {/* ======================================================== */}

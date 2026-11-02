@@ -128,36 +128,25 @@ test.describe("Beamline — Commercial Multi-Tenant CRM & OS E2E Verification", 
     await page.reload();
     await ensureAuthenticated(page, "admin");
 
-    // Verify Beamline branding visible in viewport
+    // Verify Beamline branding & Platform Superadmin Portal in viewport
     await expect(page.getByText("Beamline").filter({ visible: true }).first()).toBeVisible();
+    await expect(page.getByText("Platform Control Plane").filter({ visible: true }).first()).toBeVisible();
+    await expect(page.getByText(/Client Organizations/i).first()).toBeVisible();
+    await expect(page.getByText(/Subscriptions & MRR/i).first()).toBeVisible();
+    await expect(page.getByText(/Client Support & Inquiries/i).first()).toBeVisible();
+    await expect(page.getByText(/System Broadcasts/i).first()).toBeVisible();
 
-    // Verify Superadmin button exists and opens modal
-    const superAdminBtn = page.locator('button[title*="Superadmin"]').filter({ visible: true }).first();
-    await expect(superAdminBtn).toBeVisible();
-    await superAdminBtn.click();
+    // Verify Superadmin does NOT see construction operations (drywall/build tasks)
+    await expect(page.getByText("Total Pipeline Value")).toHaveCount(0);
 
-    // Verify Superadmin modal opened
-    await expect(page.getByText("Beamline Platform Superadmin Console").first()).toBeVisible();
-    await expect(page.getByText(/Client Directory/i).first()).toBeVisible();
-    await expect(page.getByText(/Platform OAuth & Domain/i).first()).toBeVisible();
+    // Now sign in as Kevin (Client Admin) to verify the Builder Operations Console
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+    await ensureAuthenticated(page, "kevin");
 
-    // Close Superadmin modal
-    const closeSuperAdminBtn = page.locator('div[role="dialog"] button, .fixed button:has(svg.lucide-x)').first();
-    if (await closeSuperAdminBtn.isVisible()) {
-      await closeSuperAdminBtn.click();
-    } else {
-      await page.keyboard.press("Escape");
-    }
-    await page.waitForTimeout(400);
-
-    // Verify Org Settings modal opens
-    const orgSettingsBtn = page.locator('button[title*="Client Organization Settings"]').filter({ visible: true }).first();
-    await expect(orgSettingsBtn).toBeVisible();
-    await orgSettingsBtn.click();
-
-    // Verify Org Settings modal elements
-    await expect(page.getByText("Client Organization Settings").first()).toBeVisible();
-    await expect(page.getByText(/Domains & Branding/i).first()).toBeVisible();
-    await expect(page.getByText(/Review Thresholds/i).first()).toBeVisible();
+    // Verify Kevin's builder operations console
+    await expect(page.getByText("Total Pipeline Value").first()).toBeVisible();
+    await expect(page.getByText("Active Luxury Builds").first()).toBeVisible();
+    await expect(page.getByText("Sales & Clients").first()).toBeVisible();
   });
 });

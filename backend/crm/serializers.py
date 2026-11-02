@@ -611,7 +611,15 @@ class ClientEmailTriggerSerializer(serializers.Serializer):
 # ==============================================================================
 # Multi-Tenancy, SuperAdmin & Authentication Serializers
 # ==============================================================================
-from common.tenancy import Organization, OrganizationMember, PlatformSettings, Invitation
+from common.tenancy import (
+    Organization,
+    OrganizationMember,
+    PlatformSettings,
+    Invitation,
+    ClientSubscription,
+    ClientSupportTicket,
+    PlatformNotification,
+)
 
 
 class PlatformSettingsSerializer(serializers.ModelSerializer):
@@ -769,5 +777,97 @@ class RegisterRequestSerializer(serializers.Serializer):
     username = serializers.CharField(required=False, allow_blank=True, default="")
     organization_name = serializers.CharField(required=False, allow_blank=True, default="")
     organization_slug = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class ClientSubscriptionSerializer(serializers.ModelSerializer):
+    organization_name = serializers.CharField(source="organization.name", read_only=True)
+    organization_slug = serializers.CharField(source="organization.slug", read_only=True)
+
+    class Meta:
+        model = ClientSubscription
+        fields = [
+            "id",
+            "organization",
+            "organization_name",
+            "organization_slug",
+            "plan_tier",
+            "monthly_price",
+            "billing_cycle",
+            "status",
+            "payment_method",
+            "next_billing_date",
+            "last_payment_date",
+            "total_paid_ytd",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class ClientSupportTicketSerializer(serializers.ModelSerializer):
+    organization_name = serializers.CharField(source="organization.name", read_only=True)
+    organization_slug = serializers.CharField(source="organization.slug", read_only=True)
+
+    class Meta:
+        model = ClientSupportTicket
+        fields = [
+            "id",
+            "organization",
+            "organization_name",
+            "organization_slug",
+            "submitted_by_name",
+            "submitted_by_email",
+            "subject",
+            "category",
+            "priority",
+            "status",
+            "message",
+            "admin_notes",
+            "created_at",
+            "updated_at",
+            "resolved_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class PlatformNotificationSerializer(serializers.ModelSerializer):
+    target_organization_name = serializers.CharField(
+        source="target_organization.name", read_only=True
+    )
+    target_organization_slug = serializers.CharField(
+        source="target_organization.slug", read_only=True
+    )
+
+    class Meta:
+        model = PlatformNotification
+        fields = [
+            "id",
+            "title",
+            "message",
+            "severity",
+            "target_organization",
+            "target_organization_name",
+            "target_organization_slug",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class PlatformUserDirectorySerializer(serializers.Serializer):
+    id = serializers.CharField()
+    username = serializers.CharField()
+    email = serializers.EmailField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    is_active = serializers.BooleanField()
+    is_superuser = serializers.BooleanField()
+    date_joined = serializers.DateTimeField()
+    last_login = serializers.DateTimeField(allow_null=True)
+    organization = serializers.CharField(allow_null=True)
+    organization_name = serializers.CharField(allow_null=True)
+    role = serializers.CharField()
+
 
 

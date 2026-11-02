@@ -105,3 +105,108 @@ def test_two_tier_invitations_workflow():
     team_data = res_team.json()["data"]
     assert team_data["email"] == "david.pm@apexbuilds.com"
     assert team_data["role"] == "PM"
+
+
+@pytest.mark.django_db
+def test_superadmin_portal_telemetry_users_subscriptions_support_notifications():
+    client = Client()
+    admin_user = User.objects.get(username="admin")
+    tokens = JWTService.generate_token_pair(admin_user, role="Superadmin")
+    auth_header = f"Bearer {tokens['access_token']}"
+
+    # 1. Telemetry stats
+    res_stats = client.get("/api/v1/superadmin/dashboard-stats/", HTTP_AUTHORIZATION=auth_header)
+    assert res_stats.status_code == 200
+    kpis = res_stats.json()["data"]["kpis"]
+    assert kpis["total_organizations"] >= 1
+    assert "mrr" in kpis
+    assert "open_support_queries" in kpis
+
+    # 2. Users directory
+    res_users = client.get("/api/v1/superadmin/users/", HTTP_AUTHORIZATION=auth_header)
+    assert res_users.status_code == 200
+    user_list = res_users.json()["data"]["results"]
+    usernames = [u["username"] for u in user_list]
+    assert "admin" in usernames
+    assert "kevin" in usernames
+
+    # 3. Subscriptions & MRR
+    res_subs = client.get("/api/v1/superadmin/subscriptions/", HTTP_AUTHORIZATION=auth_header)
+    assert res_subs.status_code == 200
+    subs = res_subs.json()["data"]["results"]
+    assert len(subs) >= 1
+    kevin_sub = [s for s in subs if s["organization_slug"] == "kevin"][0]
+    assert kevin_sub["status"] == "Active"
+
+    # 4. Support Queries & Triage
+    kevin_org = Organization.objects.get(slug="kevin")
+    res_create_ticket = client.post(
+        "/api/v1/superadmin/support-tickets/",
+        {
+            "organization": str(kevin_org.id),
+            "submitted_by_name": "Kevin Builder",
+            "submitted_by_email": "kevin@kevinbuild.com",
+            "subject": "Need custom domain setup assistance",
+            "category": "Domain & DNS",
+            "priority": "High",
+            "status": "Open",
+            "message": "We bought kevinbuild.com and need SSL verification.",
+        },
+        content_type="application/json",
+        HTTP_AUTHORIZATION=auth_header,
+    )
+    assert res_create_ticket.status_code == 201
+    ticket_id = res_create_ticket.json()["data"]["id"]
+
+    # Patch ticket to Resolved
+    res_patch_ticket = client.patch(
+        f"/api/v1/superadmin/support-tickets/{ticket_id}/",
+        {"status": "Resolved", "admin_notes": "Domain verified and SSL active."},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=auth_header,
+    )
+    assert res_patch_ticket.status_code == 200
+    assert res_patch_ticket.json()["data"]["status"] == "Resolved"
+
+    # 5. Broadcast Announcements
+    res_note = client.post(
+        "/api/v1/superadmin/notifications/",
+        {
+            "title": "Scheduled Edge Router Upgrade",
+            "message": "Maintenance will occur at 02:00 UTC with zero downtime.",
+            "severity": "info",
+            "is_active": True,
+        },
+        content_type="application/json",
+        HTTP_AUTHORIZATION=auth_header,
+    )
+    assert res_note.status_code == 201
+    note_id = res_note.json()["data"]["id"]
+
+    res_list_notes = client.get("/api/v1/superadmin/notifications/", HTTP_AUTHORIZATION=auth_header)
+    assert res_list_notes.status_code == 200
+    assert any(n["id"] == note_id for n in res_list_notes.json()["data"]["results"])
+
+
+@pytest.mark.django_db
+def test_non_superadmin_forbidden_from_superadmin_portal():
+    client = Client()
+    kevin_user = User.objects.get(username="kevin")
+    kevin_org = Organization.objects.get(slug="kevin")
+    tokens = JWTService.generate_token_pair(kevin_user, kevin_org, role="Owner")
+    auth_header = f"Bearer {tokens['access_token']}"
+
+    forbidden_endpoints = [
+        "/api/v1/superadmin/dashboard-stats/",
+        "/api/v1/superadmin/users/",
+        "/api/v1/superadmin/subscriptions/",
+        "/api/v1/superadmin/support-tickets/",
+        "/api/v1/superadmin/notifications/",
+        "/api/v1/superadmin/platform-settings/",
+        "/api/v1/superadmin/organizations/",
+        "/api/v1/superadmin/invitations/",
+    ]
+    for endpoint in forbidden_endpoints:
+        res = client.get(endpoint, HTTP_AUTHORIZATION=auth_header)
+        assert res.status_code == 403, f"Expected 403 for {endpoint}, got {res.status_code}"
+

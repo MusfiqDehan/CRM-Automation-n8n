@@ -8,6 +8,7 @@ from common.tenancy import (
     OrganizationMember,
     PlatformSettings,
     TenantManager,
+    UserProfile,
 )
 
 __all__ = [
@@ -17,6 +18,7 @@ __all__ = [
     "OrganizationMember",
     "Invitation",
     "TenantManager",
+    "UserProfile",
 ]
 
 

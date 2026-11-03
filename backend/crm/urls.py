@@ -171,6 +171,8 @@ urlpatterns = [
     path("superadmin/organizations", SuperadminOrganizationListCreateAPIView.as_view()),
     path("superadmin/organizations/<str:pk>/", SuperadminOrganizationDetailAPIView.as_view(), name="superadmin-organization-detail"),
     path("superadmin/organizations/<str:pk>", SuperadminOrganizationDetailAPIView.as_view()),
+    path("superadmin/organizations/<str:pk>/feature-flags/", SuperadminOrganizationDetailAPIView.as_view(), name="superadmin-organization-feature-flags"),
+    path("superadmin/organizations/<str:pk>/feature-flags", SuperadminOrganizationDetailAPIView.as_view()),
     path("superadmin/invitations/", SuperadminInvitationAPIView.as_view(), name="superadmin-invitations"),
     path("superadmin/invitations", SuperadminInvitationAPIView.as_view()),
 

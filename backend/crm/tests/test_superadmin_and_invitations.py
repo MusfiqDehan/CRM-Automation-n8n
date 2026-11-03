@@ -55,6 +55,20 @@ def test_superadmin_platform_settings_and_client_management():
     assert updated_flags["page_crm"] is True  # preserved default
     assert updated_flags["page_landing"] is False  # client landing pages are opt-in
 
+    # Superadmin enables Client Landing Page via /feature-flags/ endpoint alias
+    enable_landing_res = client.patch(
+        f"/api/v1/superadmin/organizations/{kevin_org.id}/feature-flags/",
+        {"feature_flags": {"page_landing": True}},
+        content_type="application/json",
+        HTTP_AUTHORIZATION=auth_header,
+    )
+    assert enable_landing_res.status_code == 200
+    assert enable_landing_res.json()["data"]["feature_flags"]["page_landing"] is True
+
+    # Re-verify landing page enabled persisted on organization model
+    kevin_org.refresh_from_db()
+    assert kevin_org.is_feature_enabled("page_landing") is True
+
 
 @pytest.mark.django_db
 def test_two_tier_invitations_workflow():

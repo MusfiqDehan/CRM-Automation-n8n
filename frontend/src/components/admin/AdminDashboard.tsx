@@ -283,11 +283,27 @@ export function AdminDashboard() {
 
   const isSuperadmin = Boolean(currentUser?.is_superuser || currentRole === "Superadmin");
   const showPublicSite = activeOrg?.feature_flags?.page_landing === true;
-  const tenantHomeUrl = activeOrg?.custom_domain
+  const isLocalHost = typeof window !== "undefined" && (
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1" ||
+    window.location.hostname.endsWith(".localhost")
+  );
+  const tenantHomeUrl = (activeOrg?.custom_domain && !isLocalHost)
     ? `https://${activeOrg.custom_domain}`
     : activeOrg?.slug
     ? `/?tenant=${activeOrg.slug}`
     : "/";
+
+  const handleLogoClick = (e?: React.MouseEvent) => {
+    if (showPublicSite) {
+      window.location.href = tenantHomeUrl;
+    } else {
+      if (e) {
+        e.preventDefault();
+      }
+      window.location.reload();
+    }
+  };
 
   // Feature flag helpers
   const isFeatureEnabled = (key: string) => activeOrg?.feature_flags?.[key] !== false;
@@ -760,21 +776,40 @@ export function AdminDashboard() {
             {/* Left: Mobile Brand / Desktop Active Title with Contextual Breadcrumbs */}
             <div className="flex min-w-0 flex-1 items-center gap-3">
               {/* Mobile View Title & Brand */}
-              <Link
-                href={tenantHomeUrl}
-                aria-label={`${activeOrg?.name || "Workspace"} home`}
-                className="flex min-w-0 items-center gap-2.5 lg:hidden group transition-opacity hover:opacity-85"
-              >
-                <BeamLineMark className="size-8" title="BeamLine" />
-                <div className="min-w-0">
-                  <h1 className="max-w-36 truncate text-sm font-semibold leading-tight text-stone-900 sm:max-w-xs dark:text-white">
-                    {pageMeta[activeTab].title}
-                  </h1>
-                  <span className="block max-w-36 truncate text-[11px] text-stone-500 sm:max-w-xs dark:text-stone-400">
-                    {activeOrg?.name || "BeamLine"}
-                  </span>
-                </div>
-              </Link>
+              {showPublicSite ? (
+                <Link
+                  href={tenantHomeUrl}
+                  aria-label={`${activeOrg?.name || "Workspace"} home`}
+                  className="flex min-w-0 items-center gap-2.5 lg:hidden group transition-opacity hover:opacity-85"
+                >
+                  <BeamLineMark className="size-8" title="BeamLine" />
+                  <div className="min-w-0">
+                    <h1 className="max-w-36 truncate text-sm font-semibold leading-tight text-stone-900 sm:max-w-xs dark:text-white">
+                      {pageMeta[activeTab].title}
+                    </h1>
+                    <span className="block max-w-36 truncate text-[11px] text-stone-500 sm:max-w-xs dark:text-stone-400">
+                      {activeOrg?.name || "BeamLine"}
+                    </span>
+                  </div>
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  aria-label={`Refresh ${activeOrg?.name || "Workspace"}`}
+                  className="flex min-w-0 items-center gap-2.5 lg:hidden group transition-opacity hover:opacity-85 text-left cursor-pointer"
+                >
+                  <BeamLineMark className="size-8" title="BeamLine" />
+                  <div className="min-w-0">
+                    <h1 className="max-w-36 truncate text-sm font-semibold leading-tight text-stone-900 sm:max-w-xs dark:text-white">
+                      {pageMeta[activeTab].title}
+                    </h1>
+                    <span className="block max-w-36 truncate text-[11px] text-stone-500 sm:max-w-xs dark:text-stone-400">
+                      {activeOrg?.name || "BeamLine"}
+                    </span>
+                  </div>
+                </button>
+              )}
 
               {/* Desktop View Title & Breadcrumbs */}
               <div className="hidden lg:flex items-center gap-3">
@@ -1082,7 +1117,8 @@ export function AdminDashboard() {
           {/* Tenant Identity & Clickable Logo */}
           <div className="border-b border-stone-200/80 p-5 dark:border-stone-800/80">
             <BeamLineLogo
-              href={tenantHomeUrl}
+              href={showPublicSite ? tenantHomeUrl : undefined}
+              onClick={handleLogoClick}
               wordmarkClassName="text-sm text-stone-900 dark:text-white"
               badge={
                 <span className="rounded-md bg-amber-50 dark:bg-amber-400/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300">

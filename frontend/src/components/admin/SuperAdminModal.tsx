@@ -203,20 +203,24 @@ export function SuperAdminControlPlane({
     setFeedback(null);
     try {
       const updatedFlags = {
-        ...selectedOrgForFeatures.feature_flags,
+        ...(selectedOrgForFeatures.feature_flags || {}),
         [featureKey]: nextValue,
       };
       const res = await apiClient.patch<Organization>(
-        `/superadmin/organizations/${selectedOrgForFeatures.id}/feature-flags/`,
+        `/superadmin/organizations/${selectedOrgForFeatures.id}/`,
         { feature_flags: updatedFlags }
       );
-      setSelectedOrgForFeatures(res.data);
+      const updatedOrg = res.data || {
+        ...selectedOrgForFeatures,
+        feature_flags: updatedFlags,
+      };
+      setSelectedOrgForFeatures(updatedOrg);
       setOrganizations((prev) =>
-        prev.map((o) => (o.id === res.data.id ? res.data : o))
+        prev.map((o) => (o.id === updatedOrg.id ? updatedOrg : o))
       );
       setFeedback({
         type: "success",
-        message: `Updated "${featureKey}" for ${res.data.name}.`,
+        message: `Updated "${featureKey}" for ${updatedOrg.name}.`,
       });
       onOrganizationsChanged?.();
     } catch (err) {

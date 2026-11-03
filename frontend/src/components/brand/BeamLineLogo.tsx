@@ -44,6 +44,7 @@ export function BeamLineLogo({
   subtitleClassName = "text-stone-500 dark:text-stone-400",
   badge,
   href,
+  onClick,
   className = "",
 }: {
   markClassName?: string;
@@ -54,6 +55,7 @@ export function BeamLineLogo({
   subtitleClassName?: string;
   badge?: ReactNode;
   href?: string | null;
+  onClick?: (e: React.MouseEvent) => void;
   className?: string;
 }) {
   const content = (
@@ -79,11 +81,25 @@ export function BeamLineLogo({
     return (
       <Link
         href={href}
-        className="group inline-flex min-w-0 items-center transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded-lg"
+        onClick={onClick}
+        className="group inline-flex min-w-0 items-center transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded-lg text-left"
         aria-label={typeof subtitle === "string" ? `BeamLine — ${subtitle}` : "BeamLine home"}
       >
         {content}
       </Link>
+    );
+  }
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="group inline-flex min-w-0 items-center transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded-lg text-left cursor-pointer"
+        aria-label={typeof subtitle === "string" ? `BeamLine — ${subtitle}` : "BeamLine refresh"}
+      >
+        {content}
+      </button>
     );
   }
 

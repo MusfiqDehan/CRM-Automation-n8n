@@ -7,7 +7,11 @@ test.describe("Beamline — Commercial Multi-Tenant CRM & OS E2E Verification", 
     await quickLoginBtn.waitFor({ state: "visible", timeout: 4000 }).catch(() => {});
     if (await quickLoginBtn.isVisible()) {
       await quickLoginBtn.click();
-      await page.waitForTimeout(600);
+      await page.waitForResponse(
+        (resp) => resp.url().includes("/auth/login/") && resp.status() === 200,
+        { timeout: 5000 }
+      ).catch(() => {});
+      await page.waitForTimeout(800);
     }
   };
   test("loads Overview Landing Page, verifies executive action items and benefits", async ({
@@ -148,5 +152,94 @@ test.describe("Beamline — Commercial Multi-Tenant CRM & OS E2E Verification", 
     await expect(page.getByText("Total Pipeline Value").first()).toBeVisible();
     await expect(page.getByText("Active Luxury Builds").first()).toBeVisible();
     await expect(page.getByText("Sales & Clients").first()).toBeVisible();
+  });
+
+  test("verifies client admin logo behavior when landing page feature flag is disabled vs enabled", async ({
+    page,
+    request,
+  }) => {
+    const resetLandingFlag = async () => {
+      try {
+        const loginRes = await request.post("http://localhost:8017/api/v1/auth/login/", {
+          data: { username_or_email: "admin", password: "adminpass2026" },
+        });
+        const loginData = await loginRes.json();
+        const token = loginData.data?.tokens?.access_token;
+        const orgsRes = await request.get("http://localhost:8017/api/v1/superadmin/organizations/", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const orgsData = await orgsRes.json();
+        const kevinOrg = orgsData.data?.results?.find((o: { slug: string }) => o.slug === "kevin");
+        if (kevinOrg) {
+          await request.patch(`http://localhost:8017/api/v1/superadmin/organizations/${kevinOrg.id}/`, {
+            headers: { Authorization: `Bearer ${token}` },
+            data: { feature_flags: { page_landing: false } },
+          });
+        }
+      } catch {}
+    };
+
+    // Ensure clean state before running
+    await resetLandingFlag();
+
+    try {
+      // 1. Sign in as Kevin with default disabled landing page
+      await page.goto("/admin");
+      await page.evaluate(() => localStorage.clear());
+      await page.reload();
+      await ensureAuthenticated(page, "kevin");
+
+      // Wait for client dashboard to load
+      await expect(page.getByText("Sales & Clients").first()).toBeVisible();
+
+      // With landing page disabled, logo renders as button (refresh only, no link)
+      const logoRefreshBtn = page.getByRole("button", { name: /BeamLine|Refresh/i }).first();
+      await expect(logoRefreshBtn).toBeVisible();
+
+      // 2. Sign in as Superadmin to enable client landing page via feature flag
+      await page.evaluate(() => localStorage.clear());
+      await page.reload();
+      await ensureAuthenticated(page, "admin");
+
+      // Switch to Client Organizations tab and open Feature Flags
+      const clientsTab = page.getByRole("button", { name: /Client Organizations/i }).first();
+      await expect(clientsTab).toBeVisible();
+      await clientsTab.click();
+      await page.waitForTimeout(400);
+
+      const featureFlagsBtn = page.getByRole("button", { name: /Feature Flags/i }).first();
+      await featureFlagsBtn.click();
+      await page.waitForTimeout(400);
+
+      // Toggle Client Landing Page feature flag
+      const landingSwitch = page.getByRole("switch", { name: /Client landing page/i });
+      await expect(landingSwitch).toBeVisible();
+      await landingSwitch.click();
+      await page.waitForTimeout(500);
+
+      // Verify success toast/message is displayed without 404
+      await expect(page.getByText(/Updated entitlement "page_landing"|Updated "page_landing"/i).first()).toBeVisible();
+
+      // 3. Re-enter Kevin's workspace as client admin
+      await page.evaluate(() => localStorage.clear());
+      await page.reload();
+      await ensureAuthenticated(page, "kevin");
+
+      // Wait for client dashboard to load
+      await expect(page.getByText("Sales & Clients").first()).toBeVisible();
+
+      // Logo is now a clickable link to client landing page
+      const logoLink = page.getByRole("link", { name: /BeamLine|home/i }).first();
+      await expect(logoLink).toBeVisible();
+      await expect(logoLink).toHaveAttribute("href", "/?tenant=kevin");
+      await logoLink.click();
+      await page.waitForTimeout(1000);
+
+      // Verify redirected to client landing page
+      await expect(page.getByRole("link", { name: /Login/i }).first()).toBeVisible();
+      await expect(page.getByText(/Building the place where your story unfolds|Custom Homes/i).first()).toBeVisible();
+    } finally {
+      await resetLandingFlag();
+    }
   });
 });

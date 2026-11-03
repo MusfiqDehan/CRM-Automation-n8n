@@ -1811,6 +1811,10 @@ class SuperadminOrganizationDetailAPIView(APIView):
             current_flags = org.get_feature_flags()
             current_flags.update(data["feature_flags"])
             data["feature_flags"] = current_flags
+        elif any(str(k).startswith(("page_", "sub_")) for k in data.keys()):
+            current_flags = org.get_feature_flags()
+            current_flags.update(data)
+            data = {"feature_flags": current_flags}
 
         serializer = OrganizationSerializer(org, data=data, partial=True)
         serializer.is_valid(raise_exception=True)

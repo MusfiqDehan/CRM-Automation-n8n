@@ -60,8 +60,14 @@ export function ClientLandingGate() {
     const isApex = isPlatformApexHost();
     setIsPlatform(isApex);
 
+    const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    const tenantParam = searchParams?.get("tenant")?.trim();
+    const endpoint = tenantParam
+      ? `/auth/oauth-config/?tenant=${encodeURIComponent(tenantParam)}`
+      : "/auth/oauth-config/";
+
     apiClient
-      .get<OAuthPublicConfig>("/auth/oauth-config/")
+      .get<OAuthPublicConfig>(endpoint)
       .then((cfg) => {
         if (!isActive) return;
 

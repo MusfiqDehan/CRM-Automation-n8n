@@ -773,7 +773,14 @@ export function AuthGate({ oauthConfig, onAuthSuccess }: AuthGateProps) {
                   : activeTenant.slug
                   ? `/?tenant=${activeTenant.slug}`
                   : "/"
+                : activeTenant
+                ? undefined
                 : "/"
+            }
+            onClick={
+              activeTenant && activeTenant.feature_flags.page_landing !== true
+                ? () => window.location.reload()
+                : undefined
             }
             markClassName="size-10"
             wordmarkClassName="text-base text-stone-900 dark:text-white"

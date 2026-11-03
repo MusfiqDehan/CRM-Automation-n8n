@@ -698,6 +698,11 @@ class OrganizationSerializer(serializers.ModelSerializer):
     def get_has_google_secret(self, obj: Organization) -> bool:
         return bool(obj.google_oauth_client_secret)
 
+    def to_representation(self, instance: Organization) -> dict:
+        ret = super().to_representation(instance)
+        ret["feature_flags"] = instance.get_feature_flags()
+        return ret
+
     def update(self, instance: Organization, validated_data: dict) -> Organization:
         secret = validated_data.get("google_oauth_client_secret")
         if secret == "":

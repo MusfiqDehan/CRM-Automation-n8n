@@ -281,18 +281,22 @@ export function PlatformSuperAdminPortal({
     const nextValue = !currentValue;
     try {
       const updatedFlags = {
-        ...selectedOrgForFeatures.feature_flags,
+        ...(selectedOrgForFeatures.feature_flags || {}),
         [featureKey]: nextValue,
       };
       const res = await apiClient.patch<Organization>(
-        `/superadmin/organizations/${selectedOrgForFeatures.id}/feature-flags/`,
+        `/superadmin/organizations/${selectedOrgForFeatures.id}/`,
         { feature_flags: updatedFlags }
       );
-      setSelectedOrgForFeatures(res.data);
-      setOrganizations((prev) => prev.map((o) => (o.id === res.data.id ? res.data : o)));
+      const updatedOrg = res.data || {
+        ...selectedOrgForFeatures,
+        feature_flags: updatedFlags,
+      };
+      setSelectedOrgForFeatures(updatedOrg);
+      setOrganizations((prev) => prev.map((o) => (o.id === updatedOrg.id ? updatedOrg : o)));
       setFeedback({
         type: "success",
-        message: `Updated entitlement "${featureKey}" for ${res.data.name}.`,
+        message: `Updated entitlement "${featureKey}" for ${updatedOrg.name}.`,
       });
     } catch (err) {
       setFeedback({

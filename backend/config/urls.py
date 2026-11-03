@@ -48,6 +48,9 @@ def api_root(request):
                 "superadmin_settings": "/api/v1/superadmin/platform-settings/",
                 "superadmin_organizations": "/api/v1/superadmin/organizations/",
                 "tenant_settings": "/api/v1/tenant/settings/",
+                "integrations_superadmin": "/api/v1/integrations/superadmin/providers/",
+                "integrations_tenant": "/api/v1/integrations/tenant/providers/",
+                "integrations_payments": "/api/v1/integrations/payments/checkout/",
             },
         },
         message="Beamline Operations API Gateway",
@@ -61,6 +64,8 @@ urlpatterns = [
     path("api", api_root),
     path("api/v1/health/", health_check, name="health-check"),
     path("api/v1/health", health_check),
+    path("api/v1/integrations/", include("integrations.urls")),
+    path("api/v1/integrations", include("integrations.urls")),
     path("api/v1/", include("crm.urls")),
     path("api/v1", include("crm.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

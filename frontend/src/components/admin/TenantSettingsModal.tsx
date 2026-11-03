@@ -5,6 +5,7 @@ import { Globe, KeyRound, Loader2, Save, Send, Sliders, Users } from "lucide-rea
 import { apiClient } from "@/lib/api-client";
 import { BeamLineMark } from "@/components/brand/BeamLineLogo";
 import { Badge, DropdownSelect, Field } from "@/components/ui/primitives";
+import { ClientDataTable, type ClientTableColumn } from "@/components/common/table";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import {
   InlineAlert,
@@ -177,6 +178,33 @@ export function TenantSettingsModal({
   const canUseCustomDomain = flags.sub_custom_domain !== false;
   const canUseCustomOAuth = flags.sub_custom_google_oauth !== false;
   const canInviteTeam = flags.sub_team_invitations !== false;
+
+  const memberColumns: ClientTableColumn<OrganizationMember>[] = [
+    {
+      key: "username",
+      header: "User",
+      render: (m) => (
+        <span className="font-medium text-stone-900 dark:text-stone-100">{m.username}</span>
+      ),
+    },
+    {
+      key: "email",
+      header: "Email",
+      render: (m) => (
+        <span className="text-stone-500 dark:text-stone-400">{m.email}</span>
+      ),
+    },
+    {
+      key: "role",
+      header: "Role",
+      render: (m) => <Badge tone="amber">{m.role}</Badge>,
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: () => <Badge tone="green">Active</Badge>,
+    },
+  ];
 
   const tabs: Array<{ id: SettingsTab; label: string; icon: React.ElementType; count?: number }> = [
     { id: "domains", label: canUseCustomDomain ? "Domain & branding" : "Organization", icon: Globe },
@@ -404,41 +432,34 @@ export function TenantSettingsModal({
             </form>
 
             <div>
-              <h3 className="mb-2 text-sm font-semibold text-stone-900 dark:text-stone-100">
-                Team members ({members.length})
-              </h3>
-              {members.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-stone-200 px-4 py-8 text-center text-sm text-stone-500 dark:border-stone-800 dark:text-stone-400">
-                  No team members yet. Invitations you send will appear here once accepted.
-                </div>
-              ) : (
-                <div className="overflow-x-auto rounded-2xl border border-stone-200/80 dark:border-stone-800">
-                  <table className="w-full min-w-xl text-left text-sm">
-                    <thead className="bg-stone-50 text-xs text-stone-500 dark:bg-stone-950/50 dark:text-stone-400">
-                      <tr>
-                        <th className="px-4 py-3 font-medium">User</th>
-                        <th className="px-4 py-3 font-medium">Email</th>
-                        <th className="px-4 py-3 font-medium">Role</th>
-                        <th className="px-4 py-3 font-medium">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
-                      {members.map((m) => (
-                        <tr key={m.id} className="transition-colors hover:bg-stone-50/70 dark:hover:bg-stone-800/40">
-                          <td className="px-4 py-3 font-medium text-stone-900 dark:text-stone-100">{m.username}</td>
-                          <td className="px-4 py-3 text-stone-500 dark:text-stone-400">{m.email}</td>
-                          <td className="px-4 py-3">
-                            <Badge tone="amber">{m.role}</Badge>
-                          </td>
-                          <td className="px-4 py-3">
-                            <Badge tone="green">Active</Badge>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              <ClientDataTable<OrganizationMember>
+                title={`Team members (${members.length})`}
+                description="Active team members with delegated access to this workspace."
+                items={members}
+                columns={memberColumns}
+                searchKeys={[(m) => m.username, (m) => m.email, (m) => m.role]}
+                searchPlaceholder="Search team members..."
+                filters={[
+                  {
+                    key: "role",
+                    label: "Role",
+                    options: [
+                      { label: "Admin", value: "admin" },
+                      { label: "Project Manager", value: "project_manager" },
+                      { label: "Estimator", value: "estimator" },
+                      { label: "Viewer", value: "viewer" },
+                    ],
+                  },
+                ]}
+                filterMatcher={(m, key, val) => {
+                  if (key === "role") return m.role.toLowerCase() === val.toLowerCase();
+                  return true;
+                }}
+                defaultPageSize={5}
+                pageSizeOptions={[5, 10, 20]}
+                emptyMessage="No team members yet. Invitations you send will appear here once accepted."
+                itemLabel="members"
+              />
             </div>
           </div>
         )}

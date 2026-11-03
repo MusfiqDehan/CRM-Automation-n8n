@@ -86,3 +86,4 @@ export function MaterialsView({ refreshCounter }: MaterialsViewProps) {
     </div>
   );
 }
+

@@ -49,6 +49,14 @@ import {
   Switch,
 } from "@/components/ui/overlay";
 import { Badge, Field, StatCard } from "@/components/ui/primitives";
+import {
+  ClientDataTable,
+  TableSearchBar,
+  TableFilterBar,
+  TablePagination,
+  TableEmptyState,
+  type ClientTableColumn,
+} from "@/components/common/table";
 import { apiClient } from "@/lib/api-client";
 import { formatCurrency, formatCompactCurrency, formatDate, formatDateTimeWithSeconds } from "@/lib/format";
 import type {
@@ -173,9 +181,19 @@ export function PlatformSuperAdminPortal({
   const [googleEnabled, setGoogleEnabled] = useState(false);
   const [savingPlatform, setSavingPlatform] = useState(false);
 
-  // Filter States
+  // Filter & Pagination States
   const [userOrgFilter, setUserOrgFilter] = useState<string>("all");
   const [ticketStatusFilter, setTicketStatusFilter] = useState<string>("all");
+  const [ticketPriorityFilter, setTicketPriorityFilter] = useState<string>("all");
+  const [ticketSearch, setTicketSearch] = useState<string>("");
+  const [ticketPage, setTicketPage] = useState<number>(1);
+  const [ticketPageSize, setTicketPageSize] = useState<number>(6);
+
+  const [notificationSearch, setNotificationSearch] = useState<string>("");
+  const [notificationSeverityFilter, setNotificationSeverityFilter] = useState<string>("all");
+  const [notificationPage, setNotificationPage] = useState<number>(1);
+  const [notificationPageSize, setNotificationPageSize] = useState<number>(6);
+
   const [dateRange, setDateRange] = useState<DateRangePreset>("30d");
   const [customStart, setCustomStart] = useState<string>("");
   const [customEnd, setCustomEnd] = useState<string>("");
@@ -533,15 +551,300 @@ export function PlatformSuperAdminPortal({
     },
   };
 
-  const filteredUsers = users.filter((u) => {
-    if (userOrgFilter === "all") return true;
-    return u.organization === userOrgFilter;
-  });
+  const orgColumns: ClientTableColumn<Organization>[] = [
+    {
+      key: "name",
+      header: "Client Organization",
+      render: (org) => (
+        <div className="flex items-center gap-3">
+          <div className="flex size-9 items-center justify-center rounded-xl bg-amber-100 font-bold text-amber-800 dark:bg-amber-950/80 dark:text-amber-300">
+            {org.name.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <div className="font-semibold text-stone-900 dark:text-white">
+              {org.name}
+            </div>
+            <div className="text-[11px] text-stone-400 font-mono">
+              Slug: {org.slug} · ID: {org.id.substring(0, 8)}...
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "subdomain",
+      header: "Subdomain & Custom Domain",
+      render: (org) => (
+        <div className="flex flex-col gap-0.5 font-mono">
+          <span className="text-stone-800 dark:text-stone-200">
+            {org.subdomain_host}
+          </span>
+          {org.custom_domain && (
+            <span className="inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 font-semibold">
+              <Globe className="size-3" />
+              {org.custom_domain}
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (org) => (
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+            org.is_active
+              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+              : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
+          }`}
+        >
+          <span
+            className={`size-1.5 rounded-full ${
+              org.is_active ? "bg-emerald-500" : "bg-rose-500"
+            }`}
+          />
+          {org.is_active ? "Active" : "Suspended"}
+        </span>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      className: "text-right",
+      render: (org) => {
+        const isSelected = selectedOrgForFeatures?.id === org.id;
+        return (
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => onInspectOrg(org)}
+              className="btn-primary btn-xs"
+              title={`Inspect ${org.name} workspace`}
+            >
+              <Eye className="size-3.5" />
+              Inspect
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setSelectedOrgForFeatures(isSelected ? null : org)
+              }
+              className="btn-secondary btn-xs"
+            >
+              <Sliders className="size-3.5" />
+              Feature Flags
+            </button>
+            <button
+              type="button"
+              onClick={() => handleToggleOrgStatus(org)}
+              className={`${
+                org.is_active ? "btn-danger" : "btn-secondary"
+              } btn-xs`}
+            >
+              <Power className="size-3.5" />
+              {org.is_active ? "Suspend" : "Activate"}
+            </button>
+          </div>
+        );
+      },
+    },
+  ];
+
+  const userColumns: ClientTableColumn<PlatformUser>[] = [
+    {
+      key: "user",
+      header: "User",
+      render: (u) => (
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-7 items-center justify-center rounded-full bg-stone-100 font-bold text-stone-700 dark:bg-stone-800 dark:text-stone-300">
+            {u.username.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <span className="font-semibold text-stone-900 dark:text-white">
+              {u.username}
+            </span>
+            <p className="text-[11px] text-stone-500 font-mono">{u.email}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "organization",
+      header: "Organization",
+      render: (u) => (
+        <span className="font-medium text-stone-700 dark:text-stone-300">
+          {u.organization_name || "Platform Superadmin"}
+        </span>
+      ),
+    },
+    {
+      key: "role",
+      header: "Role",
+      render: (u) => (
+        <Badge tone={u.is_superuser ? "amber" : "gray"}>
+          {u.role}
+        </Badge>
+      ),
+    },
+    {
+      key: "date_joined",
+      header: "Date Joined",
+      render: (u) => (
+        <span className="text-stone-500 font-mono">
+          {formatDate(u.date_joined)}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (u) => (
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+            u.is_active
+              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+              : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
+          }`}
+        >
+          {u.is_active ? "Active" : "Suspended"}
+        </span>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      className: "text-right",
+      render: (u) => (
+        <div className="flex items-center justify-end">
+          {!u.is_superuser && (
+            <button
+              type="button"
+              onClick={() => handleToggleUserStatus(u)}
+              className={`btn-xs ${u.is_active ? "btn-secondary text-rose-600" : "btn-primary"}`}
+            >
+              {u.is_active ? <UserX className="size-3" /> : <UserCheck className="size-3" />}
+              {u.is_active ? "Suspend" : "Activate"}
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ];
+
+  const subColumns: ClientTableColumn<ClientSubscription>[] = [
+    {
+      key: "organization",
+      header: "Tenant Organization",
+      render: (sub) => (
+        <span className="font-semibold text-stone-900 dark:text-white">
+          {sub.organization_name}
+        </span>
+      ),
+    },
+    {
+      key: "plan_tier",
+      header: "Plan Tier",
+      render: (sub) => <Badge tone="indigo">{sub.plan_tier}</Badge>,
+    },
+    {
+      key: "monthly_price",
+      header: "Monthly Amount",
+      render: (sub) => (
+        <span className="font-bold text-stone-900 dark:text-white">
+          {formatCurrency(sub.monthly_price)} / mo
+        </span>
+      ),
+    },
+    {
+      key: "billing_cycle",
+      header: "Billing Cycle",
+      render: (sub) => (
+        <span className="text-stone-500 font-medium">
+          {sub.billing_cycle}
+        </span>
+      ),
+    },
+    {
+      key: "payment_method",
+      header: "Payment Method",
+      render: (sub) => (
+        <span className="font-mono text-stone-600 dark:text-stone-400">
+          {sub.payment_method}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (sub) => (
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+            sub.status === "Active"
+              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+              : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
+          }`}
+        >
+          {sub.status}
+        </span>
+      ),
+    },
+    {
+      key: "next_renewal",
+      header: "Next Renewal",
+      render: (sub) => (
+        <span className="font-mono text-stone-500">
+          {sub.next_billing_date ? formatDate(sub.next_billing_date) : "—"}
+        </span>
+      ),
+    },
+  ];
 
   const filteredTickets = tickets.filter((t) => {
-    if (ticketStatusFilter === "all") return true;
-    return t.status.toLowerCase() === ticketStatusFilter.toLowerCase();
+    if (ticketStatusFilter !== "all" && t.status.toLowerCase() !== ticketStatusFilter.toLowerCase()) {
+      return false;
+    }
+    if (ticketPriorityFilter !== "all" && t.priority.toLowerCase() !== ticketPriorityFilter.toLowerCase()) {
+      return false;
+    }
+    if (ticketSearch.trim()) {
+      const q = ticketSearch.trim().toLowerCase();
+      const match =
+        t.subject.toLowerCase().includes(q) ||
+        t.message.toLowerCase().includes(q) ||
+        t.organization_name.toLowerCase().includes(q) ||
+        t.submitted_by_name.toLowerCase().includes(q) ||
+        t.submitted_by_email.toLowerCase().includes(q) ||
+        t.category.toLowerCase().includes(q);
+      if (!match) return false;
+    }
+    return true;
   });
+
+  const paginatedTickets = filteredTickets.slice(
+    (ticketPage - 1) * ticketPageSize,
+    ticketPage * ticketPageSize
+  );
+
+  const filteredNotifications = notifications.filter((note) => {
+    if (notificationSeverityFilter !== "all" && note.severity.toLowerCase() !== notificationSeverityFilter.toLowerCase()) {
+      return false;
+    }
+    if (notificationSearch.trim()) {
+      const q = notificationSearch.trim().toLowerCase();
+      const match =
+        note.title.toLowerCase().includes(q) ||
+        note.message.toLowerCase().includes(q) ||
+        (note.target_organization_name || "Platform-wide").toLowerCase().includes(q);
+      if (!match) return false;
+    }
+    return true;
+  });
+
+  const paginatedNotifications = filteredNotifications.slice(
+    (notificationPage - 1) * notificationPageSize,
+    notificationPage * notificationPageSize
+  );
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900 transition-colors duration-200 dark:bg-stone-950 dark:text-stone-100 flex flex-col lg:flex-row">
@@ -870,130 +1173,61 @@ export function PlatformSuperAdminPortal({
           {/* ========================================================== */}
           {activeTab === "clients" && (
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <h2 className="text-base font-bold text-stone-900 dark:text-white">
-                    Tenant Client Organizations ({organizations.length})
-                  </h2>
-                  <p className="text-xs text-stone-500 dark:text-stone-400">
-                    Oversee home builder accounts, configure granular feature flags, and inspect tenant workspaces.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsInviteModalOpen(true)}
-                  className="btn-primary btn-sm self-start sm:self-auto"
-                >
-                  <UserPlus className="h-4 w-4" />
-                  Provision New Tenant
-                </button>
-              </div>
-
-              <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-xs dark:border-stone-800 dark:bg-stone-900">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="border-b border-stone-200 bg-stone-50/75 text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:border-stone-800 dark:bg-stone-950/50 dark:text-stone-400">
-                      <tr>
-                        <th className="px-4 py-3">Client Organization</th>
-                        <th className="px-4 py-3">Subdomain &amp; Custom Domain</th>
-                        <th className="px-4 py-3">Status</th>
-                        <th className="px-4 py-3 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-100 dark:divide-stone-800/80">
-                      {organizations.map((org) => {
-                        const isSelected = selectedOrgForFeatures?.id === org.id;
-                        return (
-                          <tr
-                            key={org.id}
-                            className={`transition hover:bg-stone-50/75 dark:hover:bg-stone-800/40 ${
-                              isSelected ? "bg-amber-50/50 dark:bg-amber-950/20" : ""
-                            }`}
-                          >
-                            <td className="px-4 py-3.5">
-                              <div className="flex items-center gap-3">
-                                <div className="flex size-9 items-center justify-center rounded-xl bg-amber-100 font-bold text-amber-800 dark:bg-amber-950/80 dark:text-amber-300">
-                                  {org.name.charAt(0).toUpperCase()}
-                                </div>
-                                <div>
-                                  <div className="font-semibold text-stone-900 dark:text-white">
-                                    {org.name}
-                                  </div>
-                                  <div className="text-[11px] text-stone-400 font-mono">
-                                    Slug: {org.slug} · ID: {org.id.substring(0, 8)}...
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3.5 font-mono">
-                              <div className="flex flex-col gap-0.5">
-                                <span className="text-stone-800 dark:text-stone-200">
-                                  {org.subdomain_host}
-                                </span>
-                                {org.custom_domain && (
-                                  <span className="inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 font-semibold">
-                                    <Globe className="size-3" />
-                                    {org.custom_domain}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3.5">
-                              <span
-                                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
-                                  org.is_active
-                                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                                    : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
-                                }`}
-                              >
-                                <span
-                                  className={`size-1.5 rounded-full ${
-                                    org.is_active ? "bg-emerald-500" : "bg-rose-500"
-                                  }`}
-                                />
-                                {org.is_active ? "Active" : "Suspended"}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3.5 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => onInspectOrg(org)}
-                                  className="btn-primary btn-xs"
-                                  title={`Inspect ${org.name} workspace`}
-                                >
-                                  <Eye className="size-3.5" />
-                                  Inspect
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setSelectedOrgForFeatures(isSelected ? null : org)
-                                  }
-                                  className="btn-secondary btn-xs"
-                                >
-                                  <Sliders className="size-3.5" />
-                                  Feature Flags
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleToggleOrgStatus(org)}
-                                  className={`${
-                                    org.is_active ? "btn-danger" : "btn-secondary"
-                                  } btn-xs`}
-                                >
-                                  <Power className="size-3.5" />
-                                  {org.is_active ? "Suspend" : "Activate"}
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <ClientDataTable<Organization>
+                title={`Tenant Client Organizations (${organizations.length})`}
+                description="Oversee home builder accounts, configure granular feature flags, and inspect tenant workspaces."
+                items={organizations}
+                columns={orgColumns}
+                searchKeys={[
+                  (org) => org.name,
+                  (org) => org.slug,
+                  (org) => org.subdomain_host,
+                  (org) => org.custom_domain || "",
+                ]}
+                searchPlaceholder="Search organizations by name, slug, domain..."
+                filters={[
+                  {
+                    key: "status",
+                    label: "Status",
+                    options: [
+                      { label: "Active", value: "active" },
+                      { label: "Suspended", value: "suspended" },
+                    ],
+                  },
+                ]}
+                filterMatcher={(org, key, val) => {
+                  if (key === "status") {
+                    return val === "active" ? org.is_active : !org.is_active;
+                  }
+                  return true;
+                }}
+                sortOptions={[
+                  { label: "Name (A-Z)", value: "name_asc" },
+                  { label: "Name (Z-A)", value: "name_desc" },
+                ]}
+                sortComparator={(a, b, sortKey) => {
+                  if (sortKey === "name_asc") return a.name.localeCompare(b.name);
+                  if (sortKey === "name_desc") return b.name.localeCompare(a.name);
+                  return 0;
+                }}
+                rowClassName={(org) =>
+                  selectedOrgForFeatures?.id === org.id
+                    ? "bg-amber-50/50 dark:bg-amber-950/20"
+                    : ""
+                }
+                defaultPageSize={10}
+                itemLabel="organizations"
+                actions={
+                  <button
+                    type="button"
+                    onClick={() => setIsInviteModalOpen(true)}
+                    className="btn-primary btn-sm"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    Provision New Tenant
+                  </button>
+                }
+              />
 
               {/* Feature Entitlements Drawer */}
               {selectedOrgForFeatures && (
@@ -1060,102 +1294,59 @@ export function PlatformSuperAdminPortal({
           {/* ========================================================== */}
           {activeTab === "users" && (
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <h2 className="text-base font-bold text-stone-900 dark:text-white">
-                    Platform User Accounts ({users.length})
-                  </h2>
-                  <p className="text-xs text-stone-500 dark:text-stone-400">
-                    Monitor users, RBAC roles, and login activity across all client builder organizations.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-stone-500">Filter Tenant:</span>
-                  <select
-                    value={userOrgFilter}
-                    onChange={(e) => setUserOrgFilter(e.target.value)}
-                    className="input py-1 text-xs"
-                  >
-                    <option value="all">All Organizations</option>
-                    {organizations.map((o) => (
-                      <option key={o.slug} value={o.slug}>
-                        {o.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-xs dark:border-stone-800 dark:bg-stone-900">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="border-b border-stone-200 bg-stone-50/75 text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:border-stone-800 dark:bg-stone-950/50 dark:text-stone-400">
-                      <tr>
-                        <th className="px-4 py-3">User</th>
-                        <th className="px-4 py-3">Organization</th>
-                        <th className="px-4 py-3">Role</th>
-                        <th className="px-4 py-3">Date Joined</th>
-                        <th className="px-4 py-3">Status</th>
-                        <th className="px-4 py-3 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-100 dark:divide-stone-800/80">
-                      {filteredUsers.map((u) => (
-                        <tr key={u.id} className="hover:bg-stone-50/60 dark:hover:bg-stone-800/30">
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2.5">
-                              <div className="flex size-7 items-center justify-center rounded-full bg-stone-100 font-bold text-stone-700 dark:bg-stone-800 dark:text-stone-300">
-                                {u.username.charAt(0).toUpperCase()}
-                              </div>
-                              <div>
-                                <span className="font-semibold text-stone-900 dark:text-white">
-                                  {u.username}
-                                </span>
-                                <p className="text-[11px] text-stone-500 font-mono">{u.email}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 font-medium text-stone-700 dark:text-stone-300">
-                            {u.organization_name || "Platform Superadmin"}
-                          </td>
-                          <td className="px-4 py-3">
-                            <Badge tone={u.is_superuser ? "amber" : "gray"}>
-                              {u.role}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-3 text-stone-500 font-mono">
-                            {formatDate(u.date_joined)}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                                u.is_active
-                                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                                  : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
-                              }`}
-                            >
-                              {u.is_active ? "Active" : "Suspended"}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            {!u.is_superuser && (
-                              <button
-                                type="button"
-                                onClick={() => handleToggleUserStatus(u)}
-                                className={`btn-xs ${u.is_active ? "btn-secondary text-rose-600" : "btn-primary"}`}
-                              >
-                                {u.is_active ? <UserX className="size-3" /> : <UserCheck className="size-3" />}
-                                {u.is_active ? "Suspend" : "Activate"}
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <ClientDataTable<PlatformUser>
+                title={`Platform User Accounts (${users.length})`}
+                description="Monitor users, RBAC roles, and login activity across all client builder organizations."
+                items={users}
+                columns={userColumns}
+                searchKeys={[
+                  (u) => u.username,
+                  (u) => u.email,
+                  (u) => u.first_name || "",
+                  (u) => u.last_name || "",
+                  (u) => u.organization_name || "",
+                  (u) => u.role,
+                ]}
+                searchPlaceholder="Search users by username, email, role..."
+                filters={[
+                  {
+                    key: "organization",
+                    label: "Organization",
+                    options: organizations.map((o) => ({
+                      label: o.name,
+                      value: o.name,
+                    })),
+                  },
+                  {
+                    key: "status",
+                    label: "Status",
+                    options: [
+                      { label: "Active", value: "active" },
+                      { label: "Suspended", value: "suspended" },
+                    ],
+                  },
+                ]}
+                filterMatcher={(u, key, val) => {
+                  if (key === "organization") {
+                    return (u.organization_name || "Platform Superadmin") === val;
+                  }
+                  if (key === "status") {
+                    return val === "active" ? u.is_active : !u.is_active;
+                  }
+                  return true;
+                }}
+                sortOptions={[
+                  { label: "Username (A-Z)", value: "user_asc" },
+                  { label: "Username (Z-A)", value: "user_desc" },
+                ]}
+                sortComparator={(a, b, sortKey) => {
+                  if (sortKey === "user_asc") return a.username.localeCompare(b.username);
+                  if (sortKey === "user_desc") return b.username.localeCompare(a.username);
+                  return 0;
+                }}
+                defaultPageSize={10}
+                itemLabel="users"
+              />
             </div>
           )}
 
@@ -1164,74 +1355,63 @@ export function PlatformSuperAdminPortal({
           {/* ========================================================== */}
           {activeTab === "subscriptions" && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-bold text-stone-900 dark:text-white">
-                    Tenant Subscriptions &amp; Billing
-                  </h2>
-                  <p className="text-xs text-stone-500 dark:text-stone-400">
-                    Track recurring subscription payments, plan tiers, and renewal dates across builder tenants.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1 font-mono text-xs font-bold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300">
+              <ClientDataTable<ClientSubscription>
+                title={`Tenant Subscriptions & MRR Billing (${subscriptions.length})`}
+                description="Track recurring subscription payments, plan tiers, and renewal dates across builder tenants."
+                items={subscriptions}
+                columns={subColumns}
+                searchKeys={[
+                  (sub) => sub.organization_name,
+                  (sub) => sub.plan_tier,
+                  (sub) => sub.payment_method,
+                  (sub) => sub.status,
+                ]}
+                searchPlaceholder="Search subscriptions by tenant, plan, or method..."
+                filters={[
+                  {
+                    key: "plan_tier",
+                    label: "Plan Tier",
+                    options: [
+                      { label: "Starter", value: "Starter" },
+                      { label: "Pro", value: "Pro" },
+                      { label: "Enterprise", value: "Enterprise" },
+                    ],
+                  },
+                  {
+                    key: "status",
+                    label: "Status",
+                    options: [
+                      { label: "Active", value: "Active" },
+                      { label: "Past Due", value: "Past Due" },
+                      { label: "Canceled", value: "Canceled" },
+                      { label: "Trialing", value: "Trialing" },
+                    ],
+                  },
+                ]}
+                filterMatcher={(sub, key, val) => {
+                  if (key === "plan_tier") return sub.plan_tier === val;
+                  if (key === "status") return sub.status === val;
+                  return true;
+                }}
+                sortOptions={[
+                  { label: "Monthly Amount (High to Low)", value: "price_desc" },
+                  { label: "Monthly Amount (Low to High)", value: "price_asc" },
+                ]}
+                sortComparator={(a, b, sortKey) => {
+                  const pA = Number(a.monthly_price) || 0;
+                  const pB = Number(b.monthly_price) || 0;
+                  if (sortKey === "price_desc") return pB - pA;
+                  if (sortKey === "price_asc") return pA - pB;
+                  return 0;
+                }}
+                defaultPageSize={10}
+                itemLabel="subscriptions"
+                actions={
+                  <span className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 font-mono text-xs font-bold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300">
                     MRR: {formatCurrency(stats?.kpis.mrr ?? 899)}
                   </span>
-                </div>
-              </div>
-
-              <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-xs dark:border-stone-800 dark:bg-stone-900">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="border-b border-stone-200 bg-stone-50/75 text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:border-stone-800 dark:bg-stone-950/50 dark:text-stone-400">
-                      <tr>
-                        <th className="px-4 py-3">Tenant Organization</th>
-                        <th className="px-4 py-3">Plan Tier</th>
-                        <th className="px-4 py-3">Monthly Amount</th>
-                        <th className="px-4 py-3">Billing Cycle</th>
-                        <th className="px-4 py-3">Payment Method</th>
-                        <th className="px-4 py-3">Status</th>
-                        <th className="px-4 py-3">Next Renewal</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-100 dark:divide-stone-800/80">
-                      {subscriptions.map((sub) => (
-                        <tr key={sub.id} className="hover:bg-stone-50/60 dark:hover:bg-stone-800/30">
-                          <td className="px-4 py-3 font-semibold text-stone-900 dark:text-white">
-                            {sub.organization_name}
-                          </td>
-                          <td className="px-4 py-3">
-                            <Badge tone="indigo">{sub.plan_tier}</Badge>
-                          </td>
-                          <td className="px-4 py-3 font-bold text-stone-900 dark:text-white">
-                            {formatCurrency(sub.monthly_price)} / mo
-                          </td>
-                          <td className="px-4 py-3 text-stone-500 font-medium">
-                            {sub.billing_cycle}
-                          </td>
-                          <td className="px-4 py-3 font-mono text-stone-600 dark:text-stone-400">
-                            {sub.payment_method}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                                sub.status === "Active"
-                                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                                  : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
-                              }`}
-                            >
-                              {sub.status}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 font-mono text-stone-500">
-                            {sub.next_billing_date ? formatDate(sub.next_billing_date) : "—"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                }
+              />
             </div>
           )}
 
@@ -1243,107 +1423,175 @@ export function PlatformSuperAdminPortal({
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <h2 className="text-base font-bold text-stone-900 dark:text-white">
-                    Client Support &amp; Technical Queries
+                    Client Support &amp; Technical Queries ({tickets.length})
                   </h2>
                   <p className="text-xs text-stone-500 dark:text-stone-400">
                     Triage incoming DNS verification inquiries, OAuth questions, and technical support requests.
                   </p>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-stone-500">Filter Status:</span>
-                  <select
-                    value={ticketStatusFilter}
-                    onChange={(e) => setTicketStatusFilter(e.target.value)}
-                    className="input py-1 text-xs"
-                  >
-                    <option value="all">All Queries</option>
-                    <option value="open">Open</option>
-                    <option value="in progress">In Progress</option>
-                    <option value="resolved">Resolved</option>
-                  </select>
-                </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
-                {filteredTickets.map((ticket) => (
-                  <div
-                    key={ticket.id}
-                    className="rounded-2xl border border-stone-200 bg-white p-5 shadow-xs dark:border-stone-800 dark:bg-stone-900 space-y-3"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                      <div className="flex items-center gap-2.5">
-                        <Badge
-                          tone={
-                            ticket.priority === "Critical" || ticket.priority === "High"
-                              ? "amber"
-                              : "gray"
-                          }
-                        >
-                          {ticket.priority} Priority
-                        </Badge>
-                        <Badge tone="indigo">{ticket.category}</Badge>
-                        <span className="text-xs font-semibold text-stone-600 dark:text-stone-300">
-                          {ticket.organization_name}
-                        </span>
-                      </div>
+              {/* Toolbar: Search and Filters */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <TableSearchBar
+                  value={ticketSearch}
+                  onChange={(val) => {
+                    setTicketSearch(val);
+                    setTicketPage(1);
+                  }}
+                  placeholder="Search tickets by subject, message, organization..."
+                  className="sm:w-80"
+                />
+                <TableFilterBar
+                  filters={[
+                    {
+                      key: "status",
+                      label: "Status",
+                      options: [
+                        { label: "Open", value: "open" },
+                        { label: "In Progress", value: "in progress" },
+                        { label: "Resolved", value: "resolved" },
+                      ],
+                    },
+                    {
+                      key: "priority",
+                      label: "Priority",
+                      options: [
+                        { label: "Critical", value: "critical" },
+                        { label: "High", value: "high" },
+                        { label: "Medium", value: "medium" },
+                        { label: "Low", value: "low" },
+                      ],
+                    },
+                  ]}
+                  activeFilters={{
+                    status: ticketStatusFilter === "all" ? "" : ticketStatusFilter,
+                    priority: ticketPriorityFilter === "all" ? "" : ticketPriorityFilter,
+                  }}
+                  onFilterChange={(k, v) => {
+                    if (k === "status") setTicketStatusFilter(v || "all");
+                    if (k === "priority") setTicketPriorityFilter(v || "all");
+                    setTicketPage(1);
+                  }}
+                  onClearFilters={() => {
+                    setTicketStatusFilter("all");
+                    setTicketPriorityFilter("all");
+                    setTicketSearch("");
+                    setTicketPage(1);
+                  }}
+                />
+              </div>
 
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                            ticket.status === "Resolved"
-                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                              : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-                          }`}
-                        >
-                          {ticket.status}
-                        </span>
-                        <span className="text-[11px] text-stone-400 font-mono">
-                          {formatDateTimeWithSeconds(ticket.created_at)}
-                        </span>
-                      </div>
-                    </div>
+              {paginatedTickets.length === 0 ? (
+                <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900">
+                  <TableEmptyState
+                    title="No Support Queries Found"
+                    message="There are no tickets matching your current search query or filter selection."
+                  />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {paginatedTickets.map((ticket) => (
+                    <div
+                      key={ticket.id}
+                      className="rounded-2xl border border-stone-200 bg-white p-5 shadow-xs dark:border-stone-800 dark:bg-stone-900 space-y-3"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <Badge
+                            tone={
+                              ticket.priority === "Critical" || ticket.priority === "High"
+                                ? "amber"
+                                : "gray"
+                            }
+                          >
+                            {ticket.priority} Priority
+                          </Badge>
+                          <Badge tone="indigo">{ticket.category}</Badge>
+                          <span className="text-xs font-semibold text-stone-600 dark:text-stone-300">
+                            {ticket.organization_name}
+                          </span>
+                        </div>
 
-                    <h3 className="text-sm font-bold text-stone-900 dark:text-white">
-                      {ticket.subject}
-                    </h3>
-
-                    <p className="text-xs text-stone-600 dark:text-stone-300 rounded-xl bg-stone-50 p-3 dark:bg-stone-950/40">
-                      {ticket.message}
-                    </p>
-
-                    {ticket.admin_notes && (
-                      <div className="text-xs text-emerald-700 dark:text-emerald-300 rounded-xl bg-emerald-50/70 p-3 dark:bg-emerald-950/30 flex items-start gap-2">
-                        <CheckCircle2 className="size-4 shrink-0 mt-0.5" />
-                        <div>
-                          <strong className="block text-[11px] uppercase font-bold tracking-wider">
-                            Superadmin Resolution Notes:
-                          </strong>
-                          <span>{ticket.admin_notes}</span>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                              ticket.status === "Resolved"
+                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                            }`}
+                          >
+                            {ticket.status}
+                          </span>
+                          <span className="text-[11px] text-stone-400 font-mono">
+                            {formatDateTimeWithSeconds(ticket.created_at)}
+                          </span>
                         </div>
                       </div>
-                    )}
 
-                    <div className="flex items-center justify-between pt-2 border-t border-stone-100 dark:border-stone-800">
-                      <span className="text-[11px] text-stone-400 font-mono">
-                        Submitted by: {ticket.submitted_by_name} ({ticket.submitted_by_email})
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedTicket(ticket);
-                          setTicketStatus(ticket.status);
-                          setTicketNotes(ticket.admin_notes || "");
-                        }}
-                        className="btn-secondary btn-xs"
-                      >
-                        <LifeBuoy className="size-3.5" />
-                        Respond / Resolve Ticket
-                      </button>
+                      <h3 className="text-sm font-bold text-stone-900 dark:text-white">
+                        {ticket.subject}
+                      </h3>
+
+                      <p className="text-xs text-stone-600 dark:text-stone-300 rounded-xl bg-stone-50 p-3 dark:bg-stone-950/40">
+                        {ticket.message}
+                      </p>
+
+                      {ticket.admin_notes && (
+                        <div className="text-xs text-emerald-700 dark:text-emerald-300 rounded-xl bg-emerald-50/70 p-3 dark:bg-emerald-950/30 flex items-start gap-2">
+                          <CheckCircle2 className="size-4 shrink-0 mt-0.5" />
+                          <div>
+                            <strong className="block text-[11px] uppercase font-bold tracking-wider">
+                              Superadmin Resolution Notes:
+                            </strong>
+                            <span>{ticket.admin_notes}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between pt-2 border-t border-stone-100 dark:border-stone-800">
+                        <span className="text-[11px] text-stone-400 font-mono">
+                          Submitted by: {ticket.submitted_by_name} ({ticket.submitted_by_email})
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedTicket(ticket);
+                            setTicketStatus(ticket.status);
+                            setTicketNotes(ticket.admin_notes || "");
+                          }}
+                          className="btn-secondary btn-xs"
+                        >
+                          <LifeBuoy className="size-3.5" />
+                          Respond / Resolve Ticket
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
+
+              {filteredTickets.length > 0 && (
+                <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900">
+                  <TablePagination
+                    pageSize={ticketPageSize}
+                    pageSizeOptions={[3, 6, 12, 24]}
+                    onPageSizeChange={(sz) => {
+                      setTicketPageSize(sz);
+                      setTicketPage(1);
+                    }}
+                    currentPage={ticketPage}
+                    totalPages={Math.ceil(filteredTickets.length / ticketPageSize) || 1}
+                    totalCount={filteredTickets.length}
+                    currentCount={paginatedTickets.length}
+                    hasPrevious={ticketPage > 1}
+                    hasNext={ticketPage < Math.ceil(filteredTickets.length / ticketPageSize)}
+                    onPrevious={() => setTicketPage((p) => Math.max(1, p - 1))}
+                    onNext={() => setTicketPage((p) => p + 1)}
+                    itemLabel="tickets"
+                  />
+                </div>
+              )}
             </div>
           )}
 
@@ -1352,10 +1600,10 @@ export function PlatformSuperAdminPortal({
           {/* ========================================================== */}
           {activeTab === "notifications" && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <h2 className="text-base font-bold text-stone-900 dark:text-white">
-                    Platform Broadcasts &amp; Maintenance Notices
+                    Platform System Broadcasts &amp; Notices ({notifications.length})
                   </h2>
                   <p className="text-xs text-stone-500 dark:text-stone-400">
                     Publish system alerts and maintenance announcements shown to client tenants.
@@ -1365,57 +1613,127 @@ export function PlatformSuperAdminPortal({
                 <button
                   type="button"
                   onClick={() => setIsBroadcastModalOpen(true)}
-                  className="btn-primary btn-sm"
+                  className="btn-primary btn-sm self-start sm:self-auto"
                 >
                   <Plus className="size-4" />
                   New Broadcast
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
-                {notifications.map((note) => (
-                  <div
-                    key={note.id}
-                    className="rounded-2xl border border-stone-200 bg-white p-5 shadow-xs dark:border-stone-800 dark:bg-stone-900 space-y-3"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                            note.severity === "critical"
-                              ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
-                              : note.severity === "warning"
-                              ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-                              : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                          }`}
-                        >
-                          {note.severity}
-                        </span>
-                        <Badge tone="gray">
-                          Target: {note.target_organization_name || "All Clients (Platform-wide)"}
-                        </Badge>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] text-stone-400 font-mono">
-                          {formatDateTimeWithSeconds(note.created_at)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteBroadcast(note.id)}
-                          className="btn-ghost btn-icon text-rose-600 dark:text-rose-400"
-                          title="Delete notification"
-                        >
-                          <Trash2 className="size-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <h3 className="text-sm font-bold text-stone-900 dark:text-white">{note.title}</h3>
-                    <p className="text-xs text-stone-600 dark:text-stone-300">{note.message}</p>
-                  </div>
-                ))}
+              {/* Toolbar: Search and Filter */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <TableSearchBar
+                  value={notificationSearch}
+                  onChange={(val) => {
+                    setNotificationSearch(val);
+                    setNotificationPage(1);
+                  }}
+                  placeholder="Search broadcasts by title, message, target..."
+                  className="sm:w-80"
+                />
+                <TableFilterBar
+                  filters={[
+                    {
+                      key: "severity",
+                      label: "Severity",
+                      options: [
+                        { label: "Critical", value: "critical" },
+                        { label: "Warning", value: "warning" },
+                        { label: "Info", value: "info" },
+                        { label: "Success", value: "success" },
+                      ],
+                    },
+                  ]}
+                  activeFilters={{
+                    severity: notificationSeverityFilter === "all" ? "" : notificationSeverityFilter,
+                  }}
+                  onFilterChange={(k, v) => {
+                    if (k === "severity") setNotificationSeverityFilter(v || "all");
+                    setNotificationPage(1);
+                  }}
+                  onClearFilters={() => {
+                    setNotificationSeverityFilter("all");
+                    setNotificationSearch("");
+                    setNotificationPage(1);
+                  }}
+                />
               </div>
+
+              {paginatedNotifications.length === 0 ? (
+                <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900">
+                  <TableEmptyState
+                    title="No Broadcasts Found"
+                    message="There are no system notifications matching your filter criteria."
+                  />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {paginatedNotifications.map((note) => (
+                    <div
+                      key={note.id}
+                      className="rounded-2xl border border-stone-200 bg-white p-5 shadow-xs dark:border-stone-800 dark:bg-stone-900 space-y-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                              note.severity === "critical"
+                                ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
+                                : note.severity === "warning"
+                                ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                                : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                            }`}
+                          >
+                            {note.severity}
+                          </span>
+                          <Badge tone="gray">
+                            Target: {note.target_organization_name || "All Clients (Platform-wide)"}
+                          </Badge>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] text-stone-400 font-mono">
+                            {formatDateTimeWithSeconds(note.created_at)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteBroadcast(note.id)}
+                            className="btn-ghost btn-icon text-rose-600 dark:text-rose-400"
+                            title="Delete notification"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <h3 className="text-sm font-bold text-stone-900 dark:text-white">{note.title}</h3>
+                      <p className="text-xs text-stone-600 dark:text-stone-300">{note.message}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {filteredNotifications.length > 0 && (
+                <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900">
+                  <TablePagination
+                    pageSize={notificationPageSize}
+                    pageSizeOptions={[3, 6, 12, 24]}
+                    onPageSizeChange={(sz) => {
+                      setNotificationPageSize(sz);
+                      setNotificationPage(1);
+                    }}
+                    currentPage={notificationPage}
+                    totalPages={Math.ceil(filteredNotifications.length / notificationPageSize) || 1}
+                    totalCount={filteredNotifications.length}
+                    currentCount={paginatedNotifications.length}
+                    hasPrevious={notificationPage > 1}
+                    hasNext={notificationPage < Math.ceil(filteredNotifications.length / notificationPageSize)}
+                    onPrevious={() => setNotificationPage((p) => Math.max(1, p - 1))}
+                    onNext={() => setNotificationPage((p) => p + 1)}
+                    itemLabel="broadcasts"
+                  />
+                </div>
+              )}
             </div>
           )}
 

@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { BeamLineMark } from "@/components/brand/BeamLineLogo";
 import { Badge, Field, StatCard } from "@/components/ui/primitives";
+import { ClientDataTable, type ClientTableColumn } from "@/components/common/table";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import {
   InlineAlert,
@@ -323,6 +324,108 @@ export function SuperAdminControlPlane({
 
   const activeCount = organizations.filter((o) => o.is_active).length;
 
+  const modalOrgColumns: ClientTableColumn<Organization>[] = [
+    {
+      key: "name",
+      header: "Client Organization",
+      render: (o) => (
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 font-bold text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 text-xs">
+            {o.name.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <div className="font-semibold text-stone-900 dark:text-white">{o.name}</div>
+            <div className="text-[11px] text-stone-400 dark:text-stone-500 font-mono">
+              ID: {o.id.substring(0, 8)}...
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "subdomain",
+      header: "Subdomain & Domain",
+      render: (o) => (
+        <div className="flex flex-col gap-0.5">
+          <span className="font-mono text-stone-700 dark:text-stone-300">
+            {o.subdomain_host}
+          </span>
+          {o.custom_domain && (
+            <span className="inline-flex items-center gap-1 font-mono text-[11px] text-amber-600 dark:text-amber-400">
+              <Globe className="h-3 w-3" />
+              {o.custom_domain}
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (o) => (
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+            o.is_active
+              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+              : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
+          }`}
+        >
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${
+              o.is_active ? "bg-emerald-500" : "bg-rose-500"
+            }`}
+          />
+          {o.is_active ? "Active" : "Suspended"}
+        </span>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      className: "text-right",
+      render: (o) => {
+        const isSelected = selectedOrgForFeatures?.id === o.id;
+        return (
+          <div className="flex items-center justify-end gap-2">
+            {onInspectWorkspace && (
+              <button
+                type="button"
+                onClick={() => onInspectWorkspace(o)}
+                className="btn-primary btn-xs"
+                title={`Inspect ${o.name} workspace`}
+              >
+                <Eye className="h-3.5 w-3.5" />
+                Inspect Workspace
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setSelectedOrgForFeatures(isSelected ? null : o)}
+              aria-pressed={isSelected}
+              className="btn-secondary btn-xs"
+            >
+              <Sliders className="h-3.5 w-3.5" />
+              Feature Flags
+            </button>
+            <button
+              type="button"
+              onClick={() => handleToggleClientActive(o)}
+              disabled={pendingOrgId === o.id}
+              className={`${o.is_active ? "btn-danger" : "btn-secondary"} btn-xs`}
+            >
+              {pendingOrgId === o.id ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Power className="h-3.5 w-3.5" />
+              )}
+              {o.is_active ? "Suspend" : "Activate"}
+            </button>
+          </div>
+        );
+      },
+    },
+  ];
+
   const renderContent = () => (
     <div className="space-y-6">
       {feedback && (
@@ -338,149 +441,67 @@ export function SuperAdminControlPlane({
         </div>
       ) : activeTab === "organizations" ? (
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h3 className="text-base font-semibold text-stone-900 dark:text-stone-100">
-                Client Builder Directory
-              </h3>
-              <p className="text-xs text-stone-500 dark:text-stone-400">
-                Manage client organizations, configure feature toggles, and inspect workspaces.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={loadData}
-                disabled={loading}
-                className="btn-secondary btn-sm"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-                Refresh
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("invite_client")}
-                className="btn-primary btn-sm"
-              >
-                <UserPlus className="h-3.5 w-3.5" />
-                Invite new client
-              </button>
-            </div>
-          </div>
-
-          {organizations.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-stone-300 p-8 text-center text-sm text-stone-500 dark:border-stone-700 dark:text-stone-400">
-              No client organizations provisioned yet. Use the Invite tab to onboard your first client.
-            </div>
-          ) : (
-            <div className="overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-xs dark:border-stone-800 dark:bg-stone-900">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="border-b border-stone-200 bg-stone-50/75 text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:border-stone-800 dark:bg-stone-950/50 dark:text-stone-400">
-                    <tr>
-                      <th className="px-4 py-3">Client Organization</th>
-                      <th className="px-4 py-3">Subdomain &amp; Domain</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-stone-100 dark:divide-stone-800/80">
-                    {organizations.map((o) => {
-                      const isSelected = selectedOrgForFeatures?.id === o.id;
-                      return (
-                        <tr
-                          key={o.id}
-                          className={`transition hover:bg-stone-50/75 dark:hover:bg-stone-800/40 ${
-                            isSelected ? "bg-amber-50/50 dark:bg-amber-950/20" : ""
-                          }`}
-                        >
-                          <td className="px-4 py-3.5 font-medium text-stone-900 dark:text-stone-100">
-                            <div className="flex items-center gap-2.5">
-                              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 font-bold text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 text-xs">
-                                {o.name.charAt(0).toUpperCase()}
-                              </div>
-                              <div>
-                                <div className="font-semibold text-stone-900 dark:text-white">{o.name}</div>
-                                <div className="text-[11px] text-stone-400 dark:text-stone-500 font-mono">
-                                  ID: {o.id.substring(0, 8)}...
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3.5">
-                            <div className="flex flex-col gap-0.5">
-                              <span className="font-mono text-stone-700 dark:text-stone-300">
-                                {o.subdomain_host}
-                              </span>
-                              {o.custom_domain && (
-                                <span className="inline-flex items-center gap-1 font-mono text-[11px] text-amber-600 dark:text-amber-400">
-                                  <Globe className="h-3 w-3" />
-                                  {o.custom_domain}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3.5">
-                            <span
-                              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                                o.is_active
-                                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                                  : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
-                              }`}
-                            >
-                              <span
-                                className={`h-1.5 w-1.5 rounded-full ${
-                                  o.is_active ? "bg-emerald-500" : "bg-rose-500"
-                                }`}
-                              />
-                              {o.is_active ? "Active" : "Suspended"}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3.5">
-                            <div className="flex items-center justify-end gap-2">
-                              {onInspectWorkspace && (
-                                <button
-                                  type="button"
-                                  onClick={() => onInspectWorkspace(o)}
-                                  className="btn-primary btn-xs"
-                                  title={`Inspect ${o.name} workspace`}
-                                >
-                                  <Eye className="h-3.5 w-3.5" />
-                                  Inspect Workspace
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => setSelectedOrgForFeatures(isSelected ? null : o)}
-                                aria-pressed={isSelected}
-                                className="btn-secondary btn-xs"
-                              >
-                                <Sliders className="h-3.5 w-3.5" />
-                                Feature Flags
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleToggleClientActive(o)}
-                                disabled={pendingOrgId === o.id}
-                                className={`${o.is_active ? "btn-danger" : "btn-secondary"} btn-xs`}
-                              >
-                                {pendingOrgId === o.id ? (
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                  <Power className="h-3.5 w-3.5" />
-                                )}
-                                {o.is_active ? "Suspend" : "Activate"}
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+          <ClientDataTable<Organization>
+            title={`Client Builder Directory (${organizations.length})`}
+            description="Manage client organizations, configure feature toggles, and inspect workspaces."
+            items={organizations}
+            columns={modalOrgColumns}
+            searchKeys={[(o) => o.name, (o) => o.slug, (o) => o.subdomain_host, (o) => o.custom_domain || ""]}
+            searchPlaceholder="Search organizations..."
+            filters={[
+              {
+                key: "status",
+                label: "Status",
+                options: [
+                  { label: "Active", value: "active" },
+                  { label: "Suspended", value: "suspended" },
+                ],
+              },
+            ]}
+            filterMatcher={(o, key, val) => {
+              if (key === "status") return val === "active" ? o.is_active : !o.is_active;
+              return true;
+            }}
+            sortOptions={[
+              { label: "Name (A-Z)", value: "name_asc" },
+              { label: "Name (Z-A)", value: "name_desc" },
+            ]}
+            sortComparator={(a, b, sortKey) => {
+              if (sortKey === "name_asc") return a.name.localeCompare(b.name);
+              if (sortKey === "name_desc") return b.name.localeCompare(a.name);
+              return 0;
+            }}
+            rowClassName={(o) =>
+              selectedOrgForFeatures?.id === o.id
+                ? "bg-amber-50/50 dark:bg-amber-950/20"
+                : ""
+            }
+            defaultPageSize={5}
+            pageSizeOptions={[5, 10, 20]}
+            emptyMessage="No client organizations provisioned yet. Use the Invite tab to onboard your first client."
+            itemLabel="organizations"
+            actions={
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={loadData}
+                  disabled={loading}
+                  className="btn-secondary btn-sm"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+                  Refresh
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("invite_client")}
+                  className="btn-primary btn-sm"
+                >
+                  <UserPlus className="h-3.5 w-3.5" />
+                  Invite client
+                </button>
               </div>
-            </div>
-          )}
+            }
+          />
 
           {selectedOrgForFeatures && (
             <section

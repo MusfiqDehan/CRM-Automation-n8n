@@ -36,6 +36,9 @@ def get_default_feature_flags() -> dict[str, bool]:
         "sub_custom_google_oauth": True,
         "sub_integration_notion": True,
         "sub_integration_smtp": True,
+        "sub_integration_stripe": True,
+        "sub_integration_bkash": True,
+        "sub_integration_sslcommerz": True,
         "sub_team_invitations": True,
     }
 
@@ -43,15 +46,24 @@ def get_default_feature_flags() -> dict[str, bool]:
 class PlatformSettings(models.Model):
     """
     Platform-wide global settings configured exclusively by Platform Superadmin.
-    Manages platform brand, base domain, and default Google OAuth credentials.
+    Manages platform brand, base domain, and self-registration policy.
+    Third-party integrations (including Google OAuth) are managed via the `integrations` app.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     platform_name = models.CharField(max_length=100, default="Beamline")
     base_domain = models.CharField(max_length=150, default="beamline.musfiqdehan.com")
-    google_oauth_client_id = models.CharField(max_length=255, blank=True, default="")
-    google_oauth_client_secret = models.CharField(max_length=255, blank=True, default="")
-    google_oauth_enabled = models.BooleanField(default=False)
+    site_title = models.CharField(
+        max_length=255,
+        default="BeamLine — Multi-Tenant Construction CRM & Autonomous Operations OS",
+        help_text="Platform application & SEO title.",
+    )
+    site_description = models.TextField(
+        default="White-labeled CRM, 4-phase project execution, autonomous invoice deduplication, and executive triage for high-value custom home builders.",
+        help_text="Platform meta description and SEO summary.",
+    )
+    logo_url = models.URLField(max_length=500, blank=True, default="", help_text="Platform brand logo URL.")
+    social_cover_url = models.URLField(max_length=500, blank=True, default="", help_text="Platform 1200x630 OpenGraph & Twitter social cover image URL.")
     allow_self_registration = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -69,9 +81,6 @@ class PlatformSettings(models.Model):
             defaults={
                 "platform_name": "Beamline",
                 "base_domain": "beamline.musfiqdehan.com",
-                "google_oauth_client_id": getattr(settings, "GOOGLE_OAUTH_CLIENT_ID", "") or "",
-                "google_oauth_client_secret": getattr(settings, "GOOGLE_OAUTH_CLIENT_SECRET", "") or "",
-                "google_oauth_enabled": bool(getattr(settings, "GOOGLE_OAUTH_CLIENT_ID", "")),
             },
         )
         return obj
@@ -116,14 +125,6 @@ class Organization(models.Model):
         help_text="Founder/Executive recipient email for high-value alerts and flagged cost reviews.",
     )
 
-    # Client-Level Google OAuth
-    use_custom_google_oauth = models.BooleanField(
-        default=False,
-        help_text="If enabled, login for this tenant uses the client's own Google OAuth credentials.",
-    )
-    google_oauth_client_id = models.CharField(max_length=255, blank=True, default="")
-    google_oauth_client_secret = models.CharField(max_length=255, blank=True, default="")
-
     # Granular Feature Entitlements
     feature_flags = models.JSONField(
         default=get_default_feature_flags,
@@ -131,8 +132,25 @@ class Organization(models.Model):
         help_text="Granular dictionary of enabled pages, features, and sub-features.",
     )
 
-    # Branding
-    logo_url = models.URLField(max_length=500, blank=True, default="")
+    # Branding & Custom SEO
+    site_title = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="Tenant custom title for workspace and SEO meta tags.",
+    )
+    site_description = models.TextField(
+        blank=True,
+        default="",
+        help_text="Tenant custom description for workspace and SEO meta tags.",
+    )
+    logo_url = models.URLField(max_length=500, blank=True, default="", help_text="Tenant brand logo URL.")
+    social_cover_url = models.URLField(
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="Tenant custom 1200x630 social preview cover in Cloudflare R2.",
+    )
     primary_color = models.CharField(max_length=16, default="#4f46e5")
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -413,4 +431,115 @@ class PlatformNotification(models.Model):
     def __str__(self) -> str:
         target = self.target_organization.slug if self.target_organization else "ALL"
         return f"[{self.severity.upper()}] {self.title} -> {target}"
+
+
+class UserProfile(models.Model):
+    """
+    Personal profile settings for users and administrators.
+    Maintains avatar URL in Cloudflare R2, user bio, job title, and contact details.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="profile",
+    )
+    avatar_url = models.URLField(max_length=500, blank=True, default="", help_text="Profile picture in Cloudflare R2.")
+    bio = models.TextField(blank=True, default="", help_text="Personal description/bio about the user or admin.")
+    job_title = models.CharField(max_length=120, blank=True, default="")
+    phone = models.CharField(max_length=40, blank=True, default="")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "User Profile"
+        verbose_name_plural = "User Profiles"
+
+    def __str__(self) -> str:
+        return f"Profile for {self.user.username}"
+
+    @classmethod
+    def get_or_create_for_user(cls, user) -> "UserProfile":
+        obj, _ = cls.objects.get_or_create(user=user)
+        return obj
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Cloudflare R2 Object Storage Deletion Lifecycle Signals
+# ─────────────────────────────────────────────────────────────────────────────
+from django.db.models.signals import post_delete, post_save, pre_save
+from django.dispatch import receiver
+
+
+@receiver(post_save, sender=Organization)
+def initialize_tenant_r2_folders(sender, instance, created, **kwargs):
+    """Automatically provisions tenant folder hierarchy on Cloudflare R2 upon creation."""
+    if created and instance.slug:
+        from common.storage import R2AssetLifecycleService
+        try:
+            R2AssetLifecycleService.ensure_tenant_folders(instance.slug)
+        except Exception:
+            pass
+
+
+@receiver(pre_save, sender=PlatformSettings)
+def cleanup_platform_settings_old_assets(sender, instance, **kwargs):
+    if not instance.pk:
+        return
+    old = PlatformSettings.objects.filter(pk=instance.pk).first()
+    if not old:
+        return
+    from common.storage import R2AssetLifecycleService
+
+    if old.logo_url and old.logo_url != instance.logo_url:
+        R2AssetLifecycleService.delete_asset(old.logo_url)
+    if old.social_cover_url and old.social_cover_url != instance.social_cover_url:
+        R2AssetLifecycleService.delete_asset(old.social_cover_url)
+
+
+@receiver(pre_save, sender=Organization)
+def cleanup_organization_old_assets(sender, instance, **kwargs):
+    if not instance.pk:
+        return
+    old = Organization.objects.filter(pk=instance.pk).first()
+    if not old:
+        return
+    from common.storage import R2AssetLifecycleService
+
+    if old.logo_url and old.logo_url != instance.logo_url:
+        R2AssetLifecycleService.delete_asset(old.logo_url)
+    if old.social_cover_url and old.social_cover_url != instance.social_cover_url:
+        R2AssetLifecycleService.delete_asset(old.social_cover_url)
+
+
+@receiver(pre_save, sender=UserProfile)
+def cleanup_user_profile_old_assets(sender, instance, **kwargs):
+    if not instance.pk:
+        return
+    old = UserProfile.objects.filter(pk=instance.pk).first()
+    if not old:
+        return
+    from common.storage import R2AssetLifecycleService
+
+    if old.avatar_url and old.avatar_url != instance.avatar_url:
+        R2AssetLifecycleService.delete_asset(old.avatar_url)
+
+
+@receiver(post_delete, sender=Organization)
+def cleanup_organization_deleted_assets(sender, instance, **kwargs):
+    from common.storage import R2AssetLifecycleService
+
+    if instance.logo_url:
+        R2AssetLifecycleService.delete_asset(instance.logo_url)
+    if instance.social_cover_url:
+        R2AssetLifecycleService.delete_asset(instance.social_cover_url)
+
+
+@receiver(post_delete, sender=UserProfile)
+def cleanup_user_profile_deleted_assets(sender, instance, **kwargs):
+    from common.storage import R2AssetLifecycleService
+
+    if instance.avatar_url:
+        R2AssetLifecycleService.delete_asset(instance.avatar_url)
+
 

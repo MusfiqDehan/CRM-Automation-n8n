@@ -37,3 +37,4 @@ export function TableEmptyState({
     </div>
   );
 }
+

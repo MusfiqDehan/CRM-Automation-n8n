@@ -145,11 +145,11 @@ export function ClientLandingPage({ tenant }: { tenant: ClientTenant }) {
                 Thoughtful homes. Clearer building journeys.
               </div>
               <h1 className="mt-6 text-balance text-4xl font-black leading-none tracking-tight sm:text-6xl lg:text-7xl">
-                Building the place where your story unfolds.
+                {tenant.site_title || "Building the place where your story unfolds."}
               </h1>
               <p className="mt-6 max-w-2xl text-pretty text-base leading-7 text-stone-200 sm:text-xl sm:leading-8">
-                {tenant.name} brings design, craft, and communication together to make an exceptional
-                custom home feel considered from the first conversation to move-in day.
+                {tenant.site_description ||
+                  `${tenant.name} brings design, craft, and communication together to make an exceptional custom home feel considered from the first conversation to move-in day.`}
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link

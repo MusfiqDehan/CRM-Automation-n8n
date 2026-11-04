@@ -276,22 +276,6 @@ export interface SimulatorTriggerResponse {
   cost_record: ProjectCost;
 }
 
-export interface SMTPSettings {
-  id: string;
-  host: string;
-  port: number;
-  username: string;
-  password?: string;
-  has_password?: boolean;
-  use_ssl: boolean;
-  use_tls: boolean;
-  default_from_email: string;
-  kevin_email: string;
-  is_active: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
-
 export interface FeatureFlags {
   // Top-level Pages
   page_landing?: boolean;
@@ -317,6 +301,9 @@ export interface FeatureFlags {
   sub_custom_google_oauth?: boolean;
   sub_integration_notion?: boolean;
   sub_integration_smtp?: boolean;
+  sub_integration_stripe?: boolean;
+  sub_integration_bkash?: boolean;
+  sub_integration_sslcommerz?: boolean;
   sub_team_invitations?: boolean;
   [key: string]: boolean | undefined;
 }
@@ -333,12 +320,11 @@ export interface Organization {
   deal_review_threshold: string;
   invoice_review_threshold: string;
   executive_recipient_email: string;
-  use_custom_google_oauth: boolean;
-  google_oauth_client_id: string;
-  google_oauth_client_secret?: string;
-  has_google_secret?: boolean;
   feature_flags: FeatureFlags;
+  site_title?: string;
+  site_description?: string;
   logo_url: string;
+  social_cover_url?: string;
   primary_color: string;
   member_count?: number;
   project_count?: number;
@@ -350,10 +336,10 @@ export interface PlatformSettings {
   id: string;
   platform_name: string;
   base_domain: string;
-  google_oauth_client_id: string;
-  google_oauth_client_secret?: string;
-  has_google_secret?: boolean;
-  google_oauth_enabled: boolean;
+  site_title?: string;
+  site_description?: string;
+  logo_url?: string;
+  social_cover_url?: string;
   allow_self_registration: boolean;
   updated_at?: string;
 }
@@ -366,6 +352,9 @@ export interface OrganizationMember {
   email: string;
   first_name: string;
   last_name: string;
+  avatar_url?: string;
+  bio?: string;
+  job_title?: string;
   role: "Owner" | "Admin" | "PM" | "Sales" | "Field" | "Accountant" | "Client";
   is_active: boolean;
   created_at: string;
@@ -401,12 +390,33 @@ export interface AuthUser {
   email: string;
   first_name?: string;
   last_name?: string;
+  avatar_url?: string;
+  bio?: string;
+  job_title?: string;
+  phone?: string;
   is_superuser: boolean;
+}
+
+export interface PublicTenantSummary {
+  slug: string;
+  name: string;
+  subdomain_host: string;
+  custom_domain: string | null;
+  site_title?: string;
+  site_description?: string;
+  logo_url?: string;
+  social_cover_url?: string;
+  page_landing?: boolean;
+  updated_at?: string | null;
 }
 
 export interface OAuthPublicConfig {
   platform_name: string;
   base_domain: string;
+  site_title?: string;
+  site_description?: string;
+  logo_url?: string;
+  social_cover_url?: string;
   tenant: {
     id: string;
     name: string;
@@ -417,9 +427,13 @@ export interface OAuthPublicConfig {
     is_active: boolean;
     currency: string;
     feature_flags: FeatureFlags;
+    site_title?: string;
+    site_description?: string;
     logo_url: string;
+    social_cover_url?: string;
     primary_color: string;
   } | null;
+  public_tenants?: PublicTenantSummary[];
   google_oauth: {
     enabled: boolean;
     client_id: string;
@@ -493,6 +507,9 @@ export interface PlatformUser {
   email: string;
   first_name: string;
   last_name: string;
+  avatar_url?: string;
+  bio?: string;
+  job_title?: string;
   is_active: boolean;
   is_superuser: boolean;
   date_joined: string;
@@ -549,5 +566,134 @@ export interface PlatformNotification {
   created_at: string;
   updated_at: string;
 }
+
+export type IntegrationCategory =
+  | "identity"
+  | "workspace"
+  | "payments"
+  | "communication"
+  | "ai_automation";
+
+export interface IntegrationFieldSchema {
+  key: string;
+  label: string;
+  field_type: "text" | "secret" | "url" | "email" | "number" | "boolean" | "select";
+  required: boolean;
+  default: unknown;
+  placeholder: string;
+  help_text: string;
+  options: Array<{ value: string; label: string }>;
+}
+
+export interface IntegrationSupportedAction {
+  action: string;
+  label: string;
+  description: string;
+}
+
+export interface PlatformIntegrationItem {
+  id: string;
+  provider_key: string;
+  name: string;
+  category: IntegrationCategory;
+  description: string;
+  icon_name: string;
+  docs_url: string;
+  feature_flag_key: string;
+  supports_platform_fallback: boolean;
+  supports_tenant_byoc: boolean;
+  supports_webhooks: boolean;
+  credential_schema: IntegrationFieldSchema[];
+  config_schema: IntegrationFieldSchema[];
+  supported_actions: IntegrationSupportedAction[];
+  is_enabled_globally: boolean;
+  availability_mode: "ALL_TENANTS" | "SPECIFIC_TENANTS" | "PLAN_TIERS" | "PLATFORM_ONLY" | "DISABLED";
+  allowed_plan_tiers: string[];
+  allowed_organization_ids: string[];
+  allow_platform_credentials_fallback: boolean;
+  allow_tenant_custom_credentials: boolean;
+  credentials: Record<string, string>;
+  has_secrets: Record<string, boolean>;
+  config: Record<string, unknown>;
+  last_tested_at: string | null;
+  last_test_status: "UNTESTED" | "HEALTHY" | "FAILED";
+  last_test_message: string;
+  connected_tenants_count: number;
+  updated_at: string | null;
+}
+
+export interface TenantIntegrationItem {
+  id: string | null;
+  organization_id: string;
+  organization_slug: string;
+  provider_key: string;
+  name: string;
+  category: IntegrationCategory;
+  description: string;
+  icon_name: string;
+  docs_url: string;
+  feature_flag_key: string;
+  supports_platform_fallback: boolean;
+  supports_tenant_byoc: boolean;
+  supports_webhooks: boolean;
+  credential_schema: IntegrationFieldSchema[];
+  config_schema: IntegrationFieldSchema[];
+  supported_actions: IntegrationSupportedAction[];
+  is_entitled: boolean;
+  is_enabled_globally: boolean;
+  availability_mode: string;
+  allow_platform_credentials_fallback: boolean;
+  allow_tenant_custom_credentials: boolean;
+  platform_has_credentials: boolean;
+  is_enabled: boolean;
+  use_custom_credentials: boolean;
+  active_source: "tenant" | "platform" | "unconfigured" | "disabled";
+  status: "CONNECTED" | "DISCONNECTED" | "ERROR" | "PENDING_SETUP";
+  credentials: Record<string, string>;
+  has_secrets: Record<string, boolean>;
+  config: Record<string, unknown>;
+  last_synced_at: string | null;
+  last_tested_at: string | null;
+  last_error: string;
+  updated_at: string | null;
+}
+
+export interface PaymentTransaction {
+  id: string;
+  organization_id: string | null;
+  organization_name: string;
+  organization_slug: string;
+  provider_key: "stripe" | "bkash" | "sslcommerz" | string;
+  scope: "PLATFORM_SUBSCRIPTION" | "TENANT_INVOICE" | "TENANT_DEAL";
+  status: "INITIATED" | "PENDING" | "SUCCEEDED" | "FAILED" | "CANCELED" | "REFUNDED";
+  amount: string;
+  currency: string;
+  external_transaction_id: string;
+  checkout_url: string;
+  customer_email: string;
+  description: string;
+  related_subscription_id: string | null;
+  related_project_cost_id: string | null;
+  related_opportunity_id: string | null;
+  is_sandbox: boolean;
+  metadata: Record<string, unknown>;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export interface IntegrationExecutionLog {
+  id: string;
+  organization_id: string | null;
+  organization_slug: string;
+  provider_key: string;
+  action: string;
+  status: "SUCCESS" | "WARNING" | "ERROR";
+  duration_ms: number;
+  credential_source: string;
+  summary: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
 
 

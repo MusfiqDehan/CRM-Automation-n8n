@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowLeft,
+  Blocks,
   Building2,
   CheckCircle2,
   ChevronRight,
@@ -31,7 +32,7 @@ import {
   InvoiceFormModal,
   ProjectFormModal,
 } from "@/components/admin/AdminForms";
-import { SMTPSettingsModal } from "@/components/admin/SMTPSettingsModal";
+import { TenantIntegrationsModal } from "@/components/integrations/TenantIntegrationsModal";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { type DateRangePreset } from "@/components/charts/DateRangeFilter";
 import { ActionMenu, type ActionMenuSection } from "@/components/ui/overlay";
@@ -101,6 +102,7 @@ export function AdminDashboard() {
   const [isProjectOpen, setIsProjectOpen] = useState(false);
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
   const [isSmtpSettingsOpen, setIsSmtpSettingsOpen] = useState(false);
+  const [initialIntegrationKey, setInitialIntegrationKey] = useState<string | null>(null);
   const [dispatchingEmail, setDispatchingEmail] = useState<string | null>(null);
 
   // Toast
@@ -582,16 +584,29 @@ export function AdminDashboard() {
         {
           id: "org",
           label: "Organization settings",
-          description: "Domain, thresholds, sign-in, and team",
+          description: "Domain, review thresholds, and team",
           icon: Sliders,
           onSelect: () => setIsTenantSettingsOpen(true),
         },
         {
+          id: "integrations",
+          label: "Integrations & Plugins",
+          description: "Notion, Google OAuth, Stripe, bKash, SSLCommerz & AI",
+          icon: Blocks,
+          onSelect: () => {
+            setInitialIntegrationKey(null);
+            setIsSmtpSettingsOpen(true);
+          },
+        },
+        {
           id: "smtp",
-          label: "Email delivery",
+          label: "Email delivery (SMTP)",
           description: "SMTP credentials and test sends",
           icon: Mail,
-          onSelect: () => setIsSmtpSettingsOpen(true),
+          onSelect: () => {
+            setInitialIntegrationKey("smtp_email");
+            setIsSmtpSettingsOpen(true);
+          },
         },
       ],
     },
@@ -890,9 +905,17 @@ export function AdminDashboard() {
                 title={`Signed in as ${currentUser.username} (${currentRole})`}
                 aria-label={`Account: ${currentUser.username}`}
               >
-                <span className="flex size-6 items-center justify-center rounded-lg bg-amber-100 text-[11px] font-bold text-amber-800 dark:bg-amber-400/20 dark:text-amber-300">
-                  {currentUser.username.charAt(0).toUpperCase()}
-                </span>
+                {currentUser.avatar_url ? (
+                  <img
+                    src={currentUser.avatar_url}
+                    alt={currentUser.username}
+                    className="size-6 rounded-lg object-cover border border-amber-500/30"
+                  />
+                ) : (
+                  <span className="flex size-6 items-center justify-center rounded-lg bg-amber-100 text-[11px] font-bold text-amber-800 dark:bg-amber-400/20 dark:text-amber-300">
+                    {currentUser.username.charAt(0).toUpperCase()}
+                  </span>
+                )}
                 <span className="hidden max-w-28 truncate md:inline">{currentUser.username}</span>
               </button>
             </div>
@@ -1365,10 +1388,17 @@ export function AdminDashboard() {
           setLastSimulation(res);
         }}
       />
-      <SMTPSettingsModal
+      <TenantIntegrationsModal
         isOpen={isSmtpSettingsOpen}
-        onClose={() => setIsSmtpSettingsOpen(false)}
-        onSuccessToast={(msg) => showToast(msg, "success")}
+        onClose={() => {
+          setIsSmtpSettingsOpen(false);
+          setInitialIntegrationKey(null);
+        }}
+        initialProviderKey={initialIntegrationKey}
+        onIntegrationsUpdated={() => {
+          setRefreshCounter((c) => c + 1);
+          fetchAuthAndTenant();
+        }}
       />
       <AuthModal
         isOpen={isAuthModalOpen}
@@ -1393,6 +1423,10 @@ export function AdminDashboard() {
         onSettingsUpdated={(updated) => {
           setActiveOrg(updated);
           setRefreshCounter((c) => c + 1);
+        }}
+        onOpenIntegrations={() => {
+          setInitialIntegrationKey(null);
+          setIsSmtpSettingsOpen(true);
         }}
       />
       <SuperAdminModal

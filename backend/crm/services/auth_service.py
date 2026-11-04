@@ -153,35 +153,39 @@ class BeamlineJWTAuthentication(authentication.BaseAuthentication):
 
 class GoogleOAuthService:
     """
-    Two-tier Google OAuth verification service:
-    1. Checks if client organization has its own custom Google OAuth credentials configured and enabled.
-    2. Falls back to platform superadmin's global Google OAuth credentials.
+    Two-tier Google OAuth verification service backed by IntegrationResolver (`provider_key="google_oauth"`):
+    1. Checks if client organization is entitled and has custom Google OAuth credentials configured and enabled.
+    2. Falls back to platform superadmin's global Google OAuth credentials when permitted.
     """
 
     @classmethod
     def resolve_credentials(cls, organization: Any = None) -> dict[str, Any]:
         from common.tenancy import PlatformSettings
-
-        if (
-            organization
-            and organization.use_custom_google_oauth
-            and organization.is_feature_enabled("sub_custom_google_oauth")
-            and organization.google_oauth_client_id
-        ):
-            return {
-                "source": "client",
-                "client_id": organization.google_oauth_client_id,
-                "client_secret": organization.google_oauth_client_secret,
-                "organization_name": organization.name,
-                "organization_slug": organization.slug,
-            }
+        from integrations.services.resolver import IntegrationResolver
 
         platform = PlatformSettings.get_settings()
+        resolved = IntegrationResolver.resolve("google_oauth", organization=organization)
+        client_id = str(resolved.credentials.get("client_id") or "").strip()
+        client_secret = str(resolved.credentials.get("client_secret") or "").strip()
+
+        if resolved.source == "tenant" and organization:
+            return {
+                "source": "client",
+                "enabled": bool(resolved.is_enabled and client_id),
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "organization_name": organization.name,
+                "organization_slug": organization.slug,
+                "config": resolved.config,
+            }
+
         return {
             "source": "platform",
-            "client_id": platform.google_oauth_client_id,
-            "client_secret": platform.google_oauth_client_secret,
+            "enabled": bool(resolved.is_enabled and client_id),
+            "client_id": client_id,
+            "client_secret": client_secret,
             "platform_name": platform.platform_name,
+            "config": resolved.config,
         }
 
     @classmethod

@@ -8,17 +8,22 @@ import {
   Building2,
   CheckCircle2,
   Globe,
+  Loader2,
   Lock,
   LogOut,
   Mail,
+  Save,
   ShieldCheck,
+  Sparkles,
   User,
   UserPlus,
 } from "lucide-react";
 import { BeamLineLogo, BeamLineMark } from "@/components/brand/BeamLineLogo";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { PasswordInput } from "@/components/ui/PasswordInput";
+import { Field } from "@/components/ui/primitives";
 import { Modal, ModalBody, ModalHeader } from "@/components/ui/overlay";
+import { MediaAssetUploader } from "@/components/common/MediaAssetUploader";
 import { apiClient } from "@/lib/api-client";
 import type { AuthTokens, AuthUser, OAuthPublicConfig, Organization } from "@/lib/types";
 
@@ -54,10 +59,49 @@ export function AuthModal({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+  // Profile editing state
+  const [profileFirstName, setProfileFirstName] = useState("");
+  const [profileLastName, setProfileLastName] = useState("");
+  const [profileAvatar, setProfileAvatar] = useState("");
+  const [profileBio, setProfileBio] = useState("");
+  const [profileJobTitle, setProfileJobTitle] = useState("");
+  const [profilePhone, setProfilePhone] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileFeedback, setProfileFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+
   useEffect(() => {
     if (!isOpen) return;
     setErrorMsg(null);
     setSuccessMsg(null);
+    setProfileFeedback(null);
+
+    if (currentUser) {
+      setProfileFirstName(currentUser.first_name || "");
+      setProfileLastName(currentUser.last_name || "");
+      setProfileAvatar(currentUser.avatar_url || "");
+      setProfileBio(currentUser.bio || "");
+      setProfileJobTitle(currentUser.job_title || "");
+      setProfilePhone(currentUser.phone || "");
+
+      // Fetch fresh profile details from /auth/me/
+      apiClient
+        .get<AuthUser>("/auth/me/")
+        .then((user) => {
+          if (user) {
+            setProfileFirstName(user.first_name || "");
+            setProfileLastName(user.last_name || "");
+            setProfileAvatar(user.avatar_url || "");
+            setProfileBio(user.bio || "");
+            setProfileJobTitle(user.job_title || "");
+            setProfilePhone(user.phone || "");
+          }
+        })
+        .catch(() => {});
+    }
+
     apiClient
       .get<OAuthPublicConfig>("/auth/oauth-config/")
       .then((res) => {
@@ -66,7 +110,7 @@ export function AuthModal({
       .catch((err) => {
         console.warn("Could not load OAuth config", err);
       });
-  }, [isOpen]);
+  }, [isOpen, currentUser]);
 
   if (!isOpen) return null;
 
@@ -229,10 +273,50 @@ export function AuthModal({
   const activeTenant = oauthConfig?.tenant;
   const googleConfig = oauthConfig?.google_oauth;
 
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    setProfileFeedback(null);
+    try {
+      const res = await apiClient.patch<AuthUser>("/auth/me/", {
+        first_name: profileFirstName.trim(),
+        last_name: profileLastName.trim(),
+        avatar_url: profileAvatar.trim() || null,
+        bio: profileBio.trim(),
+        job_title: profileJobTitle.trim(),
+        phone: profilePhone.trim(),
+      });
+      setProfileFeedback({
+        type: "success",
+        message: "Profile updated and synced successfully!",
+      });
+      const token = apiClient.getAuthToken() || "";
+      onAuthSuccess(
+        res.data,
+        currentRole,
+        {
+          access_token: token,
+          refresh_token: "",
+          expires_in: 86400,
+          token_type: "Bearer",
+        },
+        activeTenant?.slug
+      );
+    } catch (err) {
+      setProfileFeedback({
+        type: "error",
+        message:
+          err instanceof Error ? err.message : "Failed to save profile changes.",
+      });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="sm">
+    <Modal isOpen={isOpen} onClose={onClose} size={currentUser ? "md" : "sm"}>
       <ModalHeader
-        title={currentUser ? "Your account" : "Sign in to BeamLine"}
+        title={currentUser ? "User Profile & Account" : "Sign in to BeamLine"}
         subtitle={
           activeTenant?.name
             ? `${activeTenant.name} · ${activeTenant.subdomain_host}`
@@ -272,12 +356,37 @@ export function AuthModal({
 
         {/* Logged in state */}
         {currentUser ? (
-          <div className="space-y-4">
+          <div className="space-y-5">
+            {profileFeedback && (
+              <div
+                className={`flex items-center gap-2 rounded-xl p-3 text-xs ${
+                  profileFeedback.type === "success"
+                    ? "border border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300"
+                    : "border border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300"
+                }`}
+              >
+                {profileFeedback.type === "success" ? (
+                  <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+                ) : (
+                  <AlertCircle className="size-4 shrink-0 text-rose-600" />
+                )}
+                <span>{profileFeedback.message}</span>
+              </div>
+            )}
+
             <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 dark:border-stone-800 dark:bg-stone-800/50">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-600/20 text-amber-600 font-bold dark:bg-amber-400/20 dark:text-amber-400">
-                  {currentUser.username.charAt(0).toUpperCase()}
-                </div>
+                {profileAvatar ? (
+                  <img
+                    src={profileAvatar}
+                    alt={currentUser.username}
+                    className="size-12 rounded-full object-cover border-2 border-amber-500/40 shadow-xs"
+                  />
+                ) : (
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-600/20 text-amber-600 font-bold dark:bg-amber-400/20 dark:text-amber-400 text-lg">
+                    {currentUser.username.charAt(0).toUpperCase()}
+                  </div>
+                )}
                 <div>
                   <p className="text-sm font-bold text-stone-900 dark:text-white">
                     {currentUser.username}
@@ -299,17 +408,99 @@ export function AuthModal({
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                onLogout();
-                onClose();
-              }}
-              className="btn-danger w-full"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign out
-            </button>
+            {/* Profile Editing Form */}
+            <form onSubmit={handleSaveProfile} className="space-y-4">
+              <MediaAssetUploader
+                label="Profile Picture"
+                category="avatar"
+                scopeId={currentUser.id}
+                value={profileAvatar}
+                onChange={setProfileAvatar}
+                previewType="avatar"
+                hint="Upload a square photo. Synced to Cloudflare R2 bucket root under beamline/avatar/."
+              />
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Field label="First name">
+                  <input
+                    type="text"
+                    value={profileFirstName}
+                    onChange={(e) => setProfileFirstName(e.target.value)}
+                    className="input text-xs"
+                    placeholder="Jane"
+                  />
+                </Field>
+                <Field label="Last name">
+                  <input
+                    type="text"
+                    value={profileLastName}
+                    onChange={(e) => setProfileLastName(e.target.value)}
+                    className="input text-xs"
+                    placeholder="Doe"
+                  />
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Field label="Job title / Specialty">
+                  <input
+                    type="text"
+                    value={profileJobTitle}
+                    onChange={(e) => setProfileJobTitle(e.target.value)}
+                    className="input text-xs"
+                    placeholder="Project Architect / General Contractor"
+                  />
+                </Field>
+                <Field label="Phone number">
+                  <input
+                    type="tel"
+                    value={profilePhone}
+                    onChange={(e) => setProfilePhone(e.target.value)}
+                    className="input text-xs"
+                    placeholder="+1 (555) 019-2834"
+                  />
+                </Field>
+              </div>
+
+              <Field label="Bio / Description about you" hint="Brief summary shown in team directory and project dossiers.">
+                <textarea
+                  rows={2}
+                  value={profileBio}
+                  onChange={(e) => setProfileBio(e.target.value)}
+                  className="input text-xs resize-none"
+                  placeholder="Lead custom residential builder specializing in high-performance framing and passive home construction."
+                />
+              </Field>
+
+              <div className="flex items-center gap-3 pt-1">
+                <button
+                  type="submit"
+                  disabled={savingProfile}
+                  className="btn-primary flex-1 text-xs"
+                >
+                  {savingProfile ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Save className="size-3.5" />
+                  )}
+                  {savingProfile ? "Saving Profile..." : "Save Profile Changes"}
+                </button>
+              </div>
+            </form>
+
+            <div className="border-t border-stone-200/80 pt-4 dark:border-stone-800/80">
+              <button
+                type="button"
+                onClick={() => {
+                  onLogout();
+                  onClose();
+                }}
+                className="btn-danger w-full text-xs"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Sign out
+              </button>
+            </div>
           </div>
         ) : (
           /* Unauthenticated Modal Content */

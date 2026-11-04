@@ -4,14 +4,12 @@ from crm.models import (
     Contact,
     EmailCommunicationLog,
     MaterialOrder,
-    NotionWorkspaceConfig,
     Opportunity,
     ProjectCost,
     ProjectTask,
     SalesActivity,
 )
 
-admin.site.register(NotionWorkspaceConfig)
 admin.site.register(Contact)
 admin.site.register(Opportunity)
 admin.site.register(SalesActivity)

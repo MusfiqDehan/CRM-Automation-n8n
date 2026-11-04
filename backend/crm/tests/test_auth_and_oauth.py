@@ -51,15 +51,25 @@ def test_login_api_view_success_and_failure():
 
 @pytest.mark.django_db
 def test_two_tier_google_oauth_resolution():
+    from integrations.services.resolver import IntegrationResolver
+
     client = Client()
-    platform = PlatformSettings.get_settings()
-    platform.google_oauth_client_id = "platform-global-id.apps.googleusercontent.com"
-    platform.google_oauth_client_secret = "platform-secret"
-    platform.save()
+    p_cfg = IntegrationResolver.ensure_platform_config("google_oauth")
+    p_cfg.is_enabled_globally = True
+    p_cfg.allow_platform_credentials_fallback = True
+    p_cfg.set_credentials(
+        {
+            "client_id": "platform-global-id.apps.googleusercontent.com",
+            "client_secret": "platform-secret",
+        },
+        secret_keys={"client_secret"},
+    )
+    p_cfg.save()
 
     kevin_org = Organization.objects.get(slug="kevin")
-    kevin_org.use_custom_google_oauth = False
-    kevin_org.save()
+    t_cfg = IntegrationResolver.get_or_create_tenant_config("google_oauth", kevin_org)
+    t_cfg.is_enabled = False
+    t_cfg.save()
 
     # 1. Tier 1 fallback: when client custom oauth is disabled, use platform oauth
     res_plat = client.get("/api/v1/auth/oauth-config/", HTTP_X_TENANT_SLUG="kevin")
@@ -69,10 +79,16 @@ def test_two_tier_google_oauth_resolution():
     assert oauth_data["client_id"] == "platform-global-id.apps.googleusercontent.com"
 
     # 2. Tier 2 override: when client configures and enables custom Google OAuth
-    kevin_org.use_custom_google_oauth = True
-    kevin_org.google_oauth_client_id = "kevin-custom-id.apps.googleusercontent.com"
-    kevin_org.google_oauth_client_secret = "kevin-custom-secret"
-    kevin_org.save()
+    t_cfg.is_enabled = True
+    t_cfg.use_custom_credentials = True
+    t_cfg.set_credentials(
+        {
+            "client_id": "kevin-custom-id.apps.googleusercontent.com",
+            "client_secret": "kevin-custom-secret",
+        },
+        secret_keys={"client_secret"},
+    )
+    t_cfg.save()
 
     res_client = client.get("/api/v1/auth/oauth-config/", HTTP_X_TENANT_SLUG="kevin")
     assert res_client.status_code == 200

@@ -8,21 +8,13 @@ from crm.models import (
     Contact,
     EmailCommunicationLog,
     MaterialOrder,
-    NotionWorkspaceConfig,
     Opportunity,
     ProjectCost,
     ProjectTask,
     SalesActivity,
-    SMTPSettings,
 )
 
 PHONE_REGEX = re.compile(r"^[0-9+\-() .ext]{7,30}$", re.IGNORECASE)
-
-
-class NotionWorkspaceConfigSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = NotionWorkspaceConfig
-        fields = "__all__"
 
 
 class ContactSerializer(serializers.ModelSerializer):
@@ -500,79 +492,6 @@ class InvoiceProcessRequestSerializer(serializers.Serializer):
         return super().to_internal_value(data)
 
 
-class SMTPSettingsSerializer(serializers.ModelSerializer):
-    """Serializer for admin to view and edit SMTP configuration."""
-
-    has_password = serializers.SerializerMethodField()
-
-    class Meta:
-        model = SMTPSettings
-        fields = [
-            "id",
-            "host",
-            "port",
-            "username",
-            "password",
-            "has_password",
-            "use_ssl",
-            "use_tls",
-            "default_from_email",
-            "kevin_email",
-            "is_active",
-            "created_at",
-            "updated_at",
-        ]
-        read_only_fields = ["id", "created_at", "updated_at"]
-        extra_kwargs = {
-            "password": {"required": False, "allow_blank": True},
-            "username": {"required": False, "allow_blank": True},
-            "host": {"required": False, "allow_blank": True},
-            "default_from_email": {"required": False, "allow_blank": True},
-            "kevin_email": {"required": False, "allow_blank": True},
-        }
-
-    def get_has_password(self, obj: SMTPSettings) -> bool:
-        from django.conf import settings
-
-        return bool(obj.password or getattr(settings, "SMTP_PASSWORD", ""))
-
-    def to_representation(self, instance: SMTPSettings) -> dict:
-        from django.conf import settings
-
-        data = super().to_representation(instance)
-        # Render default credentials dynamically from env variables if blank
-        if not data.get("host"):
-            data["host"] = getattr(settings, "SMTP_HOST", "smtp.gmail.com") or "smtp.gmail.com"
-        if not data.get("port"):
-            data["port"] = int(getattr(settings, "SMTP_PORT", 465) or 465)
-        if not data.get("username"):
-            data["username"] = getattr(settings, "SMTP_USER", "") or ""
-        if not data.get("default_from_email"):
-            data["default_from_email"] = (
-                getattr(settings, "DEFAULT_FROM_EMAIL", "")
-                or f"Kevin's Construction OS <{data['username']}>" if data.get("username") else ""
-            )
-        if not data.get("kevin_email"):
-            data["kevin_email"] = getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "") or data.get("username", "")
-
-        # Never reveal the app password to frontend after render
-        data["password"] = ""
-        return data
-
-    def validate_password(self, value: str) -> str:
-        return (value or "").strip().replace(" ", "")
-
-    def update(self, instance: SMTPSettings, validated_data: dict) -> SMTPSettings:
-        # If password is empty or not passed, keep the existing password
-        if "password" in validated_data:
-            pw = validated_data["password"]
-            if not pw:
-                validated_data.pop("password", None)
-            else:
-                validated_data["password"] = pw.strip().replace(" ", "")
-        return super().update(instance, validated_data)
-
-
 class SMTPTestConnectionSerializer(serializers.Serializer):
     """Allows testing outbound SMTP transmission to any recipient."""
 
@@ -623,40 +542,25 @@ from common.tenancy import (
 
 
 class PlatformSettingsSerializer(serializers.ModelSerializer):
-    has_google_secret = serializers.SerializerMethodField()
-
     class Meta:
         model = PlatformSettings
         fields = [
             "id",
             "platform_name",
             "base_domain",
-            "google_oauth_client_id",
-            "google_oauth_client_secret",
-            "has_google_secret",
-            "google_oauth_enabled",
+            "site_title",
+            "site_description",
+            "logo_url",
+            "social_cover_url",
             "allow_self_registration",
             "updated_at",
         ]
-        extra_kwargs = {
-            "google_oauth_client_secret": {"write_only": True, "required": False, "allow_blank": True},
-        }
-
-    def get_has_google_secret(self, obj: PlatformSettings) -> bool:
-        return bool(obj.google_oauth_client_secret)
-
-    def update(self, instance: PlatformSettings, validated_data: dict) -> PlatformSettings:
-        secret = validated_data.get("google_oauth_client_secret")
-        if secret == "":
-            validated_data.pop("google_oauth_client_secret", None)
-        return super().update(instance, validated_data)
 
 
 class OrganizationSerializer(serializers.ModelSerializer):
     subdomain_host = serializers.CharField(read_only=True)
     member_count = serializers.SerializerMethodField()
     project_count = serializers.SerializerMethodField()
-    has_google_secret = serializers.SerializerMethodField()
 
     class Meta:
         model = Organization
@@ -672,12 +576,11 @@ class OrganizationSerializer(serializers.ModelSerializer):
             "deal_review_threshold",
             "invoice_review_threshold",
             "executive_recipient_email",
-            "use_custom_google_oauth",
-            "google_oauth_client_id",
-            "google_oauth_client_secret",
-            "has_google_secret",
             "feature_flags",
+            "site_title",
+            "site_description",
             "logo_url",
+            "social_cover_url",
             "primary_color",
             "member_count",
             "project_count",
@@ -685,9 +588,6 @@ class OrganizationSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "subdomain_host", "created_at", "updated_at"]
-        extra_kwargs = {
-            "google_oauth_client_secret": {"write_only": True, "required": False, "allow_blank": True},
-        }
 
     def get_member_count(self, obj: Organization) -> int:
         return obj.members.filter(is_active=True).count()
@@ -695,18 +595,12 @@ class OrganizationSerializer(serializers.ModelSerializer):
     def get_project_count(self, obj: Organization) -> int:
         return getattr(obj, "crm_constructionproject_records", obj.constructionproject_set if hasattr(obj, "constructionproject_set") else None).count() if hasattr(obj, "crm_constructionproject_records") else 0
 
-    def get_has_google_secret(self, obj: Organization) -> bool:
-        return bool(obj.google_oauth_client_secret)
-
     def to_representation(self, instance: Organization) -> dict:
         ret = super().to_representation(instance)
         ret["feature_flags"] = instance.get_feature_flags()
         return ret
 
     def update(self, instance: Organization, validated_data: dict) -> Organization:
-        secret = validated_data.get("google_oauth_client_secret")
-        if secret == "":
-            validated_data.pop("google_oauth_client_secret", None)
         # If custom domain was updated, trigger Traefik dynamic sync
         domain_changed = "custom_domain" in validated_data and validated_data["custom_domain"] != instance.custom_domain
         instance = super().update(instance, validated_data)
@@ -721,6 +615,9 @@ class OrganizationMemberSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source="user.email", read_only=True)
     first_name = serializers.CharField(source="user.first_name", read_only=True)
     last_name = serializers.CharField(source="user.last_name", read_only=True)
+    avatar_url = serializers.SerializerMethodField()
+    bio = serializers.SerializerMethodField()
+    job_title = serializers.SerializerMethodField()
 
     class Meta:
         model = OrganizationMember
@@ -732,11 +629,26 @@ class OrganizationMemberSerializer(serializers.ModelSerializer):
             "email",
             "first_name",
             "last_name",
+            "avatar_url",
+            "bio",
+            "job_title",
             "role",
             "is_active",
             "created_at",
         ]
         read_only_fields = ["id", "created_at"]
+
+    def get_avatar_url(self, obj: OrganizationMember) -> str:
+        profile = getattr(obj.user, "profile", None)
+        return profile.avatar_url if profile else ""
+
+    def get_bio(self, obj: OrganizationMember) -> str:
+        profile = getattr(obj.user, "profile", None)
+        return profile.bio if profile else ""
+
+    def get_job_title(self, obj: OrganizationMember) -> str:
+        profile = getattr(obj.user, "profile", None)
+        return profile.job_title if profile else ""
 
 
 class InvitationSerializer(serializers.ModelSerializer):
@@ -866,6 +778,9 @@ class PlatformUserDirectorySerializer(serializers.Serializer):
     email = serializers.EmailField()
     first_name = serializers.CharField()
     last_name = serializers.CharField()
+    avatar_url = serializers.CharField(allow_blank=True, default="")
+    bio = serializers.CharField(allow_blank=True, default="")
+    job_title = serializers.CharField(allow_blank=True, default="")
     is_active = serializers.BooleanField()
     is_superuser = serializers.BooleanField()
     date_joined = serializers.DateTimeField()

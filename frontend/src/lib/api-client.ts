@@ -227,8 +227,57 @@ export class ApiClient {
     });
   }
 
-  public async delete<T = { id: string }>(endpoint: string): Promise<ApiEnvelope<T>> {
-    return this.request<T>(endpoint, { method: "DELETE" });
+  public async delete<T = { id: string }>(endpoint: string, payload?: Record<string, unknown>): Promise<ApiEnvelope<T>> {
+    return this.request<T>(endpoint, {
+      method: "DELETE",
+      body: payload ? JSON.stringify(payload) : undefined,
+    });
+  }
+
+  public async uploadFormData<T>(
+    endpoint: string,
+    formData: FormData
+  ): Promise<ApiEnvelope<T>> {
+    const url = this.buildUrl(endpoint);
+    const token = this.getAuthToken();
+    const tenantSlug = this.getTenantSlug();
+
+    const headers: Record<string, string> = {
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(tenantSlug ? { "X-Tenant-Slug": tenantSlug } : {}),
+    };
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: "POST",
+        headers,
+        body: formData,
+        cache: "no-store",
+      });
+    } catch (networkErr) {
+      const msg = networkErr instanceof Error ? networkErr.message : "Network error";
+      throw new ApiError(`Network error uploading file: ${msg}`, 0);
+    }
+
+    const rawText = await response.text();
+    let json: ApiEnvelope<T> | null = null;
+    if (rawText && rawText.trim().length > 0) {
+      try {
+        json = JSON.parse(rawText) as ApiEnvelope<T>;
+      } catch {
+        json = null;
+      }
+    }
+
+    if (!response.ok || !json || json.success === false) {
+      const fallbackMsg = !response.ok
+        ? `Upload failed with status ${response.status}`
+        : "Server returned an invalid response.";
+      throw new ApiError(json?.message || fallbackMsg, response.status);
+    }
+    return json;
   }
 }
 

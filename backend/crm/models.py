@@ -8,36 +8,6 @@ from django.utils import timezone
 from common.models import BaseModel
 
 
-class NotionWorkspaceConfig(BaseModel):
-    """Stores provisioned Notion workspace page and database IDs/URLs."""
-
-    hub_page_id = models.CharField(max_length=64, default="4098194e-c3e8-811a-b5b1-c1b79f62bce1")
-    hub_page_url = models.URLField(
-        max_length=500,
-        default="https://app.notion.com/p/Kevin-s-Construction-OS-4098194ec3e8811ab5b1c1b79f62bce1",
-    )
-    contacts_db_id = models.CharField(max_length=64, blank=True, default="4098194e-c3e8-81aa-ac76-e9668e95261a")
-    contacts_db_url = models.URLField(max_length=500, blank=True, default="https://app.notion.com/p/4098194ec3e881aaac76e9668e95261a")
-    opportunities_db_id = models.CharField(max_length=64, blank=True, default="4098194e-c3e8-81a3-ae85-ec1a2f2474e7")
-    opportunities_db_url = models.URLField(max_length=500, blank=True, default="https://app.notion.com/p/4098194ec3e881a3ae85ec1a2f2474e7")
-    activities_db_id = models.CharField(max_length=64, blank=True, default="4098194e-c3e8-81f1-a84c-dd3d785e299a")
-    activities_db_url = models.URLField(max_length=500, blank=True, default="https://app.notion.com/p/4098194ec3e881f1a84cdd3d785e299a")
-    projects_db_id = models.CharField(max_length=64, blank=True, default="4098194e-c3e8-819d-8936-e84f7c594da4")
-    projects_db_url = models.URLField(max_length=500, blank=True, default="https://app.notion.com/p/4098194ec3e8819d8936e84f7c594da4")
-    tasks_db_id = models.CharField(max_length=64, blank=True, default="4098194e-c3e8-817d-9519-ca6a6950286e")
-    tasks_db_url = models.URLField(max_length=500, blank=True, default="https://app.notion.com/p/4098194ec3e8817d9519ca6a6950286e")
-    materials_db_id = models.CharField(max_length=64, blank=True, default="4098194e-c3e8-8133-8d42-e75cef33f7e4")
-    materials_db_url = models.URLField(max_length=500, blank=True, default="https://app.notion.com/p/4098194ec3e881338d42e75cef33f7e4")
-    costs_db_id = models.CharField(max_length=64, blank=True, default="4098194e-c3e8-8168-80a6-ee408dd1a250")
-    costs_db_url = models.URLField(max_length=500, blank=True, default="https://app.notion.com/p/4098194ec3e8816880a6ee408dd1a250")
-    sales_dashboard_page_id = models.CharField(max_length=64, blank=True, default="4098194e-c3e8-8111-9177-d08ccaa4c436")
-    sales_dashboard_url = models.URLField(max_length=500, blank=True, default="https://app.notion.com/p/Sales-Dashboard-Executive-Pipeline-Overview-4098194ec3e881119177d08ccaa4c436")
-    last_synced_at = models.DateTimeField(null=True, blank=True)
-
-    def __str__(self) -> str:
-        return f"NotionWorkspaceConfig ({self.hub_page_id})"
-
-
 class Contact(BaseModel):
     """CRM Contacts & Enquiries database."""
 
@@ -456,60 +426,4 @@ class EmailCommunicationLog(BaseModel):
     def __str__(self) -> str:
         return f"[{self.direction}] {self.subject}"
 
-
-class SMTPSettings(BaseModel):
-    """Stores active SMTP configuration allowing admins to edit and manage email credentials dynamically."""
-
-    host = models.CharField(max_length=255, default="smtp.gmail.com")
-    port = models.IntegerField(default=465)
-    username = models.CharField(max_length=255, blank=True, default="")
-    password = models.CharField(max_length=255, blank=True, default="")
-    use_ssl = models.BooleanField(default=True)
-    use_tls = models.BooleanField(default=False)
-    default_from_email = models.CharField(
-        max_length=255, blank=True, default=""
-    )
-    kevin_email = models.EmailField(
-        blank=True,
-        default="",
-        help_text="Founder's recipient email for high-value alerts and flagged cost reviews.",
-    )
-    is_active = models.BooleanField(default=True)
-
-    class Meta:
-        verbose_name = "SMTP Settings"
-        verbose_name_plural = "SMTP Settings"
-
-    def __str__(self) -> str:
-        return f"SMTP ({self.username or 'Default'} via {self.host}:{self.port})"
-
-    @classmethod
-    def get_active(cls, organization=None) -> "SMTPSettings":
-        from django.conf import settings
-        from common.middleware import get_current_tenant
-
-        org = organization or get_current_tenant()
-        qs = cls.objects.filter(is_active=True)
-        if org:
-            obj = qs.filter(organization=org).first()
-        else:
-            obj = qs.first()
-        if not obj:
-            obj = cls.objects.create(
-                organization=org,
-                host=getattr(settings, "SMTP_HOST", "smtp.gmail.com") or "smtp.gmail.com",
-                port=int(getattr(settings, "SMTP_PORT", 465) or 465),
-                username=getattr(settings, "SMTP_USER", "") or "",
-                password=getattr(settings, "SMTP_PASSWORD", "") or "",
-                use_ssl=getattr(settings, "SMTP_USE_SSL", True),
-                use_tls=getattr(settings, "SMTP_USE_TLS", False),
-                default_from_email=getattr(
-                    settings, "DEFAULT_FROM_EMAIL", ""
-                ) or "",
-                kevin_email=getattr(
-                    settings, "NOTIFICATION_RECIPIENT_EMAIL", ""
-                ) or (org.executive_recipient_email if org else ""),
-                is_active=True,
-            )
-        return obj
 

@@ -231,9 +231,31 @@ class InvoiceExtractorService:
         if requested_provider == "deterministic":
             return fallback_result
 
-        openai_key = getattr(settings, "OPENAI_API_KEY", "")
-        gemini_key = getattr(settings, "GEMINI_API_KEY", "")
-        deepseek_key = getattr(settings, "DEEPSEEK_API_KEY", "")
+        from integrations.services.resolver import IntegrationResolver
+
+        openai_res = IntegrationResolver.resolve("openai")
+        gemini_res = IntegrationResolver.resolve("gemini")
+        deepseek_res = IntegrationResolver.resolve("deepseek")
+
+        openai_key = (
+            str(openai_res.credentials.get("api_key") or "").strip()
+            if openai_res.is_enabled
+            else ""
+        ) or getattr(settings, "OPENAI_API_KEY", "")
+        gemini_key = (
+            str(gemini_res.credentials.get("api_key") or "").strip()
+            if gemini_res.is_enabled
+            else ""
+        ) or getattr(settings, "GEMINI_API_KEY", "")
+        deepseek_key = (
+            str(deepseek_res.credentials.get("api_key") or "").strip()
+            if deepseek_res.is_enabled
+            else ""
+        ) or getattr(settings, "DEEPSEEK_API_KEY", "")
+
+        openai_model = str(openai_res.config.get("model") or getattr(settings, "OPENAI_MODEL", "gpt-4o-mini"))
+        gemini_model = str(gemini_res.config.get("model") or getattr(settings, "GEMINI_MODEL", "gemini-2.5-flash"))
+        deepseek_model = str(deepseek_res.config.get("model") or getattr(settings, "DEEPSEEK_MODEL", "deepseek-chat"))
 
         provider = requested_provider
         if provider == "auto":
@@ -260,7 +282,7 @@ class InvoiceExtractorService:
                         "https://api.openai.com/v1/chat/completions",
                         headers={"Authorization": f"Bearer {openai_key}"},
                         json={
-                            "model": getattr(settings, "OPENAI_MODEL", "gpt-4o-mini"),
+                            "model": openai_model,
                             "response_format": {"type": "json_object"},
                             "messages": [{"role": "user", "content": prompt}],
                         },
@@ -275,7 +297,7 @@ class InvoiceExtractorService:
                         "https://api.deepseek.com/chat/completions",
                         headers={"Authorization": f"Bearer {deepseek_key}"},
                         json={
-                            "model": getattr(settings, "DEEPSEEK_MODEL", "deepseek-chat"),
+                            "model": deepseek_model,
                             "response_format": {"type": "json_object"},
                             "messages": [{"role": "user", "content": prompt}],
                         },
@@ -285,7 +307,7 @@ class InvoiceExtractorService:
                         return {**fallback_result, **parsed, "extraction_engine": "deepseek"}
 
             if provider == "gemini" and gemini_key:
-                model = getattr(settings, "GEMINI_MODEL", "gemini-2.5-flash")
+                model = gemini_model
                 with httpx.Client(timeout=15.0) as client:
                     r = client.post(
                         f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}",

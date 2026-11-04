@@ -19,16 +19,28 @@ def test_superadmin_platform_settings_and_client_management():
         "/api/v1/superadmin/platform-settings/",
         {
             "platform_name": "Beamline Pro",
-            "google_oauth_client_id": "superadmin-oauth-id.apps.googleusercontent.com",
-            "google_oauth_client_secret": "superadmin-secret",
-            "google_oauth_enabled": True,
         },
         content_type="application/json",
         HTTP_AUTHORIZATION=auth_header,
     )
     assert patch_res.status_code == 200
     assert patch_res.json()["data"]["platform_name"] == "Beamline Pro"
-    assert patch_res.json()["data"]["has_google_secret"] is True
+
+    # Superadmin updates Google OAuth via unified integrations endpoint
+    oauth_patch = client.patch(
+        "/api/v1/integrations/superadmin/providers/google_oauth/",
+        {
+            "is_enabled_globally": True,
+            "credentials": {
+                "client_id": "superadmin-oauth-id.apps.googleusercontent.com",
+                "client_secret": "superadmin-secret",
+            },
+        },
+        content_type="application/json",
+        HTTP_AUTHORIZATION=auth_header,
+    )
+    assert oauth_patch.status_code == 200
+    assert oauth_patch.json()["data"]["has_secrets"]["client_secret"] is True
 
     # Superadmin toggles client active status
     kevin_org = Organization.objects.get(slug="kevin")

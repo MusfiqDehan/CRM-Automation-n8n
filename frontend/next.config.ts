@@ -10,6 +10,16 @@ const nextConfig: NextConfig = {
         hostname: "images.unsplash.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "cdn.musfiqdehan.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "*.r2.cloudflarestorage.com",
+        pathname: "/**",
+      },
     ],
   },
   async rewrites() {
@@ -24,6 +34,10 @@ const nextConfig: NextConfig = {
       {
         source: "/api/v1/:path*",
         destination: `${backendInternal}/api/v1/:path*`,
+      },
+      {
+        source: "/media/:path*",
+        destination: `${backendInternal}/media/:path*`,
       },
     ];
   },

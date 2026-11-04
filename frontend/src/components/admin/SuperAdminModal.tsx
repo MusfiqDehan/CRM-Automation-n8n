@@ -35,6 +35,8 @@ import {
 } from "@/components/ui/overlay";
 import { apiClient } from "@/lib/api-client";
 import type { Organization, PlatformSettings } from "@/lib/types";
+import { PlatformIntegrationsPanel } from "@/components/integrations/PlatformIntegrationsPanel";
+import { MediaAssetUploader } from "@/components/common/MediaAssetUploader";
 
 type ConsoleTab = "organizations" | "platform_settings" | "invite_client";
 
@@ -106,9 +108,10 @@ export function SuperAdminControlPlane({
   // Platform form state
   const [platformName, setPlatformName] = useState("BeamLine");
   const [baseDomain, setBaseDomain] = useState("beamline.musfiqdehan.com");
-  const [googleClientId, setGoogleClientId] = useState("");
-  const [googleClientSecret, setGoogleClientSecret] = useState("");
-  const [googleEnabled, setGoogleEnabled] = useState(false);
+  const [siteTitle, setSiteTitle] = useState("");
+  const [siteDescription, setSiteDescription] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [socialCoverUrl, setSocialCoverUrl] = useState("");
   const [savingPlatform, setSavingPlatform] = useState(false);
 
   // Invite client form state
@@ -142,9 +145,10 @@ export function SuperAdminControlPlane({
         setPlatformSettings(p);
         setPlatformName(p.platform_name || "BeamLine");
         setBaseDomain(p.base_domain || "beamline.musfiqdehan.com");
-        setGoogleClientId(p.google_oauth_client_id || "");
-        setGoogleClientSecret("");
-        setGoogleEnabled(Boolean(p.google_oauth_enabled));
+        setSiteTitle(p.site_title || "");
+        setSiteDescription(p.site_description || "");
+        setLogoUrl(p.logo_url || "");
+        setSocialCoverUrl(p.social_cover_url || "");
         setOrganizations(orgsRes.results || []);
       })
       .catch((err) => {
@@ -245,21 +249,19 @@ export function SuperAdminControlPlane({
       const payload: Record<string, unknown> = {
         platform_name: platformName.trim(),
         base_domain: baseDomain.trim(),
-        google_oauth_client_id: googleClientId.trim(),
-        google_oauth_enabled: googleEnabled,
+        site_title: siteTitle.trim() || null,
+        site_description: siteDescription.trim() || null,
+        logo_url: logoUrl.trim() || null,
+        social_cover_url: socialCoverUrl.trim() || null,
       };
-      if (googleClientSecret) {
-        payload.google_oauth_client_secret = googleClientSecret;
-      }
       const res = await apiClient.patch<PlatformSettings>(
         "/superadmin/platform-settings/",
         payload
       );
       setPlatformSettings(res.data);
-      setGoogleClientSecret("");
       setFeedback({
         type: "success",
-        message: "Platform settings and Google OAuth credentials saved!",
+        message: "Platform brand and domain settings saved!",
       });
     } catch (err) {
       setFeedback({
@@ -559,88 +561,113 @@ export function SuperAdminControlPlane({
           )}
         </div>
       ) : activeTab === "platform_settings" ? (
-        <form id="platform-settings-form" onSubmit={handleSavePlatformSettings} className="max-w-2xl space-y-5">
-          <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-xs dark:border-stone-800 dark:bg-stone-900 space-y-4">
-            <h3 className="text-base font-semibold text-stone-900 dark:text-stone-100">
-              Platform Domain &amp; Branding
-            </h3>
-            <Field label="Platform name" required>
-              <input
-                type="text"
+        <div className="space-y-6">
+          <form id="platform-settings-form" onSubmit={handleSavePlatformSettings} className="max-w-2xl space-y-5">
+            <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-xs dark:border-stone-800 dark:bg-stone-900 space-y-4">
+              <h3 className="text-base font-semibold text-stone-900 dark:text-stone-100">
+                Platform Domain &amp; Branding
+              </h3>
+              <Field label="Platform name" required>
+                <input
+                  type="text"
+                  required
+                  value={platformName}
+                  onChange={(e) => setPlatformName(e.target.value)}
+                  className="input"
+                />
+              </Field>
+
+              <Field
+                label="Platform base domain"
                 required
-                value={platformName}
-                onChange={(e) => setPlatformName(e.target.value)}
-                className="input"
-              />
-            </Field>
-
-            <Field
-              label="Platform base domain"
-              required
-              hint={`Client workspaces are served dynamically at <slug>.${baseDomain || "beamline.musfiqdehan.com"}`}
-            >
-              <input
-                type="text"
-                required
-                value={baseDomain}
-                onChange={(e) => setBaseDomain(e.target.value)}
-                className="input font-mono"
-              />
-            </Field>
-          </div>
-
-          <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-xs dark:border-stone-800 dark:bg-stone-900 space-y-4">
-            <h3 className="text-base font-semibold text-stone-900 dark:text-stone-100">
-              Global Platform Google OAuth (Two-Tier Sign-in)
-            </h3>
-            <p className="text-xs text-stone-500 dark:text-stone-400">
-              Provides fallback Google OAuth for all client tenants that have not set up their own Google Client ID/Secret.
-            </p>
-
-            <div className="rounded-xl border border-stone-200/80 bg-stone-50/60 p-4 dark:border-stone-800 dark:bg-stone-950/40">
-              <Switch
-                label="Enable Platform Google OAuth"
-                description="When enabled, any tenant without custom OAuth uses this global app."
-                checked={googleEnabled}
-                onChange={setGoogleEnabled}
-              />
-            </div>
-
-            <Field label="Google OAuth Client ID">
-              <input
-                type="text"
-                placeholder="e.g. 104829104-platform.apps.googleusercontent.com"
-                value={googleClientId}
-                onChange={(e) => setGoogleClientId(e.target.value)}
-                className="input font-mono"
-              />
-            </Field>
-
-            <Field
-              label="Google OAuth Client Secret"
-              hint={platformSettings?.has_google_secret ? "A secret is stored securely. Leave blank to preserve it." : undefined}
-            >
-              <PasswordInput
-                autoComplete="new-password"
-                placeholder={platformSettings?.has_google_secret ? "••••••••••••" : "Enter Google client secret"}
-                value={googleClientSecret}
-                onChange={(e) => setGoogleClientSecret(e.target.value)}
-                className="font-mono"
-              />
-            </Field>
-
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={savingPlatform || loading}
-                className="btn-primary"
+                hint={`Client workspaces are served dynamically at <slug>.${baseDomain || "beamline.musfiqdehan.com"}`}
               >
-                {savingPlatform ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                {savingPlatform ? "Saving Platform Settings..." : "Save Platform Settings"}
-              </button>
+                <input
+                  type="text"
+                  required
+                  value={baseDomain}
+                  onChange={(e) => setBaseDomain(e.target.value)}
+                  className="input font-mono"
+                />
+              </Field>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pt-2">
+                <Field
+                  label="Platform Site Title"
+                  hint="Browser tab & SEO search title for platform apex."
+                >
+                  <input
+                    type="text"
+                    placeholder="BeamLine — Multi-Tenant Construction CRM & Autonomous Operations OS"
+                    value={siteTitle}
+                    onChange={(e) => setSiteTitle(e.target.value)}
+                    className="input"
+                  />
+                </Field>
+
+                <Field
+                  label="Platform Site Description"
+                  hint="Global meta description and LLM reference description."
+                >
+                  <input
+                    type="text"
+                    placeholder="White-labeled CRM, 4-phase project execution, and autonomous invoice deduplication."
+                    value={siteDescription}
+                    onChange={(e) => setSiteDescription(e.target.value)}
+                    className="input"
+                  />
+                </Field>
+              </div>
+
+              <div className="space-y-6 pt-2 border-t border-stone-200/80 dark:border-stone-800/80">
+                <MediaAssetUploader
+                  label="Platform Logo"
+                  category="branding"
+                  scopeId="platform"
+                  value={logoUrl}
+                  onChange={setLogoUrl}
+                  previewType="logo"
+                  hint="Square or horizontal SVG/PNG icon for global platform branding and favicon."
+                />
+
+                <MediaAssetUploader
+                  label="Platform Social Cover (OpenGraph & Twitter Cards)"
+                  category="social"
+                  scopeId="platform"
+                  value={socialCoverUrl}
+                  onChange={setSocialCoverUrl}
+                  previewType="social-card"
+                  defaultPreviewUrl="/api/og?type=platform"
+                  socialCardInfo={{
+                    brandName: platformName || "BeamLine",
+                    title: siteTitle || `${platformName || "BeamLine"} — Multi-Tenant Construction CRM`,
+                    description:
+                      siteDescription ||
+                      "Autonomous invoice deduplication and 4-phase execution for high-value custom home builders.",
+                    host: baseDomain || "beamline.musfiqdehan.com",
+                  }}
+                  hint="Stored in Cloudflare R2 bucket root under beamline/social/. If empty, the dynamic platform vector theme is served."
+                />
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={savingPlatform || loading}
+                  className="btn-primary"
+                >
+                  {savingPlatform ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  {savingPlatform ? "Saving Platform Settings..." : "Save Platform Settings"}
+                </button>
+              </div>
             </div>
-          </div>
-        </form>
+          </form>
+
+          <PlatformIntegrationsPanel
+            organizations={organizations}
+            onUpdated={loadData}
+          />
+        </div>
       ) : (
         <div className="max-w-2xl space-y-5">
           <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-xs dark:border-stone-800 dark:bg-stone-900 space-y-4">
@@ -796,11 +823,11 @@ export function SuperAdminControlPlane({
             tone="amber"
           />
           <StatCard
-            label="Global Platform OAuth"
-            value={googleEnabled ? "Enabled" : "Disabled"}
-            hint={googleClientId ? "Credentials configured" : "No client secret"}
+            label="Integrations Engine"
+            value="10 Plugins"
+            hint="OAuth, Notion, Payments & AI"
             icon={KeyRound}
-            tone={googleEnabled ? "green" : undefined}
+            tone="green"
           />
         </div>
 

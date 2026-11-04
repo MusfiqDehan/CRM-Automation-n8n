@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 import logging
 from pathlib import Path
+import uuid
 import httpx
 from django.conf import settings
 from django.db.models import Count, Sum
@@ -33,7 +34,6 @@ from crm.models import (
     ProjectCost,
     ProjectTask,
     SalesActivity,
-    SMTPSettings,
 )
 from crm.serializers import (
     ClientEmailTriggerSerializer,
@@ -43,12 +43,10 @@ from crm.serializers import (
     InvoiceExtractRequestSerializer,
     InvoiceProcessRequestSerializer,
     MaterialOrderSerializer,
-    NotionWorkspaceConfigSerializer,
     OpportunitySerializer,
     ProjectCostSerializer,
     ProjectTaskSerializer,
     SalesActivitySerializer,
-    SMTPSettingsSerializer,
     SMTPTestConnectionSerializer,
 )
 from crm.services.cost_processor import CostAutomationProcessor
@@ -633,7 +631,7 @@ class DashboardSummaryAPIView(APIView):
                     "end_date": end_dt.isoformat(),
                 },
                 "kevin_review_deals": review_deals_list,
-                "notion_workspace": NotionWorkspaceConfigSerializer(cfg).data,
+                "notion_workspace": cfg.to_dict(),
             },
             message="Executive dashboard summary retrieved successfully.",
             success=True,
@@ -644,10 +642,10 @@ class NotionProvisionAPIView(APIView):
     """Triggers idempotent Notion workspace creation & bidirectional sync."""
 
     def post(self, request):
-        service = NotionProvisionerService()
+        service = NotionProvisionerService(organization=getattr(request, "tenant", None))
         cfg = service.provision_notion_workspace()
         return api_response(
-            data=NotionWorkspaceConfigSerializer(cfg).data,
+            data=cfg.to_dict(),
             message="Notion workspace provisioned and synchronized under Kevin's Construction OS.",
             success=True,
         )
@@ -1076,31 +1074,30 @@ class BlueprintDownloadAPIView(APIView):
 
 
 class SMTPSettingsAPIView(APIView):
-    """Retrieves and updates active SMTP email credentials."""
+    """Retrieves and updates active SMTP email credentials via the unified Integrations Engine."""
 
     def get(self, request):
-        cfg = SMTPSettings.get_active()
+        from integrations.services.resolver import IntegrationResolver
+
+        state = IntegrationResolver.get_smtp_state(organization=getattr(request, "tenant", None))
+        state["password"] = ""
         return api_response(
-            data=SMTPSettingsSerializer(cfg).data,
+            data=state,
             message="Active SMTP email settings retrieved successfully.",
             success=True,
         )
 
     def post(self, request):
-        cfg = SMTPSettings.get_active()
-        serializer = SMTPSettingsSerializer(cfg, data=request.data, partial=True)
-        if serializer.is_valid():
-            saved = serializer.save()
-            return api_response(
-                data=SMTPSettingsSerializer(saved).data,
-                message="SMTP email configuration updated successfully.",
-                success=True,
-            )
+        from integrations.services.resolver import IntegrationResolver
+
+        state = IntegrationResolver.update_smtp_state(
+            request.data or {}, organization=getattr(request, "tenant", None)
+        )
+        state["password"] = ""
         return api_response(
-            data={"errors": serializer.errors},
-            message="Invalid SMTP configuration provided.",
-            success=False,
-            status_code=status.HTTP_400_BAD_REQUEST,
+            data=state,
+            message="SMTP email configuration updated successfully.",
+            success=True,
         )
 
 
@@ -1108,6 +1105,8 @@ class SMTPTestConnectionAPIView(APIView):
     """Sends a live test verification email over SMTP."""
 
     def post(self, request):
+        from integrations.services.resolver import IntegrationResolver
+
         serializer = SMTPTestConnectionSerializer(data=request.data)
         if not serializer.is_valid():
             return api_response(
@@ -1117,12 +1116,12 @@ class SMTPTestConnectionAPIView(APIView):
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-        cfg = SMTPSettings.get_active()
+        smtp_state = IntegrationResolver.get_smtp_state(organization=getattr(request, "tenant", None))
         recipient = (
             serializer.validated_data.get("recipient")
             or getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "")
-            or cfg.kevin_email
-            or cfg.username
+            or smtp_state.get("kevin_email")
+            or smtp_state.get("username")
             or "ops-automation@crm.musfiqdehan.com"
         )
         subject = serializer.validated_data.get(
@@ -1130,7 +1129,7 @@ class SMTPTestConnectionAPIView(APIView):
         )
         body = serializer.validated_data.get("body", "")
 
-        from_email = cfg.default_from_email or cfg.username
+        from_email = smtp_state.get("default_from_email") or smtp_state.get("username")
 
         from common.email_backend import AuditedEmailBackend
         from django.core.mail import EmailMessage
@@ -1140,9 +1139,9 @@ class SMTPTestConnectionAPIView(APIView):
             body=(
                 f"{body}\n\n"
                 f"--- Connection Details ---\n"
-                f"SMTP Host: {cfg.host}:{cfg.port}\n"
-                f"Auth User: {cfg.username}\n"
-                f"SSL: {cfg.use_ssl} | TLS: {cfg.use_tls}\n"
+                f"SMTP Host: {smtp_state['host']}:{smtp_state['port']}\n"
+                f"Auth User: {smtp_state['username']}\n"
+                f"SSL: {smtp_state['use_ssl']} | TLS: {smtp_state['use_tls']}\n"
                 f"Timestamp: {timezone.now().strftime('%Y-%m-%d %H:%M:%S UTC')}\n"
             ),
             from_email=from_email,
@@ -1152,32 +1151,31 @@ class SMTPTestConnectionAPIView(APIView):
             },
         )
 
-        sent_count = AuditedEmailBackend().send_messages([msg])
+        AuditedEmailBackend().send_messages([msg])
         last_log = EmailCommunicationLog.objects.filter(recipient=recipient).order_by("-created_at").first()
 
-        if last_log and "Sent" in last_log.status:
+        if last_log and ("Sent" in last_log.status or "Logged" in last_log.status):
             return api_response(
                 data={
                     "recipient": recipient,
                     "status": last_log.status,
-                    "smtp_host": f"{cfg.host}:{cfg.port}",
+                    "smtp_host": f"{smtp_state['host']}:{smtp_state['port']}",
                     "log_id": str(last_log.id),
                     "created_at": last_log.created_at.isoformat(),
                 },
-                message=f"Live test email successfully delivered to {recipient} via {cfg.host}:{cfg.port}.",
+                message=f"Test email dispatched to {recipient} via {smtp_state['host']}:{smtp_state['port']} ({last_log.status}).",
                 success=True,
             )
-        else:
-            return api_response(
-                data={
-                    "recipient": recipient,
-                    "status": last_log.status if last_log else "Failed",
-                    "smtp_host": f"{cfg.host}:{cfg.port}",
-                },
-                message=f"SMTP transmission completed with status: {last_log.status if last_log else 'Error'}.",
-                success=False,
-                status_code=status.HTTP_502_BAD_GATEWAY,
-            )
+        return api_response(
+            data={
+                "recipient": recipient,
+                "status": last_log.status if last_log else "Failed",
+                "smtp_host": f"{smtp_state['host']}:{smtp_state['port']}",
+            },
+            message=f"SMTP transmission completed with status: {last_log.status if last_log else 'Error'}.",
+            success=False,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+        )
 
 
 class ClientEmailTriggerAPIView(APIView):
@@ -1255,8 +1253,10 @@ class ClientEmailTriggerAPIView(APIView):
             client_name=client_name, project_code=project_code
         )
 
-        cfg = SMTPSettings.get_active()
-        from_email = cfg.default_from_email or cfg.username
+        from integrations.services.resolver import IntegrationResolver
+
+        smtp_state = IntegrationResolver.get_smtp_state(organization=getattr(request, "tenant", None))
+        from_email = smtp_state.get("default_from_email") or smtp_state.get("username")
 
         from common.email_backend import AuditedEmailBackend
         from django.core.mail import EmailMessage
@@ -1284,7 +1284,7 @@ class ClientEmailTriggerAPIView(APIView):
                 "triggered_at": now_ts.isoformat(),
                 "log_id": str(last_log.id) if last_log else None,
             },
-            message=f"Client automation email ({email_type}) sent to {client_email} via {cfg.host}:{cfg.port}.",
+            message=f"Client automation email ({email_type}) sent to {client_email} via {smtp_state['host']}:{smtp_state['port']}.",
             success=True,
         )
 
@@ -1301,7 +1301,9 @@ from common.tenancy import (
     ClientSubscription,
     ClientSupportTicket,
     PlatformNotification,
+    UserProfile,
 )
+from common.storage import R2AssetLifecycleService
 from common.permissions import IsPlatformSuperAdmin, IsOrganizationOwnerOrAdmin, FeatureFlagPermission
 from crm.services.auth_service import JWTService, GoogleOAuthService
 from crm.services.traefik_sync import sync_traefik_custom_domains
@@ -1334,6 +1336,22 @@ class OAuthPublicConfigAPIView(APIView):
         creds = GoogleOAuthService.resolve_credentials(tenant)
         platform = PlatformSettings.get_settings()
 
+        public_tenants = [
+            {
+                "slug": org.slug,
+                "name": org.name,
+                "subdomain_host": org.subdomain_host,
+                "custom_domain": org.custom_domain,
+                "site_title": org.site_title,
+                "site_description": org.site_description,
+                "logo_url": org.logo_url,
+                "social_cover_url": org.social_cover_url,
+                "page_landing": org.is_feature_enabled("page_landing"),
+                "updated_at": org.updated_at.isoformat() if org.updated_at else None,
+            }
+            for org in Organization.objects.filter(is_active=True).order_by("name")
+        ]
+
         tenant_data = None
         if tenant:
             tenant_data = {
@@ -1346,7 +1364,10 @@ class OAuthPublicConfigAPIView(APIView):
                 "is_active": tenant.is_active,
                 "currency": tenant.currency,
                 "feature_flags": tenant.get_feature_flags(),
+                "site_title": tenant.site_title,
+                "site_description": tenant.site_description,
                 "logo_url": tenant.logo_url,
+                "social_cover_url": tenant.social_cover_url,
                 "primary_color": tenant.primary_color,
             }
 
@@ -1354,7 +1375,12 @@ class OAuthPublicConfigAPIView(APIView):
             data={
                 "platform_name": platform.platform_name,
                 "base_domain": platform.base_domain,
+                "site_title": platform.site_title,
+                "site_description": platform.site_description,
+                "logo_url": platform.logo_url,
+                "social_cover_url": platform.social_cover_url,
                 "tenant": tenant_data,
+                "public_tenants": public_tenants,
                 "google_oauth": {
                     "enabled": bool(creds.get("client_id")),
                     "client_id": creds.get("client_id", ""),
@@ -1667,6 +1693,7 @@ class MeAPIView(APIView):
                 success=True,
             )
 
+        profile = UserProfile.get_or_create_for_user(user)
         tenant = getattr(request, "tenant", None)
         memberships = OrganizationMember.objects.filter(user=user, is_active=True).select_related("organization")
         active_role = "Client"
@@ -1704,6 +1731,10 @@ class MeAPIView(APIView):
                     "first_name": user.first_name,
                     "last_name": user.last_name,
                     "is_superuser": bool(user.is_superuser),
+                    "avatar_url": profile.avatar_url,
+                    "bio": profile.bio,
+                    "job_title": profile.job_title,
+                    "phone": profile.phone,
                 },
                 "active_organization": {
                     "id": str(tenant.id) if tenant else None,
@@ -1721,6 +1752,46 @@ class MeAPIView(APIView):
             message="Current user profile retrieved successfully.",
             success=True,
         )
+
+    def patch(self, request, *args, **kwargs):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return api_response(message="Unauthenticated.", success=False, status_code=status.HTTP_401_UNAUTHORIZED)
+
+        profile = UserProfile.get_or_create_for_user(user)
+        user_updated_fields = []
+        if "first_name" in request.data:
+            user.first_name = str(request.data["first_name"]).strip()
+            user_updated_fields.append("first_name")
+        if "last_name" in request.data:
+            user.last_name = str(request.data["last_name"]).strip()
+            user_updated_fields.append("last_name")
+        if "email" in request.data and str(request.data["email"]).strip():
+            user.email = str(request.data["email"]).strip().lower()
+            user_updated_fields.append("email")
+        if user_updated_fields:
+            user.save(update_fields=user_updated_fields)
+
+        profile_updated_fields = []
+        if "avatar_url" in request.data:
+            new_avatar = str(request.data["avatar_url"]).strip()
+            if profile.avatar_url and profile.avatar_url != new_avatar:
+                R2AssetLifecycleService.delete_asset(profile.avatar_url)
+            profile.avatar_url = new_avatar
+            profile_updated_fields.append("avatar_url")
+        if "bio" in request.data:
+            profile.bio = str(request.data["bio"]).strip()
+            profile_updated_fields.append("bio")
+        if "job_title" in request.data:
+            profile.job_title = str(request.data["job_title"]).strip()
+            profile_updated_fields.append("job_title")
+        if "phone" in request.data:
+            profile.phone = str(request.data["phone"]).strip()
+            profile_updated_fields.append("phone")
+        if profile_updated_fields:
+            profile.save(update_fields=profile_updated_fields)
+
+        return self.get(request, *args, **kwargs)
 
 
 # ==============================================================================
@@ -2071,8 +2142,12 @@ class SuperadminDashboardStatsAPIView(APIView):
                 "platform": {
                     "platform_name": platform.platform_name,
                     "base_domain": platform.base_domain,
-                    "google_oauth_enabled": bool(platform.google_oauth_enabled),
-                    "has_google_secret": bool(platform.google_oauth_client_secret),
+                    "google_oauth_enabled": bool(
+                        GoogleOAuthService.resolve_credentials().get("enabled")
+                    ),
+                    "has_google_secret": bool(
+                        GoogleOAuthService.resolve_credentials().get("client_secret")
+                    ),
                 },
                 "recent_activity": [
                     {
@@ -2116,12 +2191,16 @@ class SuperadminUserDirectoryAPIView(APIView):
         results = []
         for u in users:
             membership = OrganizationMember.objects.filter(user=u, is_active=True).select_related("organization").first()
+            profile = getattr(u, "profile", None)
             results.append({
                 "id": str(u.id),
                 "username": u.username,
                 "email": u.email,
                 "first_name": u.first_name,
                 "last_name": u.last_name,
+                "avatar_url": profile.avatar_url if profile else "",
+                "bio": profile.bio if profile else "",
+                "job_title": profile.job_title if profile else "",
                 "is_active": u.is_active,
                 "is_superuser": bool(u.is_superuser),
                 "date_joined": u.date_joined,
@@ -2309,18 +2388,18 @@ class TenantSettingsAPIView(APIView):
         if not tenant:
             return api_response(message="No active organization tenant.", success=False, status_code=status.HTTP_400_BAD_REQUEST)
 
-        # Allow updating custom domain, thresholds, client google oauth, currency, logo
+        # Allow updating custom domain, thresholds, currency, logo, SEO, and social cover
         allowed_fields = [
             "name",
             "custom_domain",
             "deal_review_threshold",
             "invoice_review_threshold",
             "executive_recipient_email",
-            "use_custom_google_oauth",
-            "google_oauth_client_id",
-            "google_oauth_client_secret",
             "currency",
+            "site_title",
+            "site_description",
             "logo_url",
+            "social_cover_url",
             "primary_color",
         ]
         patch_data = {k: v for k, v in request.data.items() if k in allowed_fields}
@@ -2453,4 +2532,185 @@ class AcceptInvitationAPIView(APIView):
             message="Invitation accepted successfully.",
             success=True,
         )
+
+
+# ==============================================================================
+# 19. Media Asset Upload & Deletion Handler (Cloudflare R2 'root/beamline/')
+# ==============================================================================
+class MediaAssetUploadAPIView(APIView):
+    """
+    Handles upload, replacement, and deletion of static/media assets (logos, social covers,
+    avatars, videos) into Cloudflare R2 ('root' bucket, 'beamline/' folder).
+    Automatically cleans up previous R2 assets to ensure zero abandoned files.
+    """
+
+    def post(self, request, *args, **kwargs):
+        if not request.user or not request.user.is_authenticated:
+            return api_response(message="Authentication required.", success=False, status_code=status.HTTP_401_UNAUTHORIZED)
+
+        file_obj = request.FILES.get("file")
+        if not file_obj:
+            return api_response(message="No file provided in 'file' multipart field.", success=False, status_code=status.HTTP_400_BAD_REQUEST)
+
+        target = request.data.get("target", "").strip()
+        requested_category = request.data.get("category", "").strip()
+        requested_scope = request.data.get("scope_id", "").strip()
+
+        tenant = getattr(request, "tenant", None)
+        user = request.user
+        profile = UserProfile.get_or_create_for_user(user)
+
+        folder = "platform"
+        category = "media"
+        scope_id = str(uuid.uuid4())[:8]
+        previous_url = None
+
+        if target == "user_avatar" or requested_category == "avatar":
+            scope_id = str(user.id)
+            category = "avatar"
+            previous_url = profile.avatar_url
+            if tenant:
+                folder = f"tenants/{tenant.slug}/users"
+            else:
+                folder = "platform/users"
+            target = "user_avatar"
+
+        elif target == "platform_logo" or (requested_scope == "platform" and requested_category == "branding"):
+            if not user.is_superuser:
+                return api_response(message="Only Platform Superadmin can update platform branding.", success=False, status_code=status.HTTP_403_FORBIDDEN)
+            platform = PlatformSettings.get_settings()
+            folder = "platform"
+            category = "branding"
+            scope_id = "logo"
+            previous_url = platform.logo_url
+            target = "platform_logo"
+
+        elif target == "platform_social_cover" or (requested_scope == "platform" and requested_category == "social"):
+            if not user.is_superuser:
+                return api_response(message="Only Platform Superadmin can update platform branding.", success=False, status_code=status.HTTP_403_FORBIDDEN)
+            platform = PlatformSettings.get_settings()
+            folder = "platform"
+            category = "social"
+            scope_id = "cover"
+            previous_url = platform.social_cover_url
+            target = "platform_social_cover"
+
+        elif target in ("tenant_logo", "tenant_social_cover") or requested_category in ("branding", "social"):
+            target_tenant = tenant
+            if not target_tenant and requested_scope and requested_scope != "platform":
+                target_tenant = Organization.objects.filter(slug=requested_scope).first()
+
+            if not target_tenant:
+                return api_response(message="Active tenant context required.", success=False, status_code=status.HTTP_400_BAD_REQUEST)
+
+            membership = OrganizationMember.objects.filter(organization=target_tenant, user=user, is_active=True).first()
+            if not user.is_superuser and (not membership or membership.role not in (OrganizationMember.Role.OWNER, OrganizationMember.Role.ADMIN)):
+                return api_response(message="Only organization Owner or Admin can update tenant branding.", success=False, status_code=status.HTTP_403_FORBIDDEN)
+
+            folder = f"tenants/{target_tenant.slug}"
+            is_logo = target == "tenant_logo" or requested_category == "branding"
+            category = "branding" if is_logo else "social"
+            scope_id = "logo" if is_logo else "cover"
+            previous_url = target_tenant.logo_url if is_logo else target_tenant.social_cover_url
+            target = "tenant_logo" if is_logo else "tenant_social_cover"
+            tenant = target_tenant
+
+        else:
+            if tenant:
+                folder = f"tenants/{tenant.slug}/media"
+            else:
+                folder = "platform/media"
+            category = requested_category or "media"
+            scope_id = requested_scope or str(uuid.uuid4())[:8]
+
+        try:
+            uploaded = R2AssetLifecycleService.upload_asset(
+                file_obj=file_obj,
+                category=category,
+                scope_id=scope_id,
+                original_name=file_obj.name,
+                previous_url=previous_url,
+                folder=folder,
+            )
+        except ValueError as val_err:
+            return api_response(message=str(val_err), success=False, status_code=status.HTTP_400_BAD_REQUEST)
+        except Exception as exc:
+            logger.exception("Failed to upload asset to Cloudflare R2")
+            return api_response(message=f"Upload failed: {str(exc)}", success=False, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Update the model field if target is linked
+        if target == "user_avatar":
+            profile.avatar_url = uploaded["url"]
+            profile.save(update_fields=["avatar_url"])
+        elif target == "tenant_logo" and tenant:
+            tenant.logo_url = uploaded["url"]
+            tenant.save(update_fields=["logo_url"])
+        elif target == "tenant_social_cover" and tenant:
+            tenant.social_cover_url = uploaded["url"]
+            tenant.save(update_fields=["social_cover_url"])
+        elif target == "platform_logo":
+            platform = PlatformSettings.get_settings()
+            platform.logo_url = uploaded["url"]
+            platform.save(update_fields=["logo_url"])
+        elif target == "platform_social_cover":
+            platform = PlatformSettings.get_settings()
+            platform.social_cover_url = uploaded["url"]
+            platform.save(update_fields=["social_cover_url"])
+
+        return api_response(
+            data=uploaded,
+            message="Asset uploaded successfully to Cloudflare R2.",
+            success=True,
+            status_code=status.HTTP_201_CREATED,
+        )
+
+    def delete(self, request, *args, **kwargs):
+        if not request.user or not request.user.is_authenticated:
+            return api_response(message="Authentication required.", success=False, status_code=status.HTTP_401_UNAUTHORIZED)
+
+        url = request.data.get("url", "").strip()
+        target = request.data.get("target", "").strip()
+
+        user = request.user
+        profile = UserProfile.get_or_create_for_user(user)
+        tenant = getattr(request, "tenant", None)
+
+        if target == "user_avatar":
+            if profile.avatar_url:
+                R2AssetLifecycleService.delete_asset(profile.avatar_url)
+                profile.avatar_url = ""
+                profile.save(update_fields=["avatar_url"])
+        elif target == "tenant_logo" and tenant:
+            if tenant.logo_url:
+                R2AssetLifecycleService.delete_asset(tenant.logo_url)
+                tenant.logo_url = ""
+                tenant.save(update_fields=["logo_url"])
+        elif target == "tenant_social_cover" and tenant:
+            if tenant.social_cover_url:
+                R2AssetLifecycleService.delete_asset(tenant.social_cover_url)
+                tenant.social_cover_url = ""
+                tenant.save(update_fields=["social_cover_url"])
+        elif target == "platform_logo":
+            if not user.is_superuser:
+                return api_response(message="Platform Superadmin required.", success=False, status_code=status.HTTP_403_FORBIDDEN)
+            platform = PlatformSettings.get_settings()
+            if platform.logo_url:
+                R2AssetLifecycleService.delete_asset(platform.logo_url)
+                platform.logo_url = ""
+                platform.save(update_fields=["logo_url"])
+        elif target == "platform_social_cover":
+            if not user.is_superuser:
+                return api_response(message="Platform Superadmin required.", success=False, status_code=status.HTTP_403_FORBIDDEN)
+            platform = PlatformSettings.get_settings()
+            if platform.social_cover_url:
+                R2AssetLifecycleService.delete_asset(platform.social_cover_url)
+                platform.social_cover_url = ""
+                platform.save(update_fields=["social_cover_url"])
+        elif url:
+            R2AssetLifecycleService.delete_asset(url)
+        else:
+            return api_response(message="Provide 'url' or 'target' to delete.", success=False, status_code=status.HTTP_400_BAD_REQUEST)
+
+        return api_response(message="Asset deleted from Cloudflare R2.", success=True)
+
 

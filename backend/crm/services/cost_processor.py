@@ -215,11 +215,19 @@ class CostAutomationProcessor:
         )
         # Determine recipient based on review flag and linked client
         try:
-            from crm.models import SMTPSettings
-            smtp_cfg = SMTPSettings.get_active()
-            kevin_email = smtp_cfg.kevin_email or getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "") or "ops-automation@crm.musfiqdehan.com"
+            from integrations.services.resolver import IntegrationResolver
+
+            smtp_state = IntegrationResolver.get_smtp_state(organization=active_org)
+            kevin_email = (
+                smtp_state.get("kevin_email")
+                or getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "")
+                or "ops-automation@crm.musfiqdehan.com"
+            )
         except Exception:
-            kevin_email = getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "") or "ops-automation@crm.musfiqdehan.com"
+            kevin_email = (
+                getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "")
+                or "ops-automation@crm.musfiqdehan.com"
+            )
 
         client_email = None
         if matched_project and hasattr(matched_project, "opportunities"):
@@ -300,12 +308,17 @@ class CostAutomationProcessor:
         from_addr = getattr(settings, "DEFAULT_FROM_EMAIL", "Kevin's Construction OS <ops-automation@crm.musfiqdehan.com>")
         to_addr = cost.notified_person
         try:
-            from crm.models import SMTPSettings
-            smtp_cfg = SMTPSettings.get_active()
-            if smtp_cfg.default_from_email:
-                from_addr = smtp_cfg.default_from_email
+            from integrations.services.resolver import IntegrationResolver
+
+            smtp_state = IntegrationResolver.get_smtp_state(organization=cost.organization)
+            if smtp_state.get("default_from_email"):
+                from_addr = smtp_state["default_from_email"]
             if not to_addr:
-                to_addr = smtp_cfg.kevin_email or getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "") or "ops-automation@crm.musfiqdehan.com"
+                to_addr = (
+                    smtp_state.get("kevin_email")
+                    or getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "")
+                    or "ops-automation@crm.musfiqdehan.com"
+                )
         except Exception:
             if not to_addr:
                 to_addr = getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "") or "ops-automation@crm.musfiqdehan.com"

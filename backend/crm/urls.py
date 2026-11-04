@@ -47,6 +47,7 @@ from crm.views import (
     TenantSettingsAPIView,
     TenantMemberListCreateAPIView,
     AcceptInvitationAPIView,
+    MediaAssetUploadAPIView,
 )
 
 urlpatterns = [
@@ -183,4 +184,8 @@ urlpatterns = [
     path("tenant/members", TenantMemberListCreateAPIView.as_view()),
     path("invitations/accept/", AcceptInvitationAPIView.as_view(), name="invitations-accept"),
     path("invitations/accept", AcceptInvitationAPIView.as_view()),
+
+    # 19. Media & Static Asset Uploads (Cloudflare R2 'root/beamline/')
+    path("media/assets/", MediaAssetUploadAPIView.as_view(), name="media-assets"),
+    path("media/assets", MediaAssetUploadAPIView.as_view()),
 ]

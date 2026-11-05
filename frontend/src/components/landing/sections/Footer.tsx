@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BeamLineLogo } from "@/components/brand/BeamLineLogo";
 
 const columns = [
-  { title: "Product", links: [["Platform", "#platform"], ["Multi-tenant", "#tenants"], ["Pricing", "#pricing"]] },
+  { title: "Product", links: [["Platform", "#platform"], ["Integrations", "#integrations"], ["Multi-tenant", "#tenants"], ["Pricing", "#pricing"]] },
   { title: "Company", links: [["How it works", "#process"], ["Growth", "#growth"], ["FAQ", "#faq"]] },
   { title: "Workspace", links: [["Open workspace", "/admin"], ["Sign in", "/admin"]] },
 ];

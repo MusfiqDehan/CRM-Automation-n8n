@@ -723,3 +723,4 @@ export function IntegrationsShowcase() {
     </section>
   );
 }
+

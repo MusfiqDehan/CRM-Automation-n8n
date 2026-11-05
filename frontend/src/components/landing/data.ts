@@ -16,6 +16,7 @@ import {
 
 export const navLinks = [
   { label: "Platform", href: "#platform" },
+  { label: "Integrations", href: "#integrations" },
   { label: "Multi-tenant", href: "#tenants" },
   { label: "Process", href: "#process" },
   { label: "Growth", href: "#growth" },

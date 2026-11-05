@@ -1,30 +1,32 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Kevin's Construction OS — Production Docker Compose
+# Beamline — Production Docker Compose
 # Architecture: Next.js 16 + Django 6.1 DRF + PostgreSQL 18 + n8n + Traefik v3
 # Domain Routing:
-#   - Frontend:  https://crm.musfiqdehan.com
-#   - Backend:   https://crm.musfiqdehan.com/api (and /admin, /media, /static)
-#   - n8n:       https://crm.musfiqdehan.com/n8n
+#   - Frontend:  https://beamline.musfiqdehan.com (and https://crm.musfiqdehan.com)
+#   - Backend:   https://beamline.musfiqdehan.com/api (and /admin, /media, /static)
+#   - n8n:       https://beamline.musfiqdehan.com/n8n
 # ─────────────────────────────────────────────────────────────────────────────
+
+name: beamline-prod
 
 services:
   # ── PostgreSQL 18 Production Database ──────────────────────────────────────
   db:
     image: postgres:18-alpine
-    container_name: crm_prod_db
+    container_name: beamline_prod_db
     restart: always
     mem_limit: 512m
     cpus: 1.0
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-kevin_construction_os_prod}
-      POSTGRES_USER: ${POSTGRES_USER:-kevin_os_user}
+      POSTGRES_DB: ${POSTGRES_DB:-beamline_prod}
+      POSTGRES_USER: ${POSTGRES_USER:-beamline_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - crm_prod_postgres_data:/var/lib/postgresql
+      - beamline_prod_postgres_data:/var/lib/postgresql
     networks:
-      - crm_internal
+      - beamline_internal
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-kevin_os_user} -d $${POSTGRES_DB:-kevin_construction_os_prod}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-beamline_user} -d $${POSTGRES_DB:-beamline_prod}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -40,7 +42,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.prod
-    container_name: crm_prod_backend
+    image: beamline-backend:prod
+    container_name: beamline_prod_backend
     restart: always
     mem_limit: 768m
     cpus: 1.5
@@ -51,13 +54,13 @@ services:
       POSTGRES_PORT: 5432
       USE_SQLITE: "False"
       DJANGO_DEBUG: "False"
-      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://crm.musfiqdehan.com}
-      PUBLIC_API_URL: ${PUBLIC_API_URL:-https://crm.musfiqdehan.com/api/v1}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://beamline.musfiqdehan.com}
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-https://beamline.musfiqdehan.com/api/v1}
     volumes:
-      - crm_prod_media_data:/app/media
+      - beamline_prod_media_data:/app/media
       - ./docs:/docs:ro
     networks:
-      - crm_internal
+      - beamline_internal
       - traefik_proxy
     depends_on:
       db:
@@ -77,13 +80,13 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_proxy"
       # Backend API, Django Admin, Media, and Static HTTPS Router
-      - "traefik.http.routers.crm-backend.rule=Host(`crm.musfiqdehan.com`) && (PathPrefix(`/api`) || PathPrefix(`/django-admin`) || PathPrefix(`/media`) || PathPrefix(`/static`))"
-      - "traefik.http.routers.crm-backend.entrypoints=websecure"
-      - "traefik.http.routers.crm-backend.tls=true"
-      - "traefik.http.routers.crm-backend.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.crm-backend.middlewares=security-headers@file,compress@file,api-ratelimit@file"
-      - "traefik.http.routers.crm-backend.priority=190"
-      - "traefik.http.services.crm-backend.loadbalancer.server.port=8017"
+      - "traefik.http.routers.beamline-backend.rule=(Host(`beamline.musfiqdehan.com`) || Host(`crm.musfiqdehan.com`)) && (PathPrefix(`/api`) || PathPrefix(`/django-admin`) || PathPrefix(`/media`) || PathPrefix(`/static`))"
+      - "traefik.http.routers.beamline-backend.entrypoints=websecure"
+      - "traefik.http.routers.beamline-backend.tls=true"
+      - "traefik.http.routers.beamline-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.beamline-backend.middlewares=security-headers@file,compress@file,api-ratelimit@file"
+      - "traefik.http.routers.beamline-backend.priority=190"
+      - "traefik.http.services.beamline-backend.loadbalancer.server.port=8017"
     logging:
       driver: json-file
       options:
@@ -93,19 +96,19 @@ services:
   # ── n8n Workflow Automation Engine ─────────────────────────────────────────
   n8n:
     image: n8nio/n8n:latest
-    container_name: crm_prod_n8n
+    container_name: beamline_prod_n8n
     restart: always
     mem_limit: 768m
     cpus: 1.0
     env_file:
       - .env.prod
     environment:
-      - N8N_HOST=crm.musfiqdehan.com
+      - N8N_HOST=beamline.musfiqdehan.com
       - N8N_PORT=5678
       - N8N_PROTOCOL=https
       - N8N_PATH=/n8n/
-      - N8N_EDITOR_BASE_URL=https://crm.musfiqdehan.com/n8n/
-      - WEBHOOK_URL=https://crm.musfiqdehan.com/n8n/
+      - N8N_EDITOR_BASE_URL=https://beamline.musfiqdehan.com/n8n/
+      - WEBHOOK_URL=https://beamline.musfiqdehan.com/n8n/
       - N8N_RUNNERS_ENABLED=false
       - N8N_PROXY_HOPS=1
       - N8N_DIAGNOSTICS_ENABLED=false
@@ -117,10 +120,10 @@ services:
       - EXECUTIONS_DATA_MAX_AGE=168
       - EXECUTIONS_DATA_PRUNE_MAX_COUNT=5000
     volumes:
-      - crm_prod_n8n_data:/home/node/.n8n
+      - beamline_prod_n8n_data:/home/node/.n8n
       - ./n8n/workflows:/workflows:ro
     networks:
-      - crm_internal
+      - beamline_internal
       - traefik_proxy
     depends_on:
       - backend
@@ -129,19 +132,19 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_proxy"
       # Explicit redirect: /n8n without slash -> /n8n/
-      - "traefik.http.middlewares.crm-n8n-slash.redirectregex.regex=^https://([^/]+)/n8n$$"
-      - "traefik.http.middlewares.crm-n8n-slash.redirectregex.replacement=https://$$1/n8n/"
-      - "traefik.http.middlewares.crm-n8n-slash.redirectregex.permanent=true"
+      - "traefik.http.middlewares.beamline-n8n-slash.redirectregex.regex=^https://([^/]+)/n8n$$"
+      - "traefik.http.middlewares.beamline-n8n-slash.redirectregex.replacement=https://$$1/n8n/"
+      - "traefik.http.middlewares.beamline-n8n-slash.redirectregex.permanent=true"
       # Strip /n8n prefix when forwarding to container
-      - "traefik.http.middlewares.crm-n8n-strip.stripprefix.prefixes=/n8n"
+      - "traefik.http.middlewares.beamline-n8n-strip.stripprefix.prefixes=/n8n"
       # n8n HTTPS Router
-      - "traefik.http.routers.crm-n8n.rule=Host(`crm.musfiqdehan.com`) && PathPrefix(`/n8n`)"
-      - "traefik.http.routers.crm-n8n.entrypoints=websecure"
-      - "traefik.http.routers.crm-n8n.tls=true"
-      - "traefik.http.routers.crm-n8n.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.crm-n8n.middlewares=crm-n8n-slash,crm-n8n-strip,security-headers@file,compress@file"
-      - "traefik.http.routers.crm-n8n.priority=200"
-      - "traefik.http.services.crm-n8n.loadbalancer.server.port=5678"
+      - "traefik.http.routers.beamline-n8n.rule=(Host(`beamline.musfiqdehan.com`) || Host(`crm.musfiqdehan.com`)) && PathPrefix(`/n8n`)"
+      - "traefik.http.routers.beamline-n8n.entrypoints=websecure"
+      - "traefik.http.routers.beamline-n8n.tls=true"
+      - "traefik.http.routers.beamline-n8n.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.beamline-n8n.middlewares=beamline-n8n-slash,beamline-n8n-strip,security-headers@file,compress@file"
+      - "traefik.http.routers.beamline-n8n.priority=200"
+      - "traefik.http.services.beamline-n8n.loadbalancer.server.port=5678"
     logging:
       driver: json-file
       options:
@@ -154,10 +157,11 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.prod
       args:
-        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-https://crm.musfiqdehan.com/api/v1}
-        NEXT_PUBLIC_N8N_URL: ${NEXT_PUBLIC_N8N_URL:-https://crm.musfiqdehan.com/n8n}
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-https://beamline.musfiqdehan.com/api/v1}
+        NEXT_PUBLIC_N8N_URL: ${NEXT_PUBLIC_N8N_URL:-https://beamline.musfiqdehan.com/n8n}
         NEXT_PUBLIC_NOTION_HUB_URL: ${NEXT_PUBLIC_NOTION_HUB_URL:-https://app.notion.com/p/Kevin-s-Construction-OS-Production-40a8194ec3e881e08797e4c0d8bc6c4e}
-    container_name: crm_prod_frontend
+    image: beamline-frontend:prod
+    container_name: beamline_prod_frontend
     restart: always
     mem_limit: 512m
     cpus: 1.0
@@ -169,7 +173,7 @@ services:
       - HOSTNAME=0.0.0.0
       - BACKEND_INTERNAL_URL=http://backend:8017
     networks:
-      - crm_internal
+      - beamline_internal
       - traefik_proxy
     depends_on:
       - backend
@@ -177,19 +181,19 @@ services:
       - "autoheal=false"
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_proxy"
-      # HTTP -> HTTPS redirect for crm.musfiqdehan.com
-      - "traefik.http.routers.crm-frontend-http.rule=Host(`crm.musfiqdehan.com`)"
-      - "traefik.http.routers.crm-frontend-http.entrypoints=web"
-      - "traefik.http.routers.crm-frontend-http.middlewares=redirect-to-https@file"
-      - "traefik.http.routers.crm-frontend-http.priority=150"
+      # HTTP -> HTTPS redirect for beamline.musfiqdehan.com and crm.musfiqdehan.com
+      - "traefik.http.routers.beamline-frontend-http.rule=Host(`beamline.musfiqdehan.com`) || Host(`crm.musfiqdehan.com`)"
+      - "traefik.http.routers.beamline-frontend-http.entrypoints=web"
+      - "traefik.http.routers.beamline-frontend-http.middlewares=redirect-to-https@file"
+      - "traefik.http.routers.beamline-frontend-http.priority=150"
       # Frontend HTTPS Router (Root and SPA pages)
-      - "traefik.http.routers.crm-frontend.rule=Host(`crm.musfiqdehan.com`)"
-      - "traefik.http.routers.crm-frontend.entrypoints=websecure"
-      - "traefik.http.routers.crm-frontend.tls=true"
-      - "traefik.http.routers.crm-frontend.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.crm-frontend.middlewares=security-headers@file,compress@file"
-      - "traefik.http.routers.crm-frontend.priority=150"
-      - "traefik.http.services.crm-frontend.loadbalancer.server.port=3017"
+      - "traefik.http.routers.beamline-frontend.rule=Host(`beamline.musfiqdehan.com`) || Host(`crm.musfiqdehan.com`)"
+      - "traefik.http.routers.beamline-frontend.entrypoints=websecure"
+      - "traefik.http.routers.beamline-frontend.tls=true"
+      - "traefik.http.routers.beamline-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.beamline-frontend.middlewares=security-headers@file,compress@file"
+      - "traefik.http.routers.beamline-frontend.priority=150"
+      - "traefik.http.services.beamline-frontend.loadbalancer.server.port=3017"
     logging:
       driver: json-file
       options:
@@ -203,15 +207,16 @@ networks:
     name: traefik_proxy
 
   # Private isolated network for inter-container communication & database protection
-  crm_internal:
+  beamline_internal:
     driver: bridge
-    name: crm_internal
+    name: beamline_internal
 
 volumes:
-  crm_prod_postgres_data:
-    name: crm_prod_postgres_data
-  crm_prod_media_data:
-    name: crm_prod_media_data
-  crm_prod_n8n_data:
-    name: crm_prod_n8n_data
+  beamline_prod_postgres_data:
+    name: beamline_prod_postgres_data
+  beamline_prod_media_data:
+    name: beamline_prod_media_data
+  beamline_prod_n8n_data:
+    name: beamline_prod_n8n_data
+
 

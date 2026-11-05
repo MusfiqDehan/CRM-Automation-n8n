@@ -4,6 +4,7 @@ import { FinalCta } from "./sections/FinalCta";
 import { Footer } from "./sections/Footer";
 import { GrowthCalculator } from "./sections/GrowthCalculator";
 import { Hero } from "./sections/Hero";
+import { IntegrationsShowcase } from "./sections/IntegrationsShowcase";
 import { Lifecycle } from "./sections/Lifecycle";
 import { Navbar } from "./sections/Navbar";
 import { Outcomes } from "./sections/Outcomes";
@@ -36,6 +37,7 @@ export function LandingPage({ introState = "play" }: { introState?: "hold" | "pl
         <CapabilityTape />
         <Outcomes />
         <PlatformExplorer />
+        <IntegrationsShowcase />
         <TenantShowcase />
         <Lifecycle />
         <GrowthCalculator />

@@ -26,7 +26,7 @@ services:
     networks:
       - beamline_internal
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-beamline_user} -d $${POSTGRES_DB:-beamline_prod}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-beamline_user}"]
       interval: 10s
       timeout: 5s
       retries: 5

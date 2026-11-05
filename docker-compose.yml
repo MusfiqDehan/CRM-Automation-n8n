@@ -13,8 +13,9 @@ services:
       - "5448:5432"
     volumes:
       - postgres_18_data:/var/lib/postgresql
+      - ./docker/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-beamline_os}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 5s
       timeout: 5s
       retries: 10

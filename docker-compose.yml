@@ -1,10 +1,12 @@
+name: beamline
+
 services:
   db:
     image: postgres:18-alpine
-    container_name: kevin_crm_db
+    container_name: beamline_db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-kevin_construction_os}
+      POSTGRES_DB: ${POSTGRES_DB:-beamline_os}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_secure_pass_2026}
     ports:
@@ -12,7 +14,7 @@ services:
     volumes:
       - postgres_18_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-kevin_construction_os}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-beamline_os}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -21,7 +23,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: kevin_crm_backend
+    image: beamline-backend:latest
+    container_name: beamline_backend
     restart: unless-stopped
     env_file:
       - .env
@@ -45,7 +48,7 @@ services:
 
   n8n:
     image: n8nio/n8n:latest
-    container_name: kevin_crm_n8n
+    container_name: beamline_n8n
     restart: unless-stopped
     environment:
       - N8N_HOST=localhost
@@ -69,7 +72,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: kevin_crm_frontend
+    image: beamline-frontend:latest
+    container_name: beamline_frontend
     restart: unless-stopped
     environment:
       - PORT=3017
@@ -88,7 +92,12 @@ services:
 
 volumes:
   postgres_18_data:
+    name: beamline_postgres_data
   backend_venv:
+    name: beamline_backend_venv
   n8n_data:
+    name: beamline_n8n_data
   frontend_node_modules:
+    name: beamline_frontend_node_modules
+
 

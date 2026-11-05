@@ -84,7 +84,7 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("POSTGRES_DB", "kevin_construction_os"),
+            "NAME": os.getenv("POSTGRES_DB", "beamline_os"),
             "USER": os.getenv("POSTGRES_USER", "postgres"),
             "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres_secure_pass_2026"),
             "HOST": os.getenv("POSTGRES_HOST", "localhost"),

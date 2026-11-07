@@ -1,0 +1,196 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <!-- Background Gradients -->
+    <radialGradient id="tenantBgGlow" cx="25%" cy="20%" r="70%">
+      <stop offset="0%" stop-color="#1c1917" />
+      <stop offset="100%" stop-color="#0c0a09" />
+    </radialGradient>
+    <radialGradient id="tenantAmber" cx="80%" cy="25%" r="55%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.18" />
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="tenantCardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1c1917" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#141211" stop-opacity="0.98" />
+    </linearGradient>
+    <linearGradient id="goldText" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fde68a" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+
+    <!-- Subtle Architectural Grid -->
+    <pattern id="tgrid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#292524" stroke-width="0.75" stroke-opacity="0.4" />
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#tenantBgGlow)" />
+  <rect width="1200" height="630" fill="url(#tenantAmber)" />
+  <rect width="1200" height="630" fill="url(#tgrid)" />
+
+  <!-- Outer Frame -->
+  <rect x="24" y="24" width="1152" height="582" rx="20" fill="none" stroke="#292524" stroke-width="1.5" />
+  <rect x="28" y="28" width="1144" height="574" rx="16" fill="none" stroke="#44403c" stroke-width="0.75" stroke-dasharray="4 8" stroke-opacity="0.3" />
+
+  <!-- Corner Accents -->
+  <path d="M 36 50 L 36 36 L 50 36" fill="none" stroke="#f59e0b" stroke-width="2" />
+  <path d="M 1164 50 L 1164 36 L 1150 36" fill="none" stroke="#f59e0b" stroke-width="2" />
+  <path d="M 36 580 L 36 594 L 50 594" fill="none" stroke="#f59e0b" stroke-width="2" />
+  <path d="M 1164 580 L 1164 594 L 1150 594" fill="none" stroke="#f59e0b" stroke-width="2" />
+
+  <!-- Left Content Column -->
+  <g transform="translate(68, 64)">
+    <!-- Private Portal Badge -->
+    <g transform="translate(0, 0)">
+      <rect width="210" height="32" rx="16" fill="#292524" stroke="#44403c" stroke-width="1" />
+      <circle cx="16" cy="16" r="4" fill="#f59e0b" />
+      <text x="28" y="20" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="800" fill="#f59e0b" letter-spacing="0.08em">
+        PRIVATE CLIENT PORTAL
+      </text>
+    </g>
+
+    <!-- Headline -->
+    <text x="0" y="96" font-family="system-ui, -apple-system, sans-serif" font-size="46" font-weight="900" fill="#ffffff" letter-spacing="-0.03em">
+      Bespoke Custom Residential
+    </text>
+    <text x="0" y="148" font-family="system-ui, -apple-system, sans-serif" font-size="46" font-weight="900" fill="url(#goldText)" letter-spacing="-0.03em">
+      Construction &amp; Craftsmanship
+    </text>
+
+    <!-- Subtitle -->
+    <text x="0" y="196" font-family="system-ui, -apple-system, sans-serif" font-size="17" font-weight="400" fill="#a8a29e" letter-spacing="-0.01em">
+      Follow every milestone, agreement, design selection, and site update
+    </text>
+    <text x="0" y="222" font-family="system-ui, -apple-system, sans-serif" font-size="17" font-weight="400" fill="#a8a29e" letter-spacing="-0.01em">
+      from the initial consultation to move-in day in your dedicated workspace.
+    </text>
+
+    <!-- 4-Phase Client Journey Showcase -->
+    <g transform="translate(0, 266)">
+      <text x="0" y="0" font-family="system-ui, sans-serif" font-size="11" font-weight="800" fill="#78716c" letter-spacing="0.1em">
+        THE 4-PHASE BUILDING JOURNEY
+      </text>
+
+      <g transform="translate(0, 16)">
+        <!-- Step 1 -->
+        <g transform="translate(0, 0)">
+          <rect width="134" height="96" rx="14" fill="url(#tenantCardGrad)" stroke="#292524" stroke-width="1.2" />
+          <text x="14" y="24" font-family="ui-monospace, monospace" font-size="12" font-weight="800" fill="#f59e0b">01</text>
+          <text x="14" y="48" font-family="system-ui, sans-serif" font-size="14" font-weight="800" fill="#ffffff">Discover</text>
+          <text x="14" y="68" font-family="system-ui, sans-serif" font-size="10.5" font-weight="500" fill="#a8a29e">Vision, site &amp;</text>
+          <text x="14" y="82" font-family="system-ui, sans-serif" font-size="10.5" font-weight="500" fill="#78716c">priorities</text>
+        </g>
+
+        <!-- Step 2 -->
+        <g transform="translate(144, 0)">
+          <rect width="134" height="96" rx="14" fill="url(#tenantCardGrad)" stroke="#292524" stroke-width="1.2" />
+          <text x="14" y="24" font-family="ui-monospace, monospace" font-size="12" font-weight="800" fill="#f59e0b">02</text>
+          <text x="14" y="48" font-family="system-ui, sans-serif" font-size="14" font-weight="800" fill="#ffffff">Plan</text>
+          <text x="14" y="68" font-family="system-ui, sans-serif" font-size="10.5" font-weight="500" fill="#a8a29e">Scope, timeline</text>
+          <text x="14" y="82" font-family="system-ui, sans-serif" font-size="10.5" font-weight="500" fill="#78716c">&amp; decisions</text>
+        </g>
+
+        <!-- Step 3 -->
+        <g transform="translate(288, 0)">
+          <rect width="134" height="96" rx="14" fill="url(#tenantCardGrad)" stroke="#292524" stroke-width="1.2" />
+          <text x="14" y="24" font-family="ui-monospace, monospace" font-size="12" font-weight="800" fill="#f59e0b">03</text>
+          <text x="14" y="48" font-family="system-ui, sans-serif" font-size="14" font-weight="800" fill="#ffffff">Build</text>
+          <text x="14" y="68" font-family="system-ui, sans-serif" font-size="10.5" font-weight="500" fill="#a8a29e">Live site milestones</text>
+          <text x="14" y="82" font-family="system-ui, sans-serif" font-size="10.5" font-weight="500" fill="#78716c">&amp; progress</text>
+        </g>
+
+        <!-- Step 4 -->
+        <g transform="translate(432, 0)">
+          <rect width="134" height="96" rx="14" fill="url(#tenantCardGrad)" stroke="#292524" stroke-width="1.2" />
+          <text x="14" y="24" font-family="ui-monospace, monospace" font-size="12" font-weight="800" fill="#10b981">04</text>
+          <text x="14" y="48" font-family="system-ui, sans-serif" font-size="14" font-weight="800" fill="#ffffff">Welcome</text>
+          <text x="14" y="68" font-family="system-ui, sans-serif" font-size="10.5" font-weight="500" fill="#a8a29e">Handover, records</text>
+          <text x="14" y="82" font-family="system-ui, sans-serif" font-size="10.5" font-weight="500" fill="#78716c">&amp; warranty</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Key Client Guarantees -->
+    <g transform="translate(0, 420)">
+      <g transform="translate(0, 0)">
+        <circle cx="8" cy="8" r="6" fill="#f59e0b" fill-opacity="0.2" />
+        <path d="M 5 8 L 7 10 L 11 6" fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linecap="round" />
+        <text x="22" y="12" font-family="system-ui, sans-serif" font-size="13" font-weight="600" fill="#e7e5e4">Real-Time Milestone Visibility</text>
+      </g>
+
+      <g transform="translate(240, 0)">
+        <circle cx="8" cy="8" r="6" fill="#f59e0b" fill-opacity="0.2" />
+        <path d="M 5 8 L 7 10 L 11 6" fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linecap="round" />
+        <text x="22" y="12" font-family="system-ui, sans-serif" font-size="13" font-weight="600" fill="#e7e5e4">Secure Agreements &amp; Invoices</text>
+      </g>
+
+      <g transform="translate(480, 0)">
+        <circle cx="8" cy="8" r="6" fill="#f59e0b" fill-opacity="0.2" />
+        <path d="M 5 8 L 7 10 L 11 6" fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linecap="round" />
+        <text x="22" y="12" font-family="system-ui, sans-serif" font-size="13" font-weight="600" fill="#e7e5e4">Direct Builder Communication</text>
+      </g>
+    </g>
+
+    <!-- Footer: Powered by BeamLine -->
+    <g transform="translate(0, 480)">
+      <text x="0" y="12" font-family="system-ui, sans-serif" font-size="12" font-weight="500" fill="#78716c">
+        Secure White-Label Client Workspace · Powered by <tspan font-weight="700" fill="#a8a29e">BeamLine Construction OS</tspan>
+      </text>
+    </g>
+  </g>
+
+  <!-- Right Visual: Architectural House Elevation Illustration -->
+  <g transform="translate(730, 80)">
+    <rect width="400" height="470" rx="18" fill="#141211" stroke="#292524" stroke-width="1.5" />
+    
+    <!-- Architectural Elevation Drawing -->
+    <g transform="translate(30, 30)">
+      <!-- Header -->
+      <text x="0" y="16" font-family="system-ui, sans-serif" font-size="11" font-weight="800" fill="#f59e0b" letter-spacing="0.08em">BESPOKE RESIDENCE</text>
+      <text x="0" y="32" font-family="system-ui, sans-serif" font-size="10" font-weight="500" fill="#78716c">ARCHITECTURAL SCHEMATIC ELEVATION</text>
+
+      <!-- House Blueprint Lines -->
+      <g transform="translate(20, 50)" stroke="#44403c" stroke-width="1.5" fill="none">
+        <!-- Ground Line -->
+        <line x1="-10" y1="280" x2="310" y2="280" stroke="#78716c" stroke-width="2" />
+        
+        <!-- Main Structure Base -->
+        <rect x="20" y="110" width="260" height="170" fill="#1c1917" stroke="#57534e" />
+
+        <!-- Roof Cantilever (Modern Flat & Butterfly) -->
+        <polygon points="0,110 300,90 280,110" fill="#292524" stroke="#f59e0b" stroke-width="2" />
+        
+        <!-- Upper Story Cladding & Glass Box -->
+        <rect x="50" y="30" width="180" height="80" fill="#141211" stroke="#f59e0b" stroke-width="1.5" />
+        <line x1="110" y1="30" x2="110" y2="110" stroke="#f59e0b" stroke-width="1" stroke-dasharray="2 4" />
+        <line x1="170" y1="30" x2="170" y2="110" stroke="#f59e0b" stroke-width="1" stroke-dasharray="2 4" />
+
+        <!-- Large Floor-to-Ceiling Windows (Level 1) -->
+        <rect x="40" y="140" width="100" height="140" fill="#0c0a09" stroke="#78716c" stroke-width="1.5" />
+        <line x1="90" y1="140" x2="90" y2="280" stroke="#44403c" />
+        <line x1="40" y1="210" x2="140" y2="210" stroke="#44403c" />
+
+        <!-- Entry Door & Sconce -->
+        <rect x="170" y="170" width="50" height="110" fill="#292524" stroke="#f59e0b" stroke-width="1.5" />
+        <circle cx="160" cy="210" r="3" fill="#f59e0b" />
+
+        <!-- Dimension Lines -->
+        <g stroke="#f59e0b" stroke-width="1" stroke-opacity="0.6">
+          <line x1="290" y1="30" x2="305" y2="30" />
+          <line x1="290" y1="280" x2="305" y2="280" />
+          <line x1="298" y1="30" x2="298" y2="280" stroke-dasharray="3 3" />
+        </g>
+      </g>
+
+      <!-- Client Portal Live Status Card -->
+      <g transform="translate(10, 360)">
+        <rect width="320" height="54" rx="10" fill="#1c1917" stroke="#292524" stroke-width="1" />
+        <circle cx="20" cy="27" r="6" fill="#10b981" />
+        <text x="36" y="24" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#fafaf9">Job Site Progress: Framing Complete</text>
+        <text x="36" y="40" font-family="system-ui, sans-serif" font-size="10" font-weight="500" fill="#a8a29e">Next milestone: Rough Mechanical Inspection</text>
+      </g>
+    </g>
+  </g>
+</svg>
+

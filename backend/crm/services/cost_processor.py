@@ -84,6 +84,15 @@ class CostAutomationProcessor:
         if payment_status == "Unpaid" and not payment_due_date:
             clarification_reasons.append("Unpaid invoice submitted without an explicit Payment Due Date.")
 
+        # Dynamic Threshold Evaluation from Organization Settings: determines executive routing
+        is_above_threshold = False
+        from common.middleware import get_current_tenant
+        active_org = (matched_project.organization if matched_project and matched_project.organization else None) or get_current_tenant()
+        if active_org and hasattr(active_org, "invoice_review_threshold"):
+            thresh = active_org.invoice_review_threshold
+            if amount >= thresh:
+                is_above_threshold = True
+
         # Determine canonical public API url for PDF invoice rendering
         api_base = getattr(
             settings,
@@ -206,11 +215,19 @@ class CostAutomationProcessor:
         )
         # Determine recipient based on review flag and linked client
         try:
-            from crm.models import SMTPSettings
-            smtp_cfg = SMTPSettings.get_active()
-            kevin_email = smtp_cfg.kevin_email or getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "") or "ops-automation@crm.musfiqdehan.com"
+            from integrations.services.resolver import IntegrationResolver
+
+            smtp_state = IntegrationResolver.get_smtp_state(organization=active_org)
+            kevin_email = (
+                smtp_state.get("kevin_email")
+                or getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "")
+                or "ops-automation@crm.musfiqdehan.com"
+            )
         except Exception:
-            kevin_email = getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "") or "ops-automation@crm.musfiqdehan.com"
+            kevin_email = (
+                getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "")
+                or "ops-automation@crm.musfiqdehan.com"
+            )
 
         client_email = None
         if matched_project and hasattr(matched_project, "opportunities"):
@@ -218,12 +235,13 @@ class CostAutomationProcessor:
             if first_opp and first_opp.contact and first_opp.contact.email:
                 client_email = first_opp.contact.email
 
+        exec_email = (active_org.executive_recipient_email if active_org and active_org.executive_recipient_email else kevin_email)
         notified_recipient = (
             payload.get("notified_person")
             or (
-                kevin_email
-                if needs_flag
-                else (client_email or kevin_email or "musfiq.works+kevin@gmail.com")
+                exec_email
+                if (needs_flag or is_above_threshold)
+                else (client_email or exec_email or "musfiq.works+kevin@gmail.com")
             )
         )
 
@@ -290,12 +308,17 @@ class CostAutomationProcessor:
         from_addr = getattr(settings, "DEFAULT_FROM_EMAIL", "Kevin's Construction OS <ops-automation@crm.musfiqdehan.com>")
         to_addr = cost.notified_person
         try:
-            from crm.models import SMTPSettings
-            smtp_cfg = SMTPSettings.get_active()
-            if smtp_cfg.default_from_email:
-                from_addr = smtp_cfg.default_from_email
+            from integrations.services.resolver import IntegrationResolver
+
+            smtp_state = IntegrationResolver.get_smtp_state(organization=cost.organization)
+            if smtp_state.get("default_from_email"):
+                from_addr = smtp_state["default_from_email"]
             if not to_addr:
-                to_addr = smtp_cfg.kevin_email or getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "") or "ops-automation@crm.musfiqdehan.com"
+                to_addr = (
+                    smtp_state.get("kevin_email")
+                    or getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "")
+                    or "ops-automation@crm.musfiqdehan.com"
+                )
         except Exception:
             if not to_addr:
                 to_addr = getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "") or "ops-automation@crm.musfiqdehan.com"

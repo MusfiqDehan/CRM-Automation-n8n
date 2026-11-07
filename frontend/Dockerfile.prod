@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Production Dockerfile for Kevin Construction OS — Next.js 16 (Bun runtime)
+# Production Dockerfile for Beamline — Next.js 16 (Bun runtime)
 # ─────────────────────────────────────────────────────────────────────────────
 FROM oven/bun:latest AS builder
 

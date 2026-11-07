@@ -20,30 +20,39 @@ class AuditedEmailBackend(BaseEmailBackend):
         if not email_messages:
             return 0
 
-        from crm.models import EmailCommunicationLog, SMTPSettings
+        from crm.models import EmailCommunicationLog
+        from integrations.services.resolver import IntegrationResolver
 
         sent_count = 0
         smtp_backend = None
-        smtp_cfg = None
+        smtp_state: dict = {}
         try:
-            smtp_cfg = SMTPSettings.get_active()
+            smtp_state = IntegrationResolver.get_smtp_state()
         except Exception:
-            smtp_cfg = None
+            smtp_state = {}
 
-        host = (smtp_cfg.host if smtp_cfg and smtp_cfg.host else getattr(settings, "SMTP_HOST", "")) or "smtp.gmail.com"
-        port = int(smtp_cfg.port if smtp_cfg and smtp_cfg.port else getattr(settings, "SMTP_PORT", 465))
-        user = (smtp_cfg.username if smtp_cfg and smtp_cfg.username else getattr(settings, "SMTP_USER", ""))
-        raw_pw = (smtp_cfg.password if smtp_cfg and smtp_cfg.password else getattr(settings, "SMTP_PASSWORD", ""))
+        host = (smtp_state.get("host") or getattr(settings, "SMTP_HOST", "")) or "smtp.gmail.com"
+        port = int(smtp_state.get("port") or getattr(settings, "SMTP_PORT", 465))
+        user = (smtp_state.get("username") or getattr(settings, "SMTP_USER", ""))
+        raw_pw = (smtp_state.get("password") or getattr(settings, "SMTP_PASSWORD", ""))
         pw = (raw_pw or "").replace(" ", "")
-        use_ssl = bool(smtp_cfg.use_ssl if smtp_cfg and smtp_cfg.use_ssl is not None else getattr(settings, "SMTP_USE_SSL", True))
-        use_tls = bool(smtp_cfg.use_tls if smtp_cfg and smtp_cfg.use_tls is not None else getattr(settings, "SMTP_USE_TLS", False))
+        use_ssl = bool(
+            smtp_state["use_ssl"]
+            if "use_ssl" in smtp_state
+            else getattr(settings, "SMTP_USE_SSL", True)
+        )
+        use_tls = bool(
+            smtp_state["use_tls"]
+            if "use_tls" in smtp_state
+            else getattr(settings, "SMTP_USE_TLS", False)
+        )
         default_from = (
-            (smtp_cfg.default_from_email if smtp_cfg and smtp_cfg.default_from_email else getattr(settings, "DEFAULT_FROM_EMAIL", ""))
+            (smtp_state.get("default_from_email") or getattr(settings, "DEFAULT_FROM_EMAIL", ""))
             or user
             or "ops-automation@crm.musfiqdehan.com"
         )
         fallback_to = (
-            (smtp_cfg.kevin_email if smtp_cfg and smtp_cfg.kevin_email else getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", ""))
+            (smtp_state.get("kevin_email") or getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", ""))
             or user
             or "ops-automation@crm.musfiqdehan.com"
         )

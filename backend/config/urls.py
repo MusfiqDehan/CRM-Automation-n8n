@@ -10,7 +10,7 @@ from rest_framework.decorators import api_view
 def health_check(request):
     return api_response(
         data={
-            "service": "kevin-construction-os-backend",
+            "service": "beamline-backend",
             "status": "healthy",
             "stack": "Python 3.14 + Django 6.1 + DRF 3.18",
         },
@@ -23,7 +23,7 @@ def health_check(request):
 def api_root(request):
     return api_response(
         data={
-            "service": "kevin-construction-os-backend",
+            "service": "beamline-backend",
             "status": "healthy",
             "version": "v1",
             "health": "/api/v1/health/",
@@ -41,20 +41,31 @@ def api_root(request):
                 "invoices_extract": "/api/v1/invoices/extract/",
                 "invoices_process": "/api/v1/invoices/process/",
                 "simulator_trigger": "/api/v1/simulator/trigger/",
+                "oauth_config": "/api/v1/auth/oauth-config/",
+                "auth_login": "/api/v1/auth/login/",
+                "auth_google": "/api/v1/auth/google/",
+                "auth_me": "/api/v1/auth/me/",
+                "superadmin_settings": "/api/v1/superadmin/platform-settings/",
+                "superadmin_organizations": "/api/v1/superadmin/organizations/",
+                "tenant_settings": "/api/v1/tenant/settings/",
+                "integrations_superadmin": "/api/v1/integrations/superadmin/providers/",
+                "integrations_tenant": "/api/v1/integrations/tenant/providers/",
+                "integrations_payments": "/api/v1/integrations/payments/checkout/",
             },
         },
-        message="Kevin Construction OS API Gateway",
+        message="Beamline Operations API Gateway",
         success=True,
     )
 
 
 urlpatterns = [
     path("django-admin/", admin.site.urls),
-    path("admin/", admin.site.urls),
     path("api/", api_root, name="api-root"),
     path("api", api_root),
     path("api/v1/health/", health_check, name="health-check"),
     path("api/v1/health", health_check),
+    path("api/v1/integrations/", include("integrations.urls")),
+    path("api/v1/integrations", include("integrations.urls")),
     path("api/v1/", include("crm.urls")),
     path("api/v1", include("crm.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

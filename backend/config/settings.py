@@ -17,14 +17,8 @@ SECRET_KEY = os.getenv(
 
 DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS = [
-    h.strip()
-    for h in os.getenv(
-        "DJANGO_ALLOWED_HOSTS",
-        "localhost,127.0.0.1,0.0.0.0,backend,host.docker.internal,testserver",
-    ).split(",")
-    if h.strip()
-]
+# Multi-tenant custom domains & subdomains are verified by Traefik; allow wildcard host resolution
+ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -40,6 +34,7 @@ INSTALLED_APPS = [
     # Local reusable & domain apps
     "common",
     "crm",
+    "integrations",
 ]
 
 MIDDLEWARE = [
@@ -50,6 +45,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "common.middleware.TenantResolutionMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -88,7 +84,7 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("POSTGRES_DB", "kevin_construction_os"),
+            "NAME": os.getenv("POSTGRES_DB", "beamline_os"),
             "USER": os.getenv("POSTGRES_USER", "postgres"),
             "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres_secure_pass_2026"),
             "HOST": os.getenv("POSTGRES_HOST", "localhost"),
@@ -133,6 +129,13 @@ CORS_ALLOWED_ORIGINS = [
     ).split(",")
     if origin.strip()
 ]
+from corsheaders.defaults import default_headers
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "x-tenant-slug",
+    "x-tenant-id",
+]
+
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.getenv(
@@ -142,22 +145,51 @@ CSRF_TRUSTED_ORIGINS = [
     if origin.strip()
 ]
 
-STORAGES = {
-    "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-}
+# Cloudflare R2 Object Storage Configuration (Bucket: root, Prefix: beamline, Custom Domain: cdn.musfiqdehan.com)
+R2_BUCKET_NAME = os.getenv("R2_BUCKET_NAME", "root")
+R2_KEY_PREFIX = os.getenv("R2_KEY_PREFIX", "beamline").strip("/")
+R2_PUBLIC_DOMAIN = os.getenv("R2_PUBLIC_DOMAIN", "cdn.musfiqdehan.com").strip("/")
+R2_ACCOUNT_ID = os.getenv("R2_ACCOUNT_ID", "")
+R2_ACCESS_KEY_ID = os.getenv("R2_ACCESS_KEY_ID", "")
+R2_SECRET_ACCESS_KEY = os.getenv("R2_SECRET_ACCESS_KEY", "")
+R2_ENDPOINT_URL = os.getenv(
+    "R2_ENDPOINT_URL",
+    f"https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com" if R2_ACCOUNT_ID else "",
+)
+USE_R2_STORAGE = os.getenv("USE_R2_STORAGE", "False").lower() in ("true", "1", "yes") or bool(
+    R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY and R2_ENDPOINT_URL
+)
+
+if USE_R2_STORAGE:
+    STORAGES = {
+        "default": {
+            "BACKEND": "common.storage.BeamlineR2MediaStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "common.storage.BeamlineR2StaticStorage",
+        },
+    }
+else:
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
-DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB limit
-FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024  # 50 MB limit for media & video uploads
+FILE_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
 
 # Django REST Framework 3.18 Configuration
 REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "crm.services.auth_service.BeamlineJWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
     "DEFAULT_RENDERER_CLASSES": [
         "common.responses.EnvelopeJSONRenderer",
         "rest_framework.renderers.BrowsableAPIRenderer",

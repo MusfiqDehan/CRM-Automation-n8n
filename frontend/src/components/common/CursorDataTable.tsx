@@ -1,27 +1,19 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Inbox, Plus, RefreshCw, Search } from "lucide-react";
+import { Plus } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
-import { DropdownSelect } from "@/components/ui/DropdownSelect";
+import {
+  TableSearchBar,
+  TableFilterBar,
+  TablePagination,
+  TableEmptyState,
+  type TableColumn,
+  type FilterConfig,
+  type SortOption,
+} from "./table";
 
-export interface TableColumn<T> {
-  key: string;
-  header: string;
-  render: (row: T) => React.ReactNode;
-  className?: string;
-}
-
-export interface FilterConfig {
-  key: string;
-  label: string;
-  options: Array<{ label: string; value: string }>;
-}
-
-export interface SortOption {
-  label: string;
-  value: string;
-}
+export type { TableColumn, FilterConfig, SortOption };
 
 interface CursorDataTableProps<T extends { id: string }> {
   /** Optional heading shown above the search bar. */
@@ -67,6 +59,7 @@ export function CursorDataTable<T extends { id: string }>({
       setCursor(null);
     }
   }, [JSON.stringify(initialFilters)]);
+
   const [ordering, setOrdering] = useState<string>(
     sortOptions[0]?.value || "-created_at"
   );
@@ -76,15 +69,6 @@ export function CursorDataTable<T extends { id: string }>({
   const [prevCursor, setPrevCursor] = useState<string | null>(null);
   const [hasNext, setHasNext] = useState<boolean>(false);
   const [hasPrev, setHasPrev] = useState<boolean>(false);
-
-  // Debounce search input and reset cursor when search changes
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchInput);
-      setCursor(null);
-    }, 280);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
 
   const fetchRows = useCallback(async () => {
     setLoading(true);
@@ -119,83 +103,60 @@ export function CursorDataTable<T extends { id: string }>({
     setCursor(null);
   };
 
+  const handleClearFilters = () => {
+    setActiveFilters({});
+    setSearchInput("");
+    setDebouncedSearch("");
+    setCursor(null);
+  };
+
   const hasActiveFilters =
     Boolean(debouncedSearch) || Object.values(activeFilters).some(Boolean);
 
   return (
     <div className="card relative">
       {/* Toolbar */}
-      <div className="flex flex-col gap-3 border-b border-slate-100 dark:border-slate-800 p-4 lg:flex-row lg:items-center">
+      <div className="flex flex-col gap-3 border-b border-stone-100 dark:border-stone-800 p-4 lg:flex-row lg:items-center">
         {title && (
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 lg:mr-2">{title}</h3>
+          <h3 className="text-base font-semibold text-stone-900 dark:text-stone-100 lg:mr-2">{title}</h3>
         )}
-        <div className="relative flex-1 lg:max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder={searchPlaceholder}
-            aria-label={searchPlaceholder}
-            className="input py-2 pl-9"
-          />
-        </div>
+        <TableSearchBar
+          value={searchInput}
+          onChange={(val) => setSearchInput(val)}
+          onDebounce={(val) => {
+            setDebouncedSearch(val);
+            setCursor(null);
+          }}
+          debounceMs={280}
+          placeholder={searchPlaceholder}
+          ariaLabel={searchPlaceholder}
+          className="lg:max-w-sm"
+        />
 
         <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
-          {filters.map((f) => (
-            <DropdownSelect
-              key={f.key}
-              size="sm"
-              fullWidth={false}
-              ariaLabel={f.label}
-              value={activeFilters[f.key] || ""}
-              onChange={(val) => handleFilterChange(f.key, val)}
-              placeholder={`${f.label}: All`}
-              options={[
-                { value: "", label: `${f.label}: All` },
-                ...f.options.map((opt) => ({
-                  value: opt.value,
-                  label: opt.label,
-                })),
-              ]}
-              buttonClassName="min-w-[120px]"
-            />
-          ))}
-
-          {sortOptions.length > 1 && (
-            <DropdownSelect
-              size="sm"
-              fullWidth={false}
-              ariaLabel="Sort order"
-              value={ordering}
-              onChange={(val) => {
-                setOrdering(val);
-                setCursor(null);
-              }}
-              options={sortOptions.map((s) => ({
-                value: s.value,
-                label: `Sort: ${s.label}`,
-              }))}
-              buttonClassName="min-w-[130px]"
-            />
-          )}
-
-          <button
-            type="button"
-            onClick={fetchRows}
-            title="Refresh"
-            aria-label="Refresh list"
-            className="rounded-xl border border-slate-200 dark:border-slate-800 p-2 text-slate-500 transition hover:bg-slate-50 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          </button>
-
-          {onAddClick && (
-            <button type="button" onClick={onAddClick} className="btn-primary py-2 text-xs sm:text-sm">
-              <Plus className="h-4 w-4" />
-              <span>{addButtonLabel}</span>
-            </button>
-          )}
+          <TableFilterBar
+            filters={filters}
+            activeFilters={activeFilters}
+            onFilterChange={handleFilterChange}
+            onClearFilters={handleClearFilters}
+            sortOptions={sortOptions.length > 1 ? sortOptions : []}
+            activeSort={ordering}
+            onSortChange={(val) => {
+              setOrdering(val);
+              setCursor(null);
+            }}
+            loading={loading}
+            onRefresh={fetchRows}
+            showActivePills={false}
+            actions={
+              onAddClick ? (
+                <button type="button" onClick={onAddClick} className="btn-primary btn-sm">
+                  <Plus className="h-4 w-4" />
+                  {addButtonLabel}
+                </button>
+              ) : null
+            }
+          />
         </div>
       </div>
 
@@ -209,7 +170,7 @@ export function CursorDataTable<T extends { id: string }>({
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="border-b border-slate-100 dark:border-slate-800 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <tr className="border-b border-stone-100 dark:border-stone-800 text-xs font-medium text-stone-500 dark:text-stone-400">
               {columns.map((col) => (
                 <th key={col.key} className={`px-4 py-3 font-medium ${col.className || ""}`}>
                   {col.header}
@@ -217,13 +178,13 @@ export function CursorDataTable<T extends { id: string }>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-sm text-slate-700 dark:text-slate-200">
+          <tbody className="divide-y divide-stone-100 dark:divide-stone-800/80 text-sm text-stone-700 dark:text-stone-200">
             {loading ? (
               Array.from({ length: 4 }).map((_, idx) => (
                 <tr key={idx}>
                   {columns.map((col) => (
                     <td key={col.key} className="px-4 py-4">
-                      <div className="h-4 w-3/4 animate-pulse rounded bg-slate-100 dark:bg-slate-800" />
+                      <div className="h-4 w-3/4 animate-pulse rounded bg-stone-100 dark:bg-stone-800" />
                     </td>
                   ))}
                 </tr>
@@ -231,14 +192,14 @@ export function CursorDataTable<T extends { id: string }>({
             ) : rows.length === 0 ? (
               <tr>
                 <td colSpan={columns.length}>
-                  <EmptyState
+                  <TableEmptyState
                     message={hasActiveFilters ? "No results match your search." : emptyMessage}
                   />
                 </td>
               </tr>
             ) : (
               rows.map((row) => (
-                <tr key={row.id} className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+                <tr key={row.id} className="transition-colors hover:bg-stone-50/70 dark:hover:bg-stone-800/40">
                   {columns.map((col) => (
                     <td key={col.key} className={`px-4 py-3.5 align-middle ${col.className || ""}`}>
                       {col.render(row)}
@@ -252,21 +213,27 @@ export function CursorDataTable<T extends { id: string }>({
       </div>
 
       {/* Mobile cards */}
-      <div className="divide-y divide-slate-100 dark:divide-slate-800 md:hidden">
+      <div className="divide-y divide-stone-100 dark:divide-stone-800 md:hidden">
         {loading ? (
-          <div className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">Loading...</div>
+          Array.from({ length: 3 }).map((_, idx) => (
+            <div key={idx} className="space-y-2.5 p-4" aria-hidden="true">
+              <div className="h-4 w-2/3 animate-pulse rounded bg-stone-100 dark:bg-stone-800" />
+              <div className="h-3 w-1/2 animate-pulse rounded bg-stone-100 dark:bg-stone-800" />
+              <div className="h-3 w-3/4 animate-pulse rounded bg-stone-100 dark:bg-stone-800" />
+            </div>
+          ))
         ) : rows.length === 0 ? (
-          <EmptyState
+          <TableEmptyState
             message={hasActiveFilters ? "No results match your search." : emptyMessage}
           />
         ) : (
           rows.map((row) => (
             <div key={row.id} className="space-y-2.5 p-4">
-              <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{columns[0]?.render(row)}</div>
+              <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{columns[0]?.render(row)}</div>
               {columns.slice(1).map((col) => (
                 <div key={col.key} className="flex items-start justify-between gap-4 text-sm">
-                  <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">{col.header}</span>
-                  <div className="text-right text-slate-700 dark:text-slate-200">{col.render(row)}</div>
+                  <span className="shrink-0 text-xs text-stone-500 dark:text-stone-400">{col.header}</span>
+                  <div className="text-right text-stone-700 dark:text-stone-200">{col.render(row)}</div>
                 </div>
               ))}
             </div>
@@ -275,61 +242,19 @@ export function CursorDataTable<T extends { id: string }>({
       </div>
 
       {/* Pagination */}
-      <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800 px-4 py-3 text-sm text-slate-500 dark:text-slate-400 sm:flex-row">
-        <div className="flex items-center gap-2">
-          <span>Show</span>
-          <DropdownSelect
-            size="sm"
-            fullWidth={false}
-            direction="up"
-            ariaLabel="Rows per page"
-            value={pageSize}
-            onChange={(val) => {
-              setPageSize(Number(val));
-              setCursor(null);
-            }}
-            options={[
-              { value: 5, label: "5" },
-              { value: 10, label: "10" },
-              { value: 25, label: "25" },
-            ]}
-            buttonClassName="min-w-[64px]"
-          />
-          <span>per page</span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            disabled={!hasPrev || loading}
-            onClick={() => setCursor(prevCursor)}
-            className="btn-secondary px-3 py-1.5 text-xs"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            <span>Previous</span>
-          </button>
-          <button
-            type="button"
-            disabled={!hasNext || loading}
-            onClick={() => setCursor(nextCursor)}
-            className="btn-secondary px-3 py-1.5 text-xs"
-          >
-            <span>Next</span>
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center gap-2 px-4 py-12 text-center">
-      <div className="rounded-2xl bg-slate-100 dark:bg-slate-800 p-3 text-slate-400 dark:text-slate-500">
-        <Inbox className="h-6 w-6" />
-      </div>
-      <p className="text-sm text-slate-500 dark:text-slate-400">{message}</p>
+      <TablePagination
+        pageSize={pageSize}
+        pageSizeOptions={[5, 10, 25, 50]}
+        onPageSizeChange={(newSize) => {
+          setPageSize(newSize);
+          setCursor(null);
+        }}
+        hasPrevious={hasPrev}
+        hasNext={hasNext}
+        onPrevious={() => setCursor(prevCursor)}
+        onNext={() => setCursor(nextCursor)}
+        loading={loading}
+      />
     </div>
   );
 }

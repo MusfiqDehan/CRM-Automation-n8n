@@ -33,7 +33,18 @@ class BaseListCreateAPIView(APIView):
 
     def get_queryset(self):
         assert self.queryset is not None, f"'{self.__class__.__name__}' must define 'queryset'."
-        return self.queryset.all()
+        from django.db.models import Q
+        from common.middleware import get_current_tenant
+
+        tenant = getattr(self.request, "tenant", None) or get_current_tenant()
+        model = self.queryset.model
+        qs = model.all_objects.all() if hasattr(model, "all_objects") else model.objects.all()
+        if tenant and hasattr(model, "organization"):
+            if tenant.slug == "kevin":
+                qs = qs.filter(Q(organization=tenant) | Q(organization__isnull=True))
+            else:
+                qs = qs.filter(organization=tenant)
+        return qs
 
     def filter_queryset(self, queryset):
         for backend in self.filter_backends:
@@ -94,7 +105,18 @@ class BaseDetailAPIView(APIView):
 
     def get_queryset(self):
         assert self.queryset is not None, f"'{self.__class__.__name__}' must define 'queryset'."
-        return self.queryset.all()
+        from django.db.models import Q
+        from common.middleware import get_current_tenant
+
+        tenant = getattr(self.request, "tenant", None) or get_current_tenant()
+        model = self.queryset.model
+        qs = model.all_objects.all() if hasattr(model, "all_objects") else model.objects.all()
+        if tenant and hasattr(model, "organization"):
+            if tenant.slug == "kevin":
+                qs = qs.filter(Q(organization=tenant) | Q(organization__isnull=True))
+            else:
+                qs = qs.filter(organization=tenant)
+        return qs
 
     def get_object(self, pk: str):
         queryset = self.get_queryset()

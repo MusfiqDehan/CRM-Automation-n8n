@@ -5,13 +5,13 @@ from datetime import UTC, date, timedelta
 from decimal import Decimal
 from typing import Any
 import httpx
+from dataclasses import asdict, dataclass
 from django.conf import settings
 from django.utils import timezone
 from crm.models import (
     ConstructionProject,
     Contact,
     MaterialOrder,
-    NotionWorkspaceConfig,
     Opportunity,
     ProjectCost,
     ProjectTask,
@@ -19,6 +19,50 @@ from crm.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class NotionWorkspaceState:
+    """
+    Value object representing Notion workspace database IDs & URLs persisted inside
+    `TenantIntegrationConfig` / `PlatformIntegrationConfig` (`provider_key="notion"`).
+    """
+
+    hub_page_id: str = "4098194e-c3e8-811a-b5b1-c1b79f62bce1"
+    hub_page_url: str = "https://app.notion.com/p/Kevin-s-Construction-OS-4098194ec3e8811ab5b1c1b79f62bce1"
+    contacts_db_id: str = "4098194e-c3e8-81aa-ac76-e9668e95261a"
+    contacts_db_url: str = "https://app.notion.com/p/4098194ec3e881aaac76e9668e95261a"
+    opportunities_db_id: str = "4098194e-c3e8-81a3-ae85-ec1a2f2474e7"
+    opportunities_db_url: str = "https://app.notion.com/p/4098194ec3e881a3ae85ec1a2f2474e7"
+    activities_db_id: str = "4098194e-c3e8-81f1-a84c-dd3d785e299a"
+    activities_db_url: str = "https://app.notion.com/p/4098194ec3e881f1a84cdd3d785e299a"
+    projects_db_id: str = "4098194e-c3e8-819d-8936-e84f7c594da4"
+    projects_db_url: str = "https://app.notion.com/p/4098194ec3e8819d8936e84f7c594da4"
+    tasks_db_id: str = "4098194e-c3e8-817d-9519-ca6a6950286e"
+    tasks_db_url: str = "https://app.notion.com/p/4098194ec3e8817d9519ca6a6950286e"
+    materials_db_id: str = "4098194e-c3e8-8133-8d42-e75cef33f7e4"
+    materials_db_url: str = "https://app.notion.com/p/4098194ec3e881338d42e75cef33f7e4"
+    costs_db_id: str = "4098194e-c3e8-8168-80a6-ee408dd1a250"
+    costs_db_url: str = "https://app.notion.com/p/4098194ec3e8816880a6ee408dd1a250"
+    sales_dashboard_page_id: str = "4098194e-c3e8-8111-9177-d08ccaa4c436"
+    sales_dashboard_url: str = "https://app.notion.com/p/Sales-Dashboard-Executive-Pipeline-Overview-4098194ec3e881119177d08ccaa4c436"
+    last_synced_at: Any = None
+    _organization: Any = None
+
+    def to_dict(self) -> dict[str, Any]:
+        data = asdict(self)
+        data.pop("_organization", None)
+        if hasattr(self.last_synced_at, "isoformat"):
+            data["last_synced_at"] = self.last_synced_at.isoformat()
+        return data
+
+    def save(self) -> "NotionWorkspaceState":
+        from integrations.services.resolver import IntegrationResolver
+
+        IntegrationResolver.update_notion_workspace_state(
+            self.to_dict(), organization=self._organization
+        )
+        return self
 
 
 def _rt(text: str) -> list[dict[str, Any]]:
@@ -47,12 +91,30 @@ class NotionProvisionerService:
 
     BASE_URL = "https://api.notion.com/v1"
 
-    def __init__(self, api_key: str | None = None, root_page_id: str | None = None):
-        self.api_key = api_key or getattr(settings, "NOTION_API_KEY", "")
-        self.root_page_id = root_page_id or getattr(
-            settings, "NOTION_ROOT_PAGE_ID", "4098194e-c3e8-811a-b5b1-c1b79f62bce1"
+    def __init__(
+        self,
+        api_key: str | None = None,
+        root_page_id: str | None = None,
+        organization: Any = None,
+    ):
+        from integrations.services.resolver import IntegrationResolver
+
+        self.organization = organization
+        resolved = IntegrationResolver.resolve("notion", organization=organization)
+        self.api_key = (
+            api_key
+            if api_key is not None
+            else str(resolved.credentials.get("api_key") or getattr(settings, "NOTION_API_KEY", ""))
         )
-        self.notion_version = getattr(settings, "NOTION_VERSION", "2022-06-28")
+        self.root_page_id = (
+            root_page_id
+            or str(resolved.config.get("hub_page_id") or "")
+            or getattr(settings, "NOTION_ROOT_PAGE_ID", "4098194e-c3e8-811a-b5b1-c1b79f62bce1")
+        )
+        self.notion_version = str(
+            resolved.config.get("notion_version")
+            or getattr(settings, "NOTION_VERSION", "2022-06-28")
+        )
 
     @property
     def headers(self) -> dict[str, str]:
@@ -85,33 +147,17 @@ class NotionProvisionerService:
             logger.warning("Notion API request error on %s %s: %s", method, endpoint, exc)
             return None
 
-    def get_or_create_config(self) -> NotionWorkspaceConfig:
-        cfg = NotionWorkspaceConfig.objects.first()
-        if not cfg:
-            if self.root_page_id and self.root_page_id != "4098194e-c3e8-811a-b5b1-c1b79f62bce1":
-                cfg = NotionWorkspaceConfig.objects.create(
-                    hub_page_id=self.root_page_id,
-                    hub_page_url=f"https://app.notion.com/p/{self.root_page_id.replace('-', '')}",
-                    contacts_db_id="",
-                    contacts_db_url="",
-                    opportunities_db_id="",
-                    opportunities_db_url="",
-                    activities_db_id="",
-                    activities_db_url="",
-                    projects_db_id="",
-                    projects_db_url="",
-                    tasks_db_id="",
-                    tasks_db_url="",
-                    materials_db_id="",
-                    materials_db_url="",
-                    costs_db_id="",
-                    costs_db_url="",
-                    sales_dashboard_page_id="",
-                    sales_dashboard_url="",
-                )
-            else:
-                cfg = NotionWorkspaceConfig.objects.create(hub_page_id=self.root_page_id)
-        return cfg
+    def get_or_create_config(self) -> NotionWorkspaceState:
+        from integrations.services.resolver import IntegrationResolver
+
+        raw = IntegrationResolver.get_notion_workspace_state(organization=self.organization)
+        valid_keys = {
+            f.name for f in NotionWorkspaceState.__dataclass_fields__.values() if f.name != "_organization"
+        }
+        filtered = {k: v for k, v in raw.items() if k in valid_keys}
+        if self.root_page_id:
+            filtered["hub_page_id"] = self.root_page_id
+        return NotionWorkspaceState(**filtered, _organization=self.organization)
 
     def seed_local_database(self) -> dict[str, int]:
         """Seeds realistic luxury residential construction records ($3M+ homes) if not already seeded."""
@@ -508,11 +554,11 @@ class NotionProvisionerService:
             "costs": ProjectCost.objects.count(),
         }
 
-    def provision_notion_workspace(self) -> NotionWorkspaceConfig:
+    def provision_notion_workspace(self) -> NotionWorkspaceState:
         """
         Provisions all 7 connected databases, the Executive Sales Dashboard, SOPs, and
         Personal Productivity Tracker under the top-level 'Kevin's Construction OS' hub page.
-        Idempotent: reuses existing databases if already created in NotionWorkspaceConfig.
+        Idempotent: reuses existing databases if already created in NotionWorkspaceState.
         """
         self.seed_local_database()
         cfg = self.get_or_create_config()
@@ -1080,7 +1126,7 @@ class NotionProvisionerService:
                 mapping[title_val] = (row["id"], row.get("url", ""))
         return mapping
 
-    def sync_records_to_notion(self, cfg: NotionWorkspaceConfig) -> None:
+    def sync_records_to_notion(self, cfg: NotionWorkspaceState) -> None:
         if not self.api_key:
             return
 
@@ -1391,7 +1437,7 @@ class NotionProvisionerService:
                 self.upsert_cost_in_notion(cost, cfg)
 
     def upsert_cost_in_notion(
-        self, cost: ProjectCost, cfg: NotionWorkspaceConfig | None = None
+        self, cost: ProjectCost, cfg: NotionWorkspaceState | None = None
     ) -> ProjectCost:
         """Creates or updates a ProjectCost page inside the Notion 'Project Costs & Invoices' DB."""
         if not self.api_key:
@@ -1455,7 +1501,7 @@ class NotionProvisionerService:
         return cost
 
     def upsert_opportunity_in_notion(
-        self, opp: Opportunity, cfg: NotionWorkspaceConfig | None = None
+        self, opp: Opportunity, cfg: NotionWorkspaceState | None = None
     ) -> Opportunity:
         """Creates or updates an Opportunity page inside the Notion 'Opportunities / Deals' DB."""
         if not self.api_key:

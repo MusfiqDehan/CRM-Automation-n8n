@@ -1,0 +1,237 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <!-- Background Gradients -->
+    <radialGradient id="bgGlow" cx="20%" cy="15%" r="65%">
+      <stop offset="0%" stop-color="#1c1917" />
+      <stop offset="100%" stop-color="#0c0a09" />
+    </radialGradient>
+    <radialGradient id="amberGlow" cx="85%" cy="30%" r="50%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.18" />
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="emeraldGlow" cx="25%" cy="85%" r="45%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.12" />
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1c1917" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#141211" stop-opacity="0.95" />
+    </linearGradient>
+    <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <linearGradient id="beamLineLogo" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="50%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+
+    <!-- Blueprint Grid Pattern -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#292524" stroke-width="0.8" stroke-opacity="0.45" />
+      <circle cx="0" cy="0" r="1" fill="#78716c" fill-opacity="0.3" />
+    </pattern>
+    <pattern id="dotGrid" width="80" height="80" patternUnits="userSpaceOnUse">
+      <circle cx="40" cy="40" r="1.5" fill="#f59e0b" fill-opacity="0.15" />
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGlow)" />
+  <rect width="1200" height="630" fill="url(#amberGlow)" />
+  <rect width="1200" height="630" fill="url(#emeraldGlow)" />
+  <rect width="1200" height="630" fill="url(#grid)" />
+  <rect width="1200" height="630" fill="url(#dotGrid)" />
+
+  <!-- Outer Architectural Border -->
+  <rect x="24" y="24" width="1152" height="582" rx="20" fill="none" stroke="#292524" stroke-width="1.5" />
+  <rect x="28" y="28" width="1144" height="574" rx="16" fill="none" stroke="#44403c" stroke-width="0.75" stroke-dasharray="4 8" stroke-opacity="0.4" />
+
+  <!-- Corner Blueprint Markers -->
+  <path d="M 36 50 L 36 36 L 50 36" fill="none" stroke="#f59e0b" stroke-width="2" />
+  <path d="M 1164 50 L 1164 36 L 1150 36" fill="none" stroke="#f59e0b" stroke-width="2" />
+  <path d="M 36 580 L 36 594 L 50 594" fill="none" stroke="#f59e0b" stroke-width="2" />
+  <path d="M 1164 580 L 1164 594 L 1150 594" fill="none" stroke="#f59e0b" stroke-width="2" />
+
+  <!-- Left Column: Branding, Value Proposition & Benefits -->
+  <g transform="translate(64, 60)">
+    <!-- Brand Logo Mark & Name -->
+    <g transform="translate(0, 0)">
+      <!-- BeamLine Mark -->
+      <rect x="0" y="0" width="46" height="46" rx="12" fill="url(#beamLineLogo)" />
+      <path d="M 13 33 L 33 13 M 13 13 L 25 13 M 33 33 L 21 33" stroke="#0c0a09" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+      
+      <!-- Wordmark -->
+      <text x="58" y="32" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="900" fill="#fafaf9" letter-spacing="-0.03em">
+        Beam<tspan fill="#f59e0b">Line</tspan>
+      </text>
+
+      <!-- Pill Badge -->
+      <rect x="202" y="10" width="190" height="26" rx="13" fill="#292524" stroke="#44403c" stroke-width="1" />
+      <circle cx="218" cy="23" r="4" fill="#10b981" />
+      <text x="230" y="27" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" fill="#e7e5e4" letter-spacing="0.04em">CONSTRUCTION OS v2.4</text>
+    </g>
+
+    <!-- Main Headline -->
+    <text x="0" y="112" font-family="system-ui, -apple-system, sans-serif" font-size="44" font-weight="900" fill="#ffffff" letter-spacing="-0.03em" line-height="1.15">
+      Autonomous CRM &amp; Operations OS
+    </text>
+    <text x="0" y="160" font-family="system-ui, -apple-system, sans-serif" font-size="44" font-weight="900" fill="url(#amberGrad)" letter-spacing="-0.03em">
+      for High-End Custom Home Builders
+    </text>
+
+    <!-- Subtitle / Value Proposition -->
+    <text x="0" y="206" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="400" fill="#a8a29e" letter-spacing="-0.01em">
+      White-labeled client workspaces, 4-phase build execution, AI margin protection,
+    </text>
+    <text x="0" y="230" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="400" fill="#a8a29e" letter-spacing="-0.01em">
+      and automated invoice deduplication engineered to eliminate margin leakage.
+    </text>
+
+    <!-- 4 Key Feature Cards -->
+    <g transform="translate(0, 268)">
+      <!-- Card 1: Multi-Tenant White-Label -->
+      <g transform="translate(0, 0)">
+        <rect width="270" height="88" rx="14" fill="url(#cardGrad)" stroke="#292524" stroke-width="1.2" />
+        <rect x="14" y="14" width="30" height="30" rx="8" fill="#f59e0b" fill-opacity="0.15" />
+        <path d="M 23 29 L 29 29 M 29 29 L 29 23 M 29 29 L 21 21" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" />
+        <text x="54" y="28" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="#fafaf9">White-Label Portals</text>
+        <text x="54" y="44" font-family="system-ui, sans-serif" font-size="11" font-weight="500" fill="#78716c">Dedicated client subdomains &amp;</text>
+        <text x="14" y="66" font-family="system-ui, sans-serif" font-size="11" font-weight="500" fill="#a8a29e">custom builder domains with SSL</text>
+      </g>
+
+      <!-- Card 2: 4-Phase Site Checklists -->
+      <g transform="translate(286, 0)">
+        <rect width="270" height="88" rx="14" fill="url(#cardGrad)" stroke="#292524" stroke-width="1.2" />
+        <rect x="14" y="14" width="30" height="30" rx="8" fill="#10b981" fill-opacity="0.15" />
+        <path d="M 23 29 L 26 32 L 35 23" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        <text x="54" y="28" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="#fafaf9">4-Phase Build Execution</text>
+        <text x="54" y="44" font-family="system-ui, sans-serif" font-size="11" font-weight="500" fill="#78716c">Pre-con to handover milestones,</text>
+        <text x="14" y="66" font-family="system-ui, sans-serif" font-size="11" font-weight="500" fill="#a8a29e">procurement &amp; site task board</text>
+      </g>
+
+      <!-- Card 3: AI Margin Shield -->
+      <g transform="translate(0, 102)">
+        <rect width="270" height="88" rx="14" fill="url(#cardGrad)" stroke="#292524" stroke-width="1.2" />
+        <rect x="14" y="14" width="30" height="30" rx="8" fill="#f59e0b" fill-opacity="0.15" />
+        <path d="M 29 20 L 22 23 L 22 28 C 22 32 25 35 29 36 C 33 35 36 32 36 28 L 36 23 Z" fill="none" stroke="#f59e0b" stroke-width="1.8" />
+        <text x="54" y="28" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="#fafaf9">AI Margin Shield</text>
+        <text x="54" y="44" font-family="system-ui, sans-serif" font-size="11" font-weight="500" fill="#78716c">100% duplicate subcontractor invoice</text>
+        <text x="14" y="66" font-family="system-ui, sans-serif" font-size="11" font-weight="500" fill="#a8a29e">prevention via automated email parsing</text>
+      </g>
+
+      <!-- Card 4: Executive Review Triage -->
+      <g transform="translate(286, 102)">
+        <rect width="270" height="88" rx="14" fill="url(#cardGrad)" stroke="#292524" stroke-width="1.2" />
+        <rect x="14" y="14" width="30" height="30" rx="8" fill="#38bdf8" fill-opacity="0.15" />
+        <circle cx="29" cy="29" r="6" stroke="#38bdf8" stroke-width="1.8" fill="none" />
+        <path d="M 29 26 L 29 30 L 32 31" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round" />
+        <text x="54" y="28" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="#fafaf9">Executive Triage</text>
+        <text x="54" y="44" font-family="system-ui, sans-serif" font-size="11" font-weight="500" fill="#78716c">Automated sign-off thresholds &amp;</text>
+        <text x="14" y="66" font-family="system-ui, sans-serif" font-size="11" font-weight="500" fill="#a8a29e">live bidirectional Notion OS sync</text>
+      </g>
+    </g>
+
+    <!-- Bottom Metrics Pill -->
+    <g transform="translate(0, 482)">
+      <text x="0" y="16" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#78716c" letter-spacing="0.05em">
+        TRUSTED BY CUSTOM BUILDERS · ARCHITECTURAL GENERAL CONTRACTORS · DEVELOPERS
+      </text>
+    </g>
+  </g>
+
+  <!-- Right Column: Visual Architectural & Live OS Telemetry Illustration -->
+  <g transform="translate(680, 70)">
+    <!-- Dashboard Mockup Window Container -->
+    <rect width="456" height="490" rx="18" fill="#141211" stroke="#292524" stroke-width="1.5" />
+    
+    <!-- Window Header -->
+    <rect width="456" height="42" rx="18" fill="#1c1917" />
+    <path d="M 0 30 L 0 42 L 456 42 L 456 30 Z" fill="#1c1917" />
+    <circle cx="24" cy="21" r="5" fill="#ef4444" fill-opacity="0.8" />
+    <circle cx="40" cy="21" r="5" fill="#f59e0b" fill-opacity="0.8" />
+    <circle cx="56" cy="21" r="5" fill="#10b981" fill-opacity="0.8" />
+    <rect x="120" y="12" width="216" height="18" rx="6" fill="#0c0a09" stroke="#292524" stroke-width="1" />
+    <text x="228" y="24" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" font-weight="600" fill="#a8a29e">
+      beamline.musfiqdehan.com
+    </text>
+
+    <!-- Internal Metric Cards -->
+    <g transform="translate(20, 58)">
+      <!-- Metric 1: Active Pipeline -->
+      <rect x="0" y="0" width="198" height="74" rx="12" fill="#1c1917" stroke="#292524" stroke-width="1" />
+      <text x="14" y="22" font-family="system-ui, sans-serif" font-size="10" font-weight="700" fill="#78716c" letter-spacing="0.05em">ACTIVE PIPELINE</text>
+      <text x="14" y="52" font-family="system-ui, sans-serif" font-size="22" font-weight="900" fill="#fafaf9">$24.8M</text>
+      <text x="120" y="50" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#10b981">+18.4%</text>
+
+      <!-- Metric 2: Prevented Duplicates -->
+      <rect x="218" y="0" width="198" height="74" rx="12" fill="#1c1917" stroke="#292524" stroke-width="1" />
+      <text x="232" y="22" font-family="system-ui, sans-serif" font-size="10" font-weight="700" fill="#78716c" letter-spacing="0.05em">MARGIN PROTECTED</text>
+      <text x="232" y="52" font-family="system-ui, sans-serif" font-size="22" font-weight="900" fill="#f59e0b">$142.5K</text>
+      <text x="352" y="50" font-family="system-ui, sans-serif" font-size="10" font-weight="700" fill="#a8a29e">100% BLOCKED</text>
+    </g>
+
+    <!-- Visual Architectural Chart / Build Phase Progress -->
+    <g transform="translate(20, 148)">
+      <rect width="416" height="154" rx="12" fill="#1c1917" stroke="#292524" stroke-width="1" />
+      <text x="16" y="24" font-family="system-ui, sans-serif" font-size="11" font-weight="800" fill="#fafaf9">Active Builds Lifecycle Tracker</text>
+      <text x="350" y="24" font-family="system-ui, sans-serif" font-size="10" font-weight="600" fill="#10b981">● Live Sync</text>
+
+      <!-- Project 1 -->
+      <g transform="translate(16, 42)">
+        <text x="0" y="12" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#e7e5e4">PRJ-101 Oakridge Modern Villa</text>
+        <text x="330" y="12" font-family="ui-monospace, monospace" font-size="10" font-weight="700" fill="#f59e0b">Phase 3 · 68%</text>
+        <rect x="0" y="18" width="384" height="6" rx="3" fill="#292524" />
+        <rect x="0" y="18" width="261" height="6" rx="3" fill="url(#amberGrad)" />
+      </g>
+
+      <!-- Project 2 -->
+      <g transform="translate(16, 80)">
+        <text x="0" y="12" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#e7e5e4">PRJ-102 Harborview Hillside Estate</text>
+        <text x="330" y="12" font-family="ui-monospace, monospace" font-size="10" font-weight="700" fill="#10b981">Phase 2 · 42%</text>
+        <rect x="0" y="18" width="384" height="6" rx="3" fill="#292524" />
+        <rect x="0" y="18" width="161" height="6" rx="3" fill="#10b981" />
+      </g>
+
+      <!-- Project 3 -->
+      <g transform="translate(16, 118)">
+        <text x="0" y="12" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#e7e5e4">PRJ-103 Bel Air Crest Contemporary</text>
+        <text x="330" y="12" font-family="ui-monospace, monospace" font-size="10" font-weight="700" fill="#38bdf8">Phase 1 · 18%</text>
+        <rect x="0" y="18" width="384" height="6" rx="3" fill="#292524" />
+        <rect x="0" y="18" width="69" height="6" rx="3" fill="#38bdf8" />
+      </g>
+    </g>
+
+    <!-- Recent Live Activity Stream inside Mockup -->
+    <g transform="translate(20, 318)">
+      <rect width="416" height="152" rx="12" fill="#1c1917" stroke="#292524" stroke-width="1" />
+      <text x="16" y="24" font-family="system-ui, sans-serif" font-size="11" font-weight="800" fill="#fafaf9">Live Automation Feed</text>
+
+      <!-- Stream Item 1 -->
+      <g transform="translate(16, 40)">
+        <circle cx="8" cy="10" r="4" fill="#10b981" />
+        <text x="22" y="12" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#e7e5e4">INV-2026-501 Verified &amp; Synced to Notion</text>
+        <text x="22" y="26" font-family="system-ui, sans-serif" font-size="9.5" font-weight="500" fill="#78716c">Sierra HVAC · $18,500.00 matched to PRJ-101</text>
+        <text x="325" y="12" font-family="ui-monospace, monospace" font-size="9" font-weight="500" fill="#78716c">Just now</text>
+      </g>
+
+      <!-- Stream Item 2 -->
+      <g transform="translate(16, 78)">
+        <circle cx="8" cy="10" r="4" fill="#f59e0b" />
+        <text x="22" y="12" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#e7e5e4">Duplicate Ingestion Blocked</text>
+        <text x="22" y="26" font-family="system-ui, sans-serif" font-size="9.5" font-weight="500" fill="#78716c">Identical invoice INV-2026-501 safely deduplicated</text>
+        <text x="325" y="12" font-family="ui-monospace, monospace" font-size="9" font-weight="500" fill="#78716c">2m ago</text>
+      </g>
+
+      <!-- Stream Item 3 -->
+      <g transform="translate(16, 116)">
+        <circle cx="8" cy="10" r="4" fill="#38bdf8" />
+        <text x="22" y="12" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#e7e5e4">Executive Review Queued</text>
+        <text x="22" y="26" font-family="system-ui, sans-serif" font-size="9.5" font-weight="500" fill="#78716c">Deal $4.2M exceeded $1M founder threshold</text>
+        <text x="325" y="12" font-family="ui-monospace, monospace" font-size="9" font-weight="500" fill="#78716c">14m ago</text>
+      </g>
+    </g>
+  </g>
+</svg>
+

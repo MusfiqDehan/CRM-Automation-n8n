@@ -1,0 +1,10 @@
+{
+  "description": "Manage client-facing pages with a consistent landing-page color theme, updated branding, and controls to enable or disable each landing page.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

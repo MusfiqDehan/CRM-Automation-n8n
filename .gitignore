@@ -29,6 +29,6 @@ test-results/
 .postgres_data/
 .n8n_data/
 backend/scripts/
-frontend/e2e/
 .vscode/
 traefik/
+*.tsbuildinfo

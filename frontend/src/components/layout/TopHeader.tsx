@@ -75,14 +75,14 @@ export function TopHeader({
   const { title, subtitle } = tabTitles[activeTab];
 
   return (
-    <header className="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-4 sm:px-6 lg:px-8 py-3.5 transition-all">
+    <header className="sticky top-0 z-30 bg-stone-950/90 backdrop-blur-md border-b border-stone-800/80 px-4 sm:px-6 lg:px-8 py-3.5 transition-all">
       <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
         {/* Left: Mobile Toggle + Page Title */}
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onOpenMobile}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 border border-slate-800 lg:hidden cursor-pointer"
+            className="p-2 rounded-xl text-stone-400 hover:text-white hover:bg-stone-900 border border-stone-800 lg:hidden cursor-pointer"
             aria-label="Open sidebar menu"
           >
             <Menu className="w-5 h-5" />
@@ -92,7 +92,7 @@ export function TopHeader({
             <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
               {title}
             </h2>
-            <p className="text-xs text-slate-400 hidden sm:block">{subtitle}</p>
+            <p className="text-xs text-stone-400 hidden sm:block">{subtitle}</p>
           </div>
         </div>
 
@@ -103,7 +103,7 @@ export function TopHeader({
             <button
               type="button"
               onClick={onOpenContactModal}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 transition cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>New Lead</span>
@@ -121,7 +121,7 @@ export function TopHeader({
             <button
               type="button"
               onClick={onOpenProjectModal}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 transition cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>New Project</span>
@@ -130,14 +130,14 @@ export function TopHeader({
             <button
               type="button"
               onClick={onOpenCustomInvoiceModal}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 transition cursor-pointer"
             >
               <Play className="w-3.5 h-3.5" />
               <span>Ingest Invoice</span>
             </button>
           </div>
 
-          <div className="h-4 w-px bg-slate-800 hidden md:block" />
+          <div className="h-4 w-px bg-stone-800 hidden md:block" />
 
           {/* External Essential Links */}
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -145,11 +145,11 @@ export function TopHeader({
               href={hubUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700/80 transition"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-stone-900 hover:bg-stone-800 text-stone-200 border border-stone-700/80 transition"
               title="Open Notion Construction OS Hub"
             >
               <span>Notion Hub</span>
-              <ExternalLink className="w-3.5 h-3.5 text-blue-400" />
+              <ExternalLink className="w-3.5 h-3.5 text-amber-400" />
             </a>
 
             {salesDbUrl && (
@@ -169,7 +169,7 @@ export function TopHeader({
               href={n8nUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 transition"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition"
               title="Open n8n Automation Engine"
             >
               <Workflow className="w-3.5 h-3.5" />

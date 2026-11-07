@@ -8,21 +8,13 @@ from crm.models import (
     Contact,
     EmailCommunicationLog,
     MaterialOrder,
-    NotionWorkspaceConfig,
     Opportunity,
     ProjectCost,
     ProjectTask,
     SalesActivity,
-    SMTPSettings,
 )
 
 PHONE_REGEX = re.compile(r"^[0-9+\-() .ext]{7,30}$", re.IGNORECASE)
-
-
-class NotionWorkspaceConfigSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = NotionWorkspaceConfig
-        fields = "__all__"
 
 
 class ContactSerializer(serializers.ModelSerializer):
@@ -500,79 +492,6 @@ class InvoiceProcessRequestSerializer(serializers.Serializer):
         return super().to_internal_value(data)
 
 
-class SMTPSettingsSerializer(serializers.ModelSerializer):
-    """Serializer for admin to view and edit SMTP configuration."""
-
-    has_password = serializers.SerializerMethodField()
-
-    class Meta:
-        model = SMTPSettings
-        fields = [
-            "id",
-            "host",
-            "port",
-            "username",
-            "password",
-            "has_password",
-            "use_ssl",
-            "use_tls",
-            "default_from_email",
-            "kevin_email",
-            "is_active",
-            "created_at",
-            "updated_at",
-        ]
-        read_only_fields = ["id", "created_at", "updated_at"]
-        extra_kwargs = {
-            "password": {"required": False, "allow_blank": True},
-            "username": {"required": False, "allow_blank": True},
-            "host": {"required": False, "allow_blank": True},
-            "default_from_email": {"required": False, "allow_blank": True},
-            "kevin_email": {"required": False, "allow_blank": True},
-        }
-
-    def get_has_password(self, obj: SMTPSettings) -> bool:
-        from django.conf import settings
-
-        return bool(obj.password or getattr(settings, "SMTP_PASSWORD", ""))
-
-    def to_representation(self, instance: SMTPSettings) -> dict:
-        from django.conf import settings
-
-        data = super().to_representation(instance)
-        # Render default credentials dynamically from env variables if blank
-        if not data.get("host"):
-            data["host"] = getattr(settings, "SMTP_HOST", "smtp.gmail.com") or "smtp.gmail.com"
-        if not data.get("port"):
-            data["port"] = int(getattr(settings, "SMTP_PORT", 465) or 465)
-        if not data.get("username"):
-            data["username"] = getattr(settings, "SMTP_USER", "") or ""
-        if not data.get("default_from_email"):
-            data["default_from_email"] = (
-                getattr(settings, "DEFAULT_FROM_EMAIL", "")
-                or f"Kevin's Construction OS <{data['username']}>" if data.get("username") else ""
-            )
-        if not data.get("kevin_email"):
-            data["kevin_email"] = getattr(settings, "NOTIFICATION_RECIPIENT_EMAIL", "") or data.get("username", "")
-
-        # Never reveal the app password to frontend after render
-        data["password"] = ""
-        return data
-
-    def validate_password(self, value: str) -> str:
-        return (value or "").strip().replace(" ", "")
-
-    def update(self, instance: SMTPSettings, validated_data: dict) -> SMTPSettings:
-        # If password is empty or not passed, keep the existing password
-        if "password" in validated_data:
-            pw = validated_data["password"]
-            if not pw:
-                validated_data.pop("password", None)
-            else:
-                validated_data["password"] = pw.strip().replace(" ", "")
-        return super().update(instance, validated_data)
-
-
 class SMTPTestConnectionSerializer(serializers.Serializer):
     """Allows testing outbound SMTP transmission to any recipient."""
 
@@ -606,4 +525,269 @@ class ClientEmailTriggerSerializer(serializers.Serializer):
     )
     subject = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
     message = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+# ==============================================================================
+# Multi-Tenancy, SuperAdmin & Authentication Serializers
+# ==============================================================================
+from common.tenancy import (
+    Organization,
+    OrganizationMember,
+    PlatformSettings,
+    Invitation,
+    ClientSubscription,
+    ClientSupportTicket,
+    PlatformNotification,
+)
+
+
+class PlatformSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlatformSettings
+        fields = [
+            "id",
+            "platform_name",
+            "base_domain",
+            "site_title",
+            "site_description",
+            "logo_url",
+            "social_cover_url",
+            "allow_self_registration",
+            "updated_at",
+        ]
+
+
+class OrganizationSerializer(serializers.ModelSerializer):
+    subdomain_host = serializers.CharField(read_only=True)
+    member_count = serializers.SerializerMethodField()
+    project_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Organization
+        fields = [
+            "id",
+            "name",
+            "slug",
+            "subdomain_host",
+            "custom_domain",
+            "custom_domain_verified",
+            "is_active",
+            "currency",
+            "deal_review_threshold",
+            "invoice_review_threshold",
+            "executive_recipient_email",
+            "feature_flags",
+            "site_title",
+            "site_description",
+            "logo_url",
+            "social_cover_url",
+            "primary_color",
+            "member_count",
+            "project_count",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "subdomain_host", "created_at", "updated_at"]
+
+    def get_member_count(self, obj: Organization) -> int:
+        return obj.members.filter(is_active=True).count()
+
+    def get_project_count(self, obj: Organization) -> int:
+        return getattr(obj, "crm_constructionproject_records", obj.constructionproject_set if hasattr(obj, "constructionproject_set") else None).count() if hasattr(obj, "crm_constructionproject_records") else 0
+
+    def to_representation(self, instance: Organization) -> dict:
+        ret = super().to_representation(instance)
+        ret["feature_flags"] = instance.get_feature_flags()
+        return ret
+
+    def update(self, instance: Organization, validated_data: dict) -> Organization:
+        # If custom domain was updated, trigger Traefik dynamic sync
+        domain_changed = "custom_domain" in validated_data and validated_data["custom_domain"] != instance.custom_domain
+        instance = super().update(instance, validated_data)
+        if domain_changed:
+            from crm.services.traefik_sync import sync_traefik_custom_domains
+            sync_traefik_custom_domains()
+        return instance
+
+
+class OrganizationMemberSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="user.username", read_only=True)
+    email = serializers.EmailField(source="user.email", read_only=True)
+    first_name = serializers.CharField(source="user.first_name", read_only=True)
+    last_name = serializers.CharField(source="user.last_name", read_only=True)
+    avatar_url = serializers.SerializerMethodField()
+    bio = serializers.SerializerMethodField()
+    job_title = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrganizationMember
+        fields = [
+            "id",
+            "organization",
+            "user",
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "avatar_url",
+            "bio",
+            "job_title",
+            "role",
+            "is_active",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
+
+    def get_avatar_url(self, obj: OrganizationMember) -> str:
+        profile = getattr(obj.user, "profile", None)
+        return profile.avatar_url if profile else ""
+
+    def get_bio(self, obj: OrganizationMember) -> str:
+        profile = getattr(obj.user, "profile", None)
+        return profile.bio if profile else ""
+
+    def get_job_title(self, obj: OrganizationMember) -> str:
+        profile = getattr(obj.user, "profile", None)
+        return profile.job_title if profile else ""
+
+
+class InvitationSerializer(serializers.ModelSerializer):
+    organization_slug = serializers.CharField(source="organization.slug", read_only=True)
+    organization_name = serializers.CharField(source="organization.name", read_only=True)
+    invited_by_username = serializers.CharField(source="invited_by.username", read_only=True)
+
+    class Meta:
+        model = Invitation
+        fields = [
+            "id",
+            "invitation_type",
+            "email",
+            "invited_name",
+            "organization",
+            "organization_slug",
+            "organization_name",
+            "role",
+            "token",
+            "status",
+            "invited_by",
+            "invited_by_username",
+            "expires_at",
+            "created_at",
+        ]
+        read_only_fields = ["id", "token", "created_at"]
+
+
+class GoogleAuthRequestSerializer(serializers.Serializer):
+    id_token = serializers.CharField(required=True)
+    invitation_token = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class LoginRequestSerializer(serializers.Serializer):
+    username_or_email = serializers.CharField(required=True)
+    password = serializers.CharField(required=True)
+
+
+class RegisterRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(required=True, min_length=8)
+    full_name = serializers.CharField(required=False, allow_blank=True, default="")
+    username = serializers.CharField(required=False, allow_blank=True, default="")
+    organization_name = serializers.CharField(required=False, allow_blank=True, default="")
+    organization_slug = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class ClientSubscriptionSerializer(serializers.ModelSerializer):
+    organization_name = serializers.CharField(source="organization.name", read_only=True)
+    organization_slug = serializers.CharField(source="organization.slug", read_only=True)
+
+    class Meta:
+        model = ClientSubscription
+        fields = [
+            "id",
+            "organization",
+            "organization_name",
+            "organization_slug",
+            "plan_tier",
+            "monthly_price",
+            "billing_cycle",
+            "status",
+            "payment_method",
+            "next_billing_date",
+            "last_payment_date",
+            "total_paid_ytd",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class ClientSupportTicketSerializer(serializers.ModelSerializer):
+    organization_name = serializers.CharField(source="organization.name", read_only=True)
+    organization_slug = serializers.CharField(source="organization.slug", read_only=True)
+
+    class Meta:
+        model = ClientSupportTicket
+        fields = [
+            "id",
+            "organization",
+            "organization_name",
+            "organization_slug",
+            "submitted_by_name",
+            "submitted_by_email",
+            "subject",
+            "category",
+            "priority",
+            "status",
+            "message",
+            "admin_notes",
+            "created_at",
+            "updated_at",
+            "resolved_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class PlatformNotificationSerializer(serializers.ModelSerializer):
+    target_organization_name = serializers.CharField(
+        source="target_organization.name", read_only=True
+    )
+    target_organization_slug = serializers.CharField(
+        source="target_organization.slug", read_only=True
+    )
+
+    class Meta:
+        model = PlatformNotification
+        fields = [
+            "id",
+            "title",
+            "message",
+            "severity",
+            "target_organization",
+            "target_organization_name",
+            "target_organization_slug",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class PlatformUserDirectorySerializer(serializers.Serializer):
+    id = serializers.CharField()
+    username = serializers.CharField()
+    email = serializers.EmailField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    avatar_url = serializers.CharField(allow_blank=True, default="")
+    bio = serializers.CharField(allow_blank=True, default="")
+    job_title = serializers.CharField(allow_blank=True, default="")
+    is_active = serializers.BooleanField()
+    is_superuser = serializers.BooleanField()
+    date_joined = serializers.DateTimeField()
+    last_login = serializers.DateTimeField(allow_null=True)
+    organization = serializers.CharField(allow_null=True)
+    organization_name = serializers.CharField(allow_null=True)
+    role = serializers.CharField()
+
+
 

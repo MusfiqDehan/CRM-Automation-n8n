@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
-# Kevin's Construction OS — Zero-Downtime Production Deployment Pipeline
-# Target Domain: https://crm.musfiqdehan.com
+# Beamline — Zero-Downtime Production Deployment Pipeline
+# Target Domain: https://beamline.musfiqdehan.com (and https://crm.musfiqdehan.com)
 # Reverse Proxy: Traefik v3 (external network: traefik_proxy)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -33,7 +33,7 @@ log_error() {
 }
 
 echo -e "${BLUE}================================================================${NC}"
-echo -e "${GREEN}  Kevin's Construction OS — Zero-Downtime Deployment Pipeline   ${NC}"
+echo -e "${GREEN}      Beamline — Zero-Downtime Deployment Pipeline              ${NC}"
 echo -e "${BLUE}================================================================${NC}"
 
 # 1. Environment Verification
@@ -81,7 +81,7 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod build
 log_info "Ensuring PostgreSQL 18 database (db) is healthy..."
 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d db
 
-until [ "$(docker inspect --format='{{.State.Health.Status}}' crm_prod_db 2>/dev/null)" = "healthy" ]; do
+until [ "$(docker inspect --format='{{.State.Health.Status}}' beamline_prod_db 2>/dev/null)" = "healthy" ]; do
     sleep 2
     echo -n "."
 done
@@ -107,7 +107,7 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-or
 log_info "Waiting for Backend container healthcheck..."
 MAX_RETRIES=30
 RETRY_COUNT=0
-until [ "$(docker inspect --format='{{.State.Health.Status}}' crm_prod_backend 2>/dev/null)" = "healthy" ]; do
+until [ "$(docker inspect --format='{{.State.Health.Status}}' beamline_prod_backend 2>/dev/null)" = "healthy" ]; do
     sleep 2
     RETRY_COUNT=$((RETRY_COUNT+1))
     if [ "$RETRY_COUNT" -ge "$MAX_RETRIES" ]; then
@@ -122,8 +122,8 @@ log_success "Backend service is healthy!"
 # 10. Wait for n8n container to respond and import workflows
 log_info "Configuring n8n workflow automation..."
 sleep 5
-docker exec -u node crm_prod_n8n n8n import:workflow --input=/workflows/construction_cost_automation.json 2>/dev/null || true
-docker exec -u node crm_prod_n8n n8n update:workflow --all --active=true 2>/dev/null || true
+docker exec -u node beamline_prod_n8n n8n import:workflow --input=/workflows/construction_cost_automation.json 2>/dev/null || true
+docker exec -u node beamline_prod_n8n n8n update:workflow --all --active=true 2>/dev/null || true
 log_success "n8n workflow imported and activated."
 
 # 11. Check running containers

@@ -66,7 +66,7 @@ export function ActionItemsCenter({
             <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
             Executive Action Items &amp; Priority Center
           </h3>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-stone-400">
             Immediate items requiring client sign-off, founder review, or operational resolution
           </p>
         </div>
@@ -76,7 +76,7 @@ export function ActionItemsCenter({
           <button
             type="button"
             onClick={onOpenContactModal}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-500 text-white shadow-sm transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-600 hover:bg-amber-500 text-white shadow-sm transition cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New Lead</span>
@@ -92,7 +92,7 @@ export function ActionItemsCenter({
           <button
             type="button"
             onClick={onOpenCustomInvoiceModal}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-purple-600 hover:bg-purple-500 text-white shadow-sm transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-600 hover:bg-amber-500 text-white shadow-sm transition cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Ingest Invoice</span>
@@ -101,10 +101,10 @@ export function ActionItemsCenter({
             type="button"
             onClick={onSyncNotion}
             disabled={syncingNotion}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 transition cursor-pointer disabled:opacity-50"
           >
             <RefreshCw
-              className={`w-3.5 h-3.5 text-blue-400 ${
+              className={`w-3.5 h-3.5 text-amber-400 ${
                 syncingNotion ? "animate-spin" : ""
               }`}
             />
@@ -120,7 +120,7 @@ export function ActionItemsCenter({
           className={`p-4 rounded-xl border transition-all ${
             kevinReviewCount > 0
               ? "bg-amber-950/30 border-amber-500/50 hover:border-amber-400/80 shadow-md shadow-amber-500/10"
-              : "bg-slate-900/80 border-slate-800"
+              : "bg-stone-900/80 border-stone-800"
           }`}
         >
           <div className="flex items-start justify-between">
@@ -129,7 +129,7 @@ export function ActionItemsCenter({
                 className={`p-2 rounded-lg ${
                   kevinReviewCount > 0
                     ? "bg-amber-500/20 text-amber-300"
-                    : "bg-slate-800 text-slate-400"
+                    : "bg-stone-800 text-stone-400"
                 }`}
               >
                 <AlertTriangle className="w-4 h-4" />
@@ -138,7 +138,7 @@ export function ActionItemsCenter({
                 <h4 className="text-xs font-bold text-white uppercase tracking-wider">
                   Founder Review Queue
                 </h4>
-                <div className="text-[11px] text-slate-400">
+                <div className="text-[11px] text-stone-400">
                   Deals requiring executive sign-off
                 </div>
               </div>
@@ -155,7 +155,7 @@ export function ActionItemsCenter({
               <span className="text-2xl font-extrabold text-white">
                 {loading ? "..." : kevinReviewCount}
               </span>
-              <span className="text-xs text-slate-400 ml-1.5">
+              <span className="text-xs text-stone-400 ml-1.5">
                 {kevinReviewCount === 1 ? "deal pending" : "deals pending"}
               </span>
             </div>
@@ -168,7 +168,7 @@ export function ActionItemsCenter({
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
-          <p className="text-[11px] text-slate-400 mt-2">
+          <p className="text-[11px] text-stone-400 mt-2">
             Escalates high-value custom requests or budget variances before design agreements are executed.
           </p>
         </div>
@@ -178,7 +178,7 @@ export function ActionItemsCenter({
           className={`p-4 rounded-xl border transition-all ${
             flaggedCostsCount > 0
               ? "bg-rose-950/30 border-rose-500/50 hover:border-rose-400/80 shadow-md shadow-rose-500/10"
-              : "bg-slate-900/80 border-slate-800"
+              : "bg-stone-900/80 border-stone-800"
           }`}
         >
           <div className="flex items-start justify-between">
@@ -187,7 +187,7 @@ export function ActionItemsCenter({
                 className={`p-2 rounded-lg ${
                   flaggedCostsCount > 0
                     ? "bg-rose-500/20 text-rose-300"
-                    : "bg-slate-800 text-slate-400"
+                    : "bg-stone-800 text-stone-400"
                 }`}
               >
                 <FileSpreadsheet className="w-4 h-4" />
@@ -196,7 +196,7 @@ export function ActionItemsCenter({
                 <h4 className="text-xs font-bold text-white uppercase tracking-wider">
                   Cost Reconciliation
                 </h4>
-                <div className="text-[11px] text-slate-400">
+                <div className="text-[11px] text-stone-400">
                   Supplier invoices &amp; variances
                 </div>
               </div>
@@ -217,7 +217,7 @@ export function ActionItemsCenter({
               <span className="text-2xl font-extrabold text-white">
                 {loading ? "..." : flaggedCostsCount}
               </span>
-              <span className="text-xs text-slate-400 ml-1.5">
+              <span className="text-xs text-stone-400 ml-1.5">
                 flagged invoice(s)
               </span>
             </div>
@@ -230,13 +230,13 @@ export function ActionItemsCenter({
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
-          <p className="text-[11px] text-slate-400 mt-2">
+          <p className="text-[11px] text-stone-400 mt-2">
             Automated AI invoice parser flags ambiguous project references and cost variances before payment.
           </p>
         </div>
 
         {/* Card 3: Construction Builds & Milestones */}
-        <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 transition-all">
+        <div className="p-4 rounded-xl bg-stone-900/80 border border-stone-800 hover:border-stone-700 transition-all">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
               <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-300">
@@ -246,7 +246,7 @@ export function ActionItemsCenter({
                 <h4 className="text-xs font-bold text-white uppercase tracking-wider">
                   Active Build Phases
                 </h4>
-                <div className="text-[11px] text-slate-400">
+                <div className="text-[11px] text-stone-400">
                   4-Phase milestone execution
                 </div>
               </div>
@@ -261,7 +261,7 @@ export function ActionItemsCenter({
               <span className="text-2xl font-extrabold text-white">
                 {loading ? "..." : activeProjectsCount}
               </span>
-              <span className="text-xs text-slate-400 ml-1.5">
+              <span className="text-xs text-stone-400 ml-1.5">
                 active custom builds
               </span>
             </div>
@@ -274,7 +274,7 @@ export function ActionItemsCenter({
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
-          <p className="text-[11px] text-slate-400 mt-2">
+          <p className="text-[11px] text-stone-400 mt-2">
             Standardized tracking across Pre-Construction, Construction, Closeout, and Warranty checklists.
           </p>
         </div>

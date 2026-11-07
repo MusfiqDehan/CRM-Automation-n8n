@@ -70,15 +70,75 @@ export class ApiClient {
     return url.toString();
   }
 
+  public setAuthToken(token: string | null) {
+    if (typeof window !== "undefined") {
+      if (token) {
+        localStorage.setItem("beamline_access_token", token);
+      } else {
+        localStorage.removeItem("beamline_access_token");
+      }
+    }
+  }
+
+  public getAuthToken(): string | null {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("beamline_access_token");
+    }
+    return null;
+  }
+
+  public setTenantSlug(slug: string | null) {
+    if (typeof window !== "undefined") {
+      if (slug) {
+        localStorage.setItem("beamline_tenant_slug", slug);
+      } else {
+        localStorage.removeItem("beamline_tenant_slug");
+      }
+    }
+  }
+
+  public getTenantSlug(): string | null {
+    if (typeof window !== "undefined") {
+      // Derive client subdomains while leaving platform apex to server-side resolution
+      const host = window.location.hostname.toLowerCase();
+      if (host.includes(".beamline.musfiqdehan.com") || host.includes(".localhost")) {
+        const sub = host.split(".")[0];
+        if (sub && sub !== "www" && sub !== "app" && sub !== "api" && sub !== "beamline") return sub;
+      }
+
+      // Explicit ?tenant= query parameter (for dev testing & preview links)
+      const params = new URLSearchParams(window.location.search);
+      const queryTenant = params.get("tenant")?.trim();
+      if (queryTenant) return queryTenant;
+
+      // When inside /admin, use the authenticated user's active tenant slug
+      const pathname = window.location.pathname;
+      if (pathname.startsWith("/admin")) {
+        const stored = localStorage.getItem("beamline_tenant_slug");
+        if (stored) return stored;
+      }
+    }
+    return null;
+  }
+
+  public clearAuth() {
+    this.setAuthToken(null);
+  }
+
   public async request<T>(
     endpoint: string,
     options: RequestInit = {},
     params?: Record<string, string | number | boolean | undefined | null>
   ): Promise<ApiEnvelope<T>> {
     const url = this.buildUrl(endpoint, params);
+    const token = this.getAuthToken();
+    const tenantSlug = this.getTenantSlug();
+
     const headers: Record<string, string> = {
       Accept: "application/json",
       ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(tenantSlug ? { "X-Tenant-Slug": tenantSlug } : {}),
       ...((options.headers as Record<string, string>) || {}),
     };
 
@@ -167,10 +227,58 @@ export class ApiClient {
     });
   }
 
-  public async delete<T = { id: string }>(endpoint: string): Promise<ApiEnvelope<T>> {
-    return this.request<T>(endpoint, { method: "DELETE" });
+  public async delete<T = { id: string }>(endpoint: string, payload?: Record<string, unknown>): Promise<ApiEnvelope<T>> {
+    return this.request<T>(endpoint, {
+      method: "DELETE",
+      body: payload ? JSON.stringify(payload) : undefined,
+    });
+  }
+
+  public async uploadFormData<T>(
+    endpoint: string,
+    formData: FormData
+  ): Promise<ApiEnvelope<T>> {
+    const url = this.buildUrl(endpoint);
+    const token = this.getAuthToken();
+    const tenantSlug = this.getTenantSlug();
+
+    const headers: Record<string, string> = {
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(tenantSlug ? { "X-Tenant-Slug": tenantSlug } : {}),
+    };
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: "POST",
+        headers,
+        body: formData,
+        cache: "no-store",
+      });
+    } catch (networkErr) {
+      const msg = networkErr instanceof Error ? networkErr.message : "Network error";
+      throw new ApiError(`Network error uploading file: ${msg}`, 0);
+    }
+
+    const rawText = await response.text();
+    let json: ApiEnvelope<T> | null = null;
+    if (rawText && rawText.trim().length > 0) {
+      try {
+        json = JSON.parse(rawText) as ApiEnvelope<T>;
+      } catch {
+        json = null;
+      }
+    }
+
+    if (!response.ok || !json || json.success === false) {
+      const fallbackMsg = !response.ok
+        ? `Upload failed with status ${response.status}`
+        : "Server returned an invalid response.";
+      throw new ApiError(json?.message || fallbackMsg, response.status);
+    }
+    return json;
   }
 }
 
 export const apiClient = new ApiClient();
-

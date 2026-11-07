@@ -13,8 +13,8 @@ RUN bun install --frozen-lockfile
 COPY . .
 
 # Build-time arguments for Next.js static embedding
-ARG NEXT_PUBLIC_API_BASE_URL=https://crm.musfiqdehan.com/api/v1
-ARG NEXT_PUBLIC_N8N_URL=https://crm.musfiqdehan.com/n8n
+ARG NEXT_PUBLIC_API_BASE_URL=https://beamline.musfiqdehan.com/api/v1
+ARG NEXT_PUBLIC_N8N_URL=https://beamline.musfiqdehan.com/n8n
 ARG NEXT_PUBLIC_NOTION_HUB_URL=https://app.notion.com/p/Kevin-s-Construction-OS-4098194ec3e8811ab5b1c1b79f62bce1
 
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL \

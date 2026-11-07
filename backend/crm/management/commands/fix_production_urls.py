@@ -19,8 +19,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "--target-base",
             type=str,
-            default=getattr(settings, "PUBLIC_API_URL", "https://crm.musfiqdehan.com/api/v1"),
-            help="Target public API URL (default: https://crm.musfiqdehan.com/api/v1)",
+            default=getattr(settings, "PUBLIC_API_URL", "https://beamline.musfiqdehan.com/api/v1"),
+            help="Target public API URL (default: https://beamline.musfiqdehan.com/api/v1)",
         )
 
     def handle(self, *args, **options):

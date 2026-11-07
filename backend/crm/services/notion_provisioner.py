@@ -483,7 +483,7 @@ class NotionProvisionerService:
         api_base = getattr(
             settings,
             "PUBLIC_API_URL",
-            "http://localhost:8017/api/v1" if getattr(settings, "DEBUG", False) else "https://crm.musfiqdehan.com/api/v1",
+            "http://localhost:8017/api/v1" if getattr(settings, "DEBUG", False) else "https://beamline.musfiqdehan.com/api/v1",
         ).rstrip("/")
 
         ProjectCost.objects.update_or_create(
@@ -1476,7 +1476,7 @@ class NotionProvisionerService:
                 api_base = getattr(
                     settings,
                     "PUBLIC_API_URL",
-                    "https://crm.musfiqdehan.com/api/v1",
+                    "https://beamline.musfiqdehan.com/api/v1",
                 ).rstrip("/")
                 doc_url = doc_url.replace("http://localhost:8017/api/v1", api_base)
             props["Supporting Document"] = {"url": doc_url}

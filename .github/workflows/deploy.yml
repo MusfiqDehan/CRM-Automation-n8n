@@ -43,13 +43,13 @@ jobs:
             # Check whether triggered by pull request or push/dispatch
             if [ "${{ github.event_name }}" = "pull_request" ]; then
               echo "==> Pull Request #${{ github.event.pull_request.number }} detected: fetching PR branch..."
-              git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-deploy
-              git checkout pr-deploy
+              git fetch origin pull/${{ github.event.pull_request.number }}/head
+              git checkout -B pr-deploy FETCH_HEAD
               git reset --hard "${{ github.event.pull_request.head.sha }}"
             else
               echo "==> Direct push/dispatch to main detected: syncing main branch..."
               git fetch origin main
-              git checkout main
+              git checkout -B main FETCH_HEAD
               git reset --hard origin/main
             fi
 
@@ -68,7 +68,7 @@ jobs:
 
             # Pre-build production images
             echo "==> Building production images (zero-downtime preparation)..."
-            docker compose -f docker-compose.prod.yml --env-file .env.prod build
+            DOCKER_BUILDKIT=0 docker compose -f docker-compose.prod.yml --env-file .env.prod build || docker compose -f docker-compose.prod.yml --env-file .env.prod build
 
             # Stop legacy crm_prod containers if running to avoid naming/port conflicts
             for legacy_container in crm_prod_frontend crm_prod_backend crm_prod_n8n crm_prod_db; do

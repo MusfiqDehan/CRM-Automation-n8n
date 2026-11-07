@@ -40,6 +40,10 @@ jobs:
               git remote set-url origin https://x-access-token:${{ secrets.GH_PAT }}@github.com/MusfiqDehan/CRM-Automation-n8n.git
             fi
 
+            # Ensure clean working tree before switching branches
+            git reset --hard HEAD || true
+            git clean -fd || true
+
             # Check whether triggered by pull request or push/dispatch
             if [ "${{ github.event_name }}" = "pull_request" ]; then
               echo "==> Pull Request #${{ github.event.pull_request.number }} detected: fetching PR branch..."

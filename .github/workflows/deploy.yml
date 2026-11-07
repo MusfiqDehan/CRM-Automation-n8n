@@ -1,0 +1,124 @@
+name: Deploy Production
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Zero-Downtime Production Deployment
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy to VPS over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          command_timeout: 25m
+          script: |
+            set -euo pipefail
+
+            DEPLOY_DIR="${{ secrets.PROD_PATH }}"
+            echo "==> Deploying to ${DEPLOY_DIR}..."
+            mkdir -p "${DEPLOY_DIR}"
+            cd "${DEPLOY_DIR}"
+
+            # Update git origin credentials if GH_PAT is provided
+            if [ -n "${{ secrets.GH_PAT }}" ]; then
+              git remote set-url origin https://x-access-token:${{ secrets.GH_PAT }}@github.com/MusfiqDehan/CRM-Automation-n8n.git
+            fi
+
+            # Check whether triggered by pull request or push/dispatch
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              echo "==> Pull Request #${{ github.event.pull_request.number }} detected: fetching PR branch..."
+              git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-deploy
+              git checkout pr-deploy
+              git reset --hard "${{ github.event.pull_request.head.sha }}"
+            else
+              echo "==> Direct push/dispatch to main detected: syncing main branch..."
+              git fetch origin main
+              git checkout main
+              git reset --hard origin/main
+            fi
+
+            # Update production environment configuration
+            echo "==> Writing .env.prod..."
+            cat << 'EOF' > .env.prod
+            ${{ secrets.PROD_ENV }}
+            EOF
+            chmod 600 .env.prod
+
+            # Ensure external Traefik proxy network exists
+            if ! docker network inspect traefik_proxy >/dev/null 2>&1; then
+              echo "==> Creating external traefik_proxy network..."
+              docker network create traefik_proxy
+            fi
+
+            # Pre-build production images
+            echo "==> Building production images (zero-downtime preparation)..."
+            docker compose -f docker-compose.prod.yml --env-file .env.prod build
+
+            # Stop legacy crm_prod containers if running to avoid naming/port conflicts
+            for legacy_container in crm_prod_frontend crm_prod_backend crm_prod_n8n crm_prod_db; do
+              if docker ps -a --format '{{.Names}}' | grep -q "^${legacy_container}$"; then
+                echo "==> Stopping legacy container ${legacy_container}..."
+                docker stop "${legacy_container}" || true
+                docker rm "${legacy_container}" || true
+              fi
+            done
+
+            # Start database service first
+            echo "==> Starting database..."
+            docker compose -f docker-compose.prod.yml --env-file .env.prod up -d db
+
+            echo "==> Waiting for database to become healthy..."
+            until [ "$(docker inspect --format='{{.State.Health.Status}}' beamline_prod_db 2>/dev/null)" = "healthy" ]; do
+              sleep 2
+              echo -n "."
+            done
+            echo ""
+            echo "Database is healthy."
+
+            # Execute database migrations and collectstatic
+            echo "==> Running migrations & collectstatic..."
+            docker compose -f docker-compose.prod.yml --env-file .env.prod run --rm backend /app/.venv/bin/python manage.py migrate --noinput
+            docker compose -f docker-compose.prod.yml --env-file .env.prod run --rm backend /app/.venv/bin/python manage.py collectstatic --noinput
+
+            # Start backend, n8n, frontend
+            echo "==> Starting production stack..."
+            docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans backend n8n frontend
+
+            # Verify services health
+            echo "==> Verifying production health endpoints..."
+            HEALTHY=false
+            for attempt in $(seq 1 30); do
+              if curl -kfsS "https://beamline.musfiqdehan.com/api/v1/health/" >/dev/null 2>&1 \
+                 && curl -kfsS "https://beamline.musfiqdehan.com/" >/dev/null 2>&1; then
+                echo "==> Production health checks passed successfully on attempt ${attempt}!"
+                HEALTHY=true
+                break
+              fi
+              echo "Waiting for services to become healthy (attempt ${attempt}/30)..."
+              sleep 5
+            done
+
+            if [ "${HEALTHY}" != "true" ]; then
+              echo "ERROR: Health checks failed after 30 attempts!"
+              docker compose -f docker-compose.prod.yml --env-file .env.prod ps
+              docker compose -f docker-compose.prod.yml --env-file .env.prod logs backend --tail 30
+              exit 1
+            fi
+
+            echo "==> Production deployment to https://beamline.musfiqdehan.com verified successfully!"

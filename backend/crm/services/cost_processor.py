@@ -97,7 +97,7 @@ class CostAutomationProcessor:
         api_base = getattr(
             settings,
             "PUBLIC_API_URL",
-            "http://localhost:8017/api/v1" if getattr(settings, "DEBUG", False) else "https://crm.musfiqdehan.com/api/v1",
+            "http://localhost:8017/api/v1" if getattr(settings, "DEBUG", False) else "https://beamline.musfiqdehan.com/api/v1",
         ).rstrip("/")
 
         supporting_url = payload.get("supporting_document_url")

@@ -125,7 +125,7 @@ CORS_ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.getenv(
         "CORS_ALLOWED_ORIGINS",
-        "https://crm.musfiqdehan.com,http://localhost:3017,http://127.0.0.1:3017,http://localhost:5678",
+        "https://beamline.musfiqdehan.com,https://crm.musfiqdehan.com,http://localhost:3017,http://127.0.0.1:3017,http://localhost:5678",
     ).split(",")
     if origin.strip()
 ]
@@ -140,7 +140,7 @@ CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.getenv(
         "CSRF_TRUSTED_ORIGINS",
-        "https://crm.musfiqdehan.com,http://localhost:3017,http://127.0.0.1:3017",
+        "https://beamline.musfiqdehan.com,https://crm.musfiqdehan.com,http://localhost:3017,http://127.0.0.1:3017",
     ).split(",")
     if origin.strip()
 ]
@@ -261,7 +261,7 @@ N8N_WEBHOOK_URL = os.getenv(
 # Public Domain & API URLs (used for sample invoice PDF links, Notion properties, email notifications)
 PUBLIC_BASE_URL = os.getenv(
     "PUBLIC_BASE_URL",
-    "http://localhost:8017" if DEBUG else "https://crm.musfiqdehan.com",
+    "http://localhost:8017" if DEBUG else "https://beamline.musfiqdehan.com",
 ).rstrip("/")
 PUBLIC_API_URL = os.getenv(
     "PUBLIC_API_URL",

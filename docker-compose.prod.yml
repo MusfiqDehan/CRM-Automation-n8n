@@ -213,10 +213,10 @@ networks:
 
 volumes:
   beamline_prod_postgres_data:
-    name: beamline_prod_postgres_data
+    name: crm_prod_postgres_data
   beamline_prod_media_data:
-    name: beamline_prod_media_data
+    name: crm_prod_media_data
   beamline_prod_n8n_data:
-    name: beamline_prod_n8n_data
+    name: crm_prod_n8n_data
 
 

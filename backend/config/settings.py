@@ -156,8 +156,9 @@ R2_ENDPOINT_URL = os.getenv(
     "R2_ENDPOINT_URL",
     f"https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com" if R2_ACCOUNT_ID else "",
 )
-USE_R2_STORAGE = os.getenv("USE_R2_STORAGE", "False").lower() in ("true", "1", "yes") or bool(
-    R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY and R2_ENDPOINT_URL
+USE_R2_STORAGE = (
+    os.getenv("USE_R2_STORAGE", "False").lower() in ("true", "1", "yes")
+    and bool(R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY and R2_ENDPOINT_URL)
 )
 
 if USE_R2_STORAGE:
